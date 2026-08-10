@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Nafiz Ahmed | Python Developer</title>
+
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+
+        /* NAVBAR */
+
+        nav {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            padding: 20px 8%;
+
+            background: rgba(15, 23, 42, 0.96);
+            backdrop-filter: blur(10px);
+
+            border-bottom: 1px solid #334155;
+        }
+
+        nav h2 {
+            color: #38bdf8;
+        }
+
+        nav div {
+            display: flex;
+            gap: 25px;
+        }
+
+        nav a {
+            color: #e2e8f0;
+            text-decoration: none;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        nav a:hover {
+            color: #38bdf8;
+        }
+
+
+        /* HOME */
+
+        #home {
+            min-height: 90vh;
+
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+
+            text-align: center;
+
+            padding: 80px 20px;
+
+            background:
+                radial-gradient(
+                    circle at top,
+                    #312e81,
+                    #0f172a 60%
+                );
+        }
+
+        .profile {
+            width: 170px;
+            height: 170px;
+
+            border-radius: 50%;
+
+            object-fit: cover;
+
+            border: 5px solid #38bdf8;
+
+            margin-bottom: 25px;
+
+            box-shadow:
+                0 0 30px rgba(56, 189, 248, 0.4);
+        }
+
+        #home h1 {
+            font-size: 55px;
+            color: white;
+            margin-bottom: 15px;
+        }
+
+        #home h1 span {
+            color: #38bdf8;
+        }
+
+        #home p {
+            max-width: 700px;
+            font-size: 20px;
+            color: #cbd5e1;
+        }
+
+        .button {
+            display: inline-block;
+
+            margin-top: 30px;
+            padding: 14px 30px;
+
+            background: #38bdf8;
+            color: #0f172a;
+
+            text-decoration: none;
+
+            border-radius: 8px;
+
+            font-weight: bold;
+
+            transition: 0.3s;
+        }
+
+        .button:hover {
+            background: #facc15;
+            transform: translateY(-4px);
+        }
+
+
+        /* SECTIONS */
+
+        section {
+            max-width: 1100px;
+            margin: auto;
+            padding: 100px 30px;
+        }
+
+        section h2 {
+            text-align: center;
+
+            font-size: 38px;
+
+            margin-bottom: 40px;
+
+            color: #38bdf8;
+        }
+
+        section p {
+            color: #cbd5e1;
+            line-height: 1.8;
+        }
+
+
+        /* ABOUT */
+
+        #about {
+            text-align: center;
+        }
+
+        #about p {
+            max-width: 750px;
+            margin: auto;
+            font-size: 18px;
+        }
+
+
+        /* SKILLS */
+
+        .skills {
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(280px, 1fr)
+                );
+
+            gap: 25px;
+        }
+
+        .skill {
+            padding: 25px;
+
+            background: #1e293b;
+
+            border: 1px solid #334155;
+
+            border-radius: 15px;
+
+            transition: 0.3s;
+        }
+
+        .skill:hover {
+            transform: translateY(-5px);
+            border-color: #38bdf8;
+        }
+
+        .skill-info {
+            display: flex;
+            justify-content: space-between;
+
+            margin-bottom: 10px;
+
+            color: white;
+            font-weight: bold;
+        }
+
+        .skill-bar {
+            width: 100%;
+            height: 10px;
+
+            background: #334155;
+
+            border-radius: 10px;
+
+            overflow: hidden;
+        }
+
+        .skill-progress {
+            height: 100%;
+
+            background:
+                linear-gradient(
+                    90deg,
+                    #38bdf8,
+                    #818cf8
+                );
+
+            border-radius: 10px;
+        }
+
+        .python {
+            width: 75%;
+        }
+
+        .html {
+            width: 80%;
+        }
+
+        .css {
+            width: 70%;
+        }
+
+        .git {
+            width: 55%;
+        }
+
+        .linux {
+            width: 60%;
+        }
+
+        .backend {
+            width: 45%;
+        }
+
+
+        /* SERVICES */
+
+        .services {
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(250px, 1fr)
+                );
+
+            gap: 25px;
+        }
+
+        .service {
+            padding: 35px;
+
+            text-align: center;
+
+            background: #1e293b;
+
+            border: 1px solid #334155;
+
+            border-radius: 15px;
+
+            transition: 0.3s;
+        }
+
+        .service:hover {
+            transform: translateY(-8px);
+            border-color: #38bdf8;
+        }
+
+        .service-icon {
+            font-size: 45px;
+            margin-bottom: 20px;
+        }
+
+        .service h3 {
+            color: #facc15;
+            margin-bottom: 15px;
+        }
+
+
+        /* PROJECTS */
+
+        .projects {
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(280px, 1fr)
+                );
+
+            gap: 25px;
+        }
+
+        .project {
+            padding: 30px;
+
+            background: #1e293b;
+
+            border: 1px solid #334155;
+
+            border-radius: 15px;
+
+            transition: 0.3s;
+        }
+
+        .project:hover {
+            transform: translateY(-8px);
+            border-color: #38bdf8;
+        }
+
+        .project h3 {
+            color: #facc15;
+            margin-bottom: 15px;
+        }
+
+
+        /* CONTACT */
+
+        #contact {
+            text-align: center;
+        }
+
+        .contact-container {
+            display: grid;
+
+            grid-template-columns:
+                1fr 1.5fr;
+
+            gap: 30px;
+
+            max-width: 900px;
+
+            margin: auto;
+        }
+
+        .contact-box,
+        .contact-form {
+            padding: 35px;
+
+            background: #1e293b;
+
+            border: 1px solid #334155;
+
+            border-radius: 15px;
+
+            text-align: left;
+        }
+
+        .contact-box h3,
+        .contact-form h3 {
+            color: #facc15;
+            margin-bottom: 20px;
+        }
+
+        .contact-box p {
+            margin: 15px 0;
+        }
+
+
+        /* SOCIAL */
+
+        .social-links {
+            display: flex;
+            gap: 10px;
+
+            margin-top: 25px;
+
+            flex-wrap: wrap;
+        }
+
+        .social-links a {
+            padding: 10px 15px;
+
+            background: #0f172a;
+
+            color: #38bdf8;
+
+            border: 1px solid #334155;
+
+            border-radius: 8px;
+
+            text-decoration: none;
+
+            font-weight: bold;
+        }
+
+        .social-links a:hover {
+            background: #38bdf8;
+            color: #0f172a;
+        }
+
+
+        /* FORM */
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+
+            margin-bottom: 8px;
+
+            color: #e2e8f0;
+
+            font-weight: bold;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+
+            padding: 13px;
+
+            background: #0f172a;
+
+            color: white;
+
+            border: 1px solid #334155;
+
+            border-radius: 8px;
+
+            outline: none;
+
+            font-size: 15px;
+
+            font-family: Arial, sans-serif;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            border-color: #38bdf8;
+        }
+
+        .form-group textarea {
+            min-height: 140px;
+            resize: vertical;
+        }
+
+        .send-button {
+            width: 100%;
+
+            padding: 14px;
+
+            border: none;
+
+            border-radius: 8px;
+
+            background: #38bdf8;
+
+            color: #0f172a;
+
+            font-size: 16px;
+
+            font-weight: bold;
+
+            cursor: pointer;
+        }
+
+        .send-button:hover {
+            background: #facc15;
+        }
+
+
+        /* FOOTER */
+
+        footer {
+            text-align: center;
+
+            padding: 30px;
+
+            background: #020617;
+
+            color: #94a3b8;
+
+            border-top: 1px solid #334155;
+        }
+
+
+        /* MOBILE */
+
+        @media (max-width: 800px) {
+
+            nav {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            nav div {
+                gap: 12px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            #home h1 {
+                font-size: 38px;
+            }
+
+            #home p {
+                font-size: 17px;
+            }
+
+            .contact-container {
+                grid-template-columns: 1fr;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <!-- NAVBAR -->
+
+    <nav>
+
+        <h2>
+            Nafiz Ahmed
+        </h2>
+
+        <div>
+
+            <a href="#home">Home</a>
+
+            <a href="#about">About</a>
+
+            <a href="#skills">Skills</a>
+
+            <a href="#services">Services</a>
+
+            <a href="#projects">Projects</a>
+
+            <a href="#contact">Contact</a>
+
+        </div>
+
+    </nav>
+
+
+    <!-- HOME -->
+
+    <section id="home">
+
+        <img
+            src="{{ url_for('static', filename='profile.jpg') }}"
+            alt="Nafiz Ahmed"
+            class="profile"
+        >
+
+        <h1>
+
+            Hi, I'm
+            <span>Nafiz Ahmed</span>
+
+        </h1>
+
+        <p>
+
+            Python Developer and Backend
+            Development Learner.
+
+            I am building my skills in Python,
+            Web Development and Backend Engineering.
+
+        </p>
+
+        <a
+            class="button"
+            href="#projects"
+        >
+            View My Projects
+        </a>
+
+    </section>
+
+
+    <!-- ABOUT -->
+
+    <section id="about">
+
+        <h2>
+            About Me
+        </h2>
+
+        <p>
+
+            Hello! I'm Nafiz Ahmed.
+
+            I am learning Python programming,
+            Web Development and Backend Development.
+
+            My goal is to become a professional
+            Backend Engineer and build real-world
+            software projects.
+
+        </p>
+
+    </section>
+
+
+    <!-- SKILLS -->
+
+    <section id="skills">
+
+        <h2>
+            My Skills
+        </h2>
+
+        <div class="skills">
+
+            <div class="skill">
+
+                <div class="skill-info">
+                    <span>Python</span>
+                    <span>75%</span>
+                </div>
+
+                <div class="skill-bar">
+                    <div class="skill-progress python"></div>
+                </div>
+
+            </div>
+
+
+            <div class="skill">
+
+                <div class="skill-info">
+                    <span>HTML</span>
+                    <span>80%</span>
+                </div>
+
+                <div class="skill-bar">
+                    <div class="skill-progress html"></div>
+                </div>
+
+            </div>
+
+
+            <div class="skill">
+
+                <div class="skill-info">
+                    <span>CSS</span>
+                    <span>70%</span>
+                </div>
+
+                <div class="skill-bar">
+                    <div class="skill-progress css"></div>
+                </div>
+
+            </div>
+
+
+            <div class="skill">
+
+                <div class="skill-info">
+                    <span>Git</span>
+                    <span>55%</span>
+                </div>
+
+                <div class="skill-bar">
+                    <div class="skill-progress git"></div>
+                </div>
+
+            </div>
+
+
+            <div class="skill">
+
+                <div class="skill-info">
+                    <span>Linux</span>
+                    <span>60%</span>
+                </div>
+
+                <div class="skill-bar">
+                    <div class="skill-progress linux"></div>
+                </div>
+
+            </div>
+
+
+            <div class="skill">
+
+                <div class="skill-info">
+                    <span>Backend</span>
+                    <span>45%</span>
+                </div>
+
+                <div class="skill-bar">
+                    <div class="skill-progress backend"></div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- SERVICES -->
+
+    <section id="services">
+
+        <h2>
+            My Services
+        </h2>
+
+        <div class="services">
+
+            <div class="service">
+
+                <div class="service-icon">
+                    💻
+                </div>
+
+                <h3>
+                    Web Development
+                </h3>
+
+                <p>
+
+                    Building clean and responsive
+                    websites using modern web
+                    technologies.
+
+                </p>
+
+            </div>
+
+
+            <div class="service">
+
+                <div class="service-icon">
+                    🐍
+                </div>
+
+                <h3>
+                    Python Development
+                </h3>
+
+                <p>
+
+                    Creating Python programs,
+                    automation tools and useful
+                    software projects.
+
+                </p>
+
+            </div>
+
+
+            <div class="service">
+
+                <div class="service-icon">
+                    ⚙️
+                </div>
+
+                <h3>
+                    Backend Development
+                </h3>
+
+                <p>
+
+                    Learning and building backend
+                    applications, APIs and databases.
+
+                </p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- PROJECTS -->
+
+    <section id="projects">
+
+        <h2>
+            My Projects
+        </h2>
+
+        <div class="projects">
+
+            <div class="project">
+
+                <h3>
+                    Password Analyzer
+                </h3>
+
+                <p>
+
+                    A Python project that analyzes
+                    password characters and counts
+                    digits, uppercase, lowercase
+                    and special characters.
+
+                </p>
+
+            </div>
+
+
+            <div class="project">
+
+                <h3>
+                    Factor Finder
+                </h3>
+
+                <p>
+
+                    A Python program that finds
+                    all factors of a given number
+                    using loops and conditions.
+
+                </p>
+
+            </div>
+
+
+            <div class="project">
+
+                <h3>
+                    Even & Odd Checker
+                </h3>
+
+                <p>
+
+                    A Python program that checks
+                    and calculates even and odd
+                    numbers.
+
+                </p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- CONTACT -->
+
+    <section id="contact">
+
+        <h2>
+            Contact Me
+        </h2>
+
+        <div class="contact-container">
+
+
+            <div class="contact-box">
+
+                <h3>
+                    Let's Work Together
+                </h3>
+
+                <p>
+                    📧 Email:
+                    your-email@example.com
+                </p>
+
+                <p>
+                    📍 Location:
+                    Bangladesh
+                </p>
+
+                <p>
+                    💻 Available for:
+                    Web & Python Projects
+                </p>
+
+
+                <div class="social-links">
+
+                    <a href="#">
+                        GitHub
+                    </a>
+
+                    <a href="#">
+                        LinkedIn
+                    </a>
+
+                    <a href="#">
+                        Facebook
+                    </a>
+
+                </div>
+
+            </div>
+
+
+            <!-- FLASK CONTACT FORM -->
+
+            <div class="contact-form">
+
+                <h3>
+                    Send Me a Message
+                </h3>
+
+
+                <form
+                    method="POST"
+                    action="/contact"
+                >
+
+
+                    <div class="form-group">
+
+                        <label for="name">
+                            Your Name
+                        </label>
+
+                        <input
+                            type="text"
+                            id="name"
+                            name="name"
+                            placeholder="Enter your name"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="email">
+                            Your Email
+                        </label>
+
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            placeholder="Enter your email"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="message">
+                            Your Message
+                        </label>
+
+                        <textarea
+                            id="message"
+                            name="message"
+                            placeholder="Write your message..."
+                            required
+                        ></textarea>
+
+                    </div>
+
+
+                    <button
+                        type="submit"
+                        class="send-button"
+                    >
+
+                        Send Message
+
+                    </button>
+
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- FOOTER -->
+
+    <footer>
+
+        <p>
+            © 2026 Nafiz Ahmed.
+            All Rights Reserved.
+        </p>
+
+    </footer>
+
+
+</body>
+
+</html>
