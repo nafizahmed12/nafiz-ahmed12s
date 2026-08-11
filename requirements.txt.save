@@ -1,0 +1,7 @@
+Flask
+gunicorn
+python-dotenv
+git add requirements.txt
+git commit -m "Add requirements"
+git push
+

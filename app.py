@@ -7,11 +7,15 @@ load_dotenv()
 
 app = Flask(__name__)
 
+# Render Environment Variables থেকে Secret Key নেবে
 app.secret_key = os.getenv("SECRET_KEY")
 
 
-def create_database():
+# =========================
+# DATABASE
+# =========================
 
+def create_database():
     connection = sqlite3.connect("messages.db")
     cursor = connection.cursor()
 
@@ -28,11 +32,22 @@ def create_database():
     connection.close()
 
 
+# Server চালু হওয়ার সময় database/table তৈরি করবে
+create_database()
+
+
+# =========================
+# HOME
+# =========================
+
 @app.route("/")
 def home():
-
     return render_template("index.html")
 
+
+# =========================
+# CONTACT
+# =========================
 
 @app.route("/contact", methods=["POST"])
 def contact():
@@ -63,6 +78,10 @@ def contact():
     return "Message saved successfully!"
 
 
+# =========================
+# LOGIN
+# =========================
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
 
@@ -71,6 +90,7 @@ def login():
         username = request.form.get("username", "")
         password = request.form.get("password", "")
 
+        # Render Environment Variables
         admin_username = os.getenv("ADMIN_USERNAME")
         admin_password = os.getenv("ADMIN_PASSWORD")
 
@@ -84,6 +104,10 @@ def login():
 
     return render_template("login.html")
 
+
+# =========================
+# ADMIN
+# =========================
 
 @app.route("/admin")
 def admin():
@@ -110,6 +134,10 @@ def admin():
     )
 
 
+# =========================
+# LOGOUT
+# =========================
+
 @app.route("/logout")
 def logout():
 
@@ -118,8 +146,9 @@ def logout():
     return redirect("/login")
 
 
+# =========================
+# LOCAL DEVELOPMENT
+# =========================
+
 if __name__ == "__main__":
-
-    create_database()
-
     app.run()
