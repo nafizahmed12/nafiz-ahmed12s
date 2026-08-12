@@ -1,87 +1,168 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
+
     <meta charset="UTF-8">
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <meta
         name="description"
-        content="Nafiz Ahmed — Python Developer and Backend Development Learner."
+        content="Nafiz Ahmed — Python Developer, Backend Developer and Web Developer."
     >
 
-    <meta name="author" content="Nafiz Ahmed">
+    <meta
+        name="author"
+        content="Nafiz Ahmed"
+    >
 
-    <meta name="theme-color" content="#050816">
+    <meta
+        name="theme-color"
+        content="#050816"
+    >
 
     <title>Nafiz Ahmed | Python Developer</title>
 
-    <!-- Flask Static CSS -->
     <link
         rel="stylesheet"
         href="{{ url_for('static', filename='style.css') }}"
     >
+
 </head>
 
 <body>
 
-    <!-- Background -->
+    <!-- =====================================================
+         BACKGROUND
+    ====================================================== -->
+
     <div class="ambient ambient-one"></div>
     <div class="ambient ambient-two"></div>
     <div class="noise"></div>
 
-
-    <!-- ================= NAVBAR ================= -->
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
 
     <header class="site-header">
+
         <nav class="navbar">
 
+            <!-- Brand -->
+
             <a href="#home" class="brand">
-                <span class="brand-mark">N</span>
+
+                <span class="brand-mark">
+                    N
+                </span>
 
                 <span class="brand-text">
                     Nafiz<span>.</span>
                 </span>
+
             </a>
 
+
+            <!-- Desktop Navigation -->
+
             <div class="nav-links">
-                <a href="#home">Home</a>
-                <a href="#about">About</a>
-                <a href="#skills">Skills</a>
-                <a href="#services">Services</a>
-                <a href="#projects">Projects</a>
-                <a href="#contact">Contact</a>
+
+                <a href="#home" class="active">
+                    Home
+                </a>
+
+                <a href="#about">
+                    About
+                </a>
+
+                <a href="#skills">
+                    Skills
+                </a>
+
+                <a href="#services">
+                    Services
+                </a>
+
+                <a href="#projects">
+                    Projects
+                </a>
+
+                <a href="#contact">
+                    Contact
+                </a>
+
             </div>
 
-            <a href="#contact" class="nav-cta">
+
+            <!-- CTA -->
+
+            <a
+                href="#contact"
+                class="nav-cta"
+            >
                 Let's Talk
                 <span>↗</span>
             </a>
 
+
+            <!-- Mobile Menu -->
+
+            <button
+                class="menu-toggle"
+                id="menuToggle"
+                aria-label="Open navigation"
+                aria-expanded="false"
+            >
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
         </nav>
+
     </header>
 
 
     <main>
 
-        <!-- ================= HERO ================= -->
+        <!-- =================================================
+             HERO
+        ================================================== -->
 
-        <section id="home" class="hero section">
+        <section
+            id="home"
+            class="hero"
+        >
 
             <div class="hero-grid"></div>
 
+            <div class="hero-orb orb-one"></div>
+            <div class="hero-orb orb-two"></div>
+
+
             <div class="hero-content">
 
+
+                <!-- Availability -->
+
                 <div class="availability reveal">
+
                     <span class="status-dot"></span>
+
                     Available for opportunities
+
                 </div>
 
+
+                <!-- Profile -->
 
                 <div class="profile-wrapper reveal">
 
                     <div class="profile-orbit orbit-one"></div>
+
                     <div class="profile-orbit orbit-two"></div>
 
                     <div class="profile-glow"></div>
@@ -95,79 +176,151 @@
                 </div>
 
 
+                <!-- Hero Text -->
+
                 <p class="hero-eyebrow reveal">
                     PYTHON • BACKEND • WEB DEVELOPMENT
                 </p>
 
 
                 <h1 class="hero-title reveal">
-                    Building
+
+                    Hi, I'm
                     <span class="gradient-text">
-                        digital experiences
+                        Nafiz Ahmed
                     </span>
-                    that matter.
+
+                    <br>
+
+                    Python Developer &
+                    <br>
+
+                    Backend Developer
+
                 </h1>
 
 
                 <p class="hero-description reveal">
-                    I'm Nafiz Ahmed, a Python developer and
-                    backend development learner focused on
-                    creating modern, reliable and scalable
-                    web applications.
+
+                    I build reliable web applications, APIs and
+                    automation solutions with Python.
+                    Currently learning, building and improving
+                    every day.
+
                 </p>
 
 
+                <!-- Buttons -->
+
                 <div class="hero-actions reveal">
 
-                    <a href="#projects" class="btn btn-primary">
-                        View Projects
+                    <a
+                        href="#projects"
+                        class="btn btn-primary"
+                    >
+
+                        View My Work
+
                         <span>↗</span>
+
                     </a>
 
-                    <a href="#contact" class="btn btn-secondary">
-                        Contact Me
+
+                    <a
+                        href="{{ url_for('static', filename='cv.pdf') }}"
+                        class="btn btn-secondary"
+                        target="_blank"
+                    >
+
+                        Download CV
+
+                        <span>↓</span>
+
                     </a>
 
                 </div>
 
 
-                <div class="hero-stats reveal">
+                <!-- Social -->
 
-                    <div class="stat">
-                        <strong>Python</strong>
-                        <span>Development</span>
+                <div class="hero-social reveal">
+
+                    <span>
+                        Connect with me
+                    </span>
+
+                    <div class="social-mini">
+
+                        <a
+                            href="#"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="GitHub"
+                        >
+                            GH
+                        </a>
+
+                        <a
+                            href="#"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="LinkedIn"
+                        >
+                            IN
+                        </a>
+
+                        <a
+                            href="#"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="Facebook"
+                        >
+                            FB
+                        </a>
+
                     </div>
 
-                    <div class="stat-divider"></div>
+                </div>
 
-                    <div class="stat">
-                        <strong>Backend</strong>
-                        <span>Engineering</span>
-                    </div>
 
-                    <div class="stat-divider"></div>
+                <!-- Tech Pills -->
 
-                    <div class="stat">
-                        <strong>Web</strong>
-                        <span>Development</span>
-                    </div>
+                <div class="hero-tech reveal">
+
+                    <span>Python</span>
+                    <i>•</i>
+                    <span>Backend</span>
+                    <i>•</i>
+                    <span>Web</span>
 
                 </div>
 
             </div>
 
 
+            <!-- Scroll -->
+
             <div class="scroll-indicator">
-                <span>Scroll to explore</span>
+
+                <span>
+                    Scroll to explore
+                </span>
+
                 <div class="scroll-line"></div>
+
             </div>
 
         </section>
 
 
-        <!-- ================= ABOUT ================= -->
+        <!-- =================================================
+             ABOUT
+        ================================================== -->
 
-        <section id="about" class="section content-section">
+        <section
+            id="about"
+            class="section"
+        >
 
             <div class="section-heading reveal">
 
@@ -176,65 +329,124 @@
                 </span>
 
                 <h2>
+
                     Turning ideas into
                     <span class="gradient-text">
                         real projects.
                     </span>
+
                 </h2>
 
                 <p>
-                    A developer focused on continuous learning,
-                    practical projects and building strong
-                    foundations in software engineering.
+
+                    I'm focused on learning software development,
+                    building practical projects and developing
+                    strong foundations in Python and backend
+                    engineering.
+
                 </p>
 
             </div>
 
 
-            <div class="about-grid">
+            <div class="about-layout">
 
-                <div class="about-card glass-card reveal">
 
-                    <div class="card-number">01</div>
+                <div class="about-text glass-card reveal">
 
-                    <h3>Who I Am</h3>
+                    <span class="card-number">
+                        01
+                    </span>
+
+                    <h3>
+                        Building. Learning. Improving.
+                    </h3>
 
                     <p>
-                        I'm learning Python, web development
-                        and backend engineering with the goal
-                        of becoming a professional software
-                        developer.
+
+                        I enjoy taking an idea and turning it into
+                        a working application. My current focus is
+                        Python, web development, Flask, APIs,
+                        databases and backend engineering.
+
+                    </p>
+
+                    <p>
+
+                        Instead of only studying theory, I focus
+                        on building practical projects and
+                        learning from real problems.
+
                     </p>
 
                 </div>
 
 
-                <div class="about-card glass-card reveal">
-
-                    <div class="card-number">02</div>
-
-                    <h3>What I Build</h3>
-
-                    <p>
-                        I enjoy creating practical applications,
-                        automation tools, websites, APIs and
-                        backend systems.
-                    </p>
-
-                </div>
+                <div class="about-features">
 
 
-                <div class="about-card glass-card reveal">
+                    <div class="feature-card glass-card reveal">
 
-                    <div class="card-number">03</div>
+                        <div class="feature-icon">
+                            ✦
+                        </div>
 
-                    <h3>My Approach</h3>
+                        <div>
 
-                    <p>
-                        Learn the fundamentals, build projects,
-                        solve problems and continuously improve
-                        the quality of the work.
-                    </p>
+                            <h3>
+                                Focused
+                            </h3>
+
+                            <p>
+                                Continuous learning and growth.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="feature-card glass-card reveal">
+
+                        <div class="feature-icon">
+                            ◈
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                Creative
+                            </h3>
+
+                            <p>
+                                Building useful digital solutions.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="feature-card glass-card reveal">
+
+                        <div class="feature-icon">
+                            ◆
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                Reliable
+                            </h3>
+
+                            <p>
+                                Clean and understandable code.
+                            </p>
+
+                        </div>
+
+                    </div>
+
 
                 </div>
 
@@ -243,9 +455,14 @@
         </section>
 
 
-        <!-- ================= SKILLS ================= -->
+        <!-- =================================================
+             SKILLS
+        ================================================== -->
 
-        <section id="skills" class="section content-section">
+        <section
+            id="skills"
+            class="section section-divider"
+        >
 
             <div class="section-heading reveal">
 
@@ -254,16 +471,19 @@
                 </span>
 
                 <h2>
-                    Tools I use to
+
+                    Technologies
                     <span class="gradient-text">
-                        build.
+                        I work with.
                     </span>
+
                 </h2>
 
                 <p>
-                    A growing technical foundation focused
-                    on programming, web development and backend
-                    engineering.
+
+                    My growing technical stack for programming,
+                    web development and backend engineering.
+
                 </p>
 
             </div>
@@ -271,163 +491,322 @@
 
             <div class="skills-grid">
 
+
+                <!-- Python -->
+
                 <div class="skill-card glass-card reveal">
 
-                    <div class="skill-top">
-
-                        <div class="skill-icon python-icon">
-                            PY
-                        </div>
-
-                        <div>
-                            <h3>Python</h3>
-                            <span>Programming</span>
-                        </div>
-
-                        <strong>75%</strong>
-
+                    <div class="skill-icon python">
+                        PY
                     </div>
 
-                    <div class="progress-track">
-                        <div
-                            class="progress-fill"
-                            style="--progress: 75%"
-                        ></div>
+                    <div class="skill-info">
+
+                        <div class="skill-name">
+
+                            <h3>
+                                Python
+                            </h3>
+
+                            <strong>
+                                75%
+                            </strong>
+
+                        </div>
+
+                        <span>
+                            Programming
+                        </span>
+
+                        <div class="progress-track">
+
+                            <div
+                                class="progress-fill"
+                                style="--progress: 75%"
+                            ></div>
+
+                        </div>
+
                     </div>
 
                 </div>
 
 
+                <!-- Flask -->
+
                 <div class="skill-card glass-card reveal">
 
-                    <div class="skill-top">
-
-                        <div class="skill-icon html-icon">
-                            &lt;/&gt;
-                        </div>
-
-                        <div>
-                            <h3>HTML</h3>
-                            <span>Structure</span>
-                        </div>
-
-                        <strong>80%</strong>
-
+                    <div class="skill-icon flask">
+                        FL
                     </div>
 
-                    <div class="progress-track">
-                        <div
-                            class="progress-fill"
-                            style="--progress: 80%"
-                        ></div>
+                    <div class="skill-info">
+
+                        <div class="skill-name">
+
+                            <h3>
+                                Flask
+                            </h3>
+
+                            <strong>
+                                65%
+                            </strong>
+
+                        </div>
+
+                        <span>
+                            Backend Framework
+                        </span>
+
+                        <div class="progress-track">
+
+                            <div
+                                class="progress-fill"
+                                style="--progress: 65%"
+                            ></div>
+
+                        </div>
+
                     </div>
 
                 </div>
 
 
+                <!-- HTML -->
+
                 <div class="skill-card glass-card reveal">
 
-                    <div class="skill-top">
-
-                        <div class="skill-icon css-icon">
-                            #
-                        </div>
-
-                        <div>
-                            <h3>CSS</h3>
-                            <span>UI Design</span>
-                        </div>
-
-                        <strong>70%</strong>
-
+                    <div class="skill-icon html">
+                        &lt;/&gt;
                     </div>
 
-                    <div class="progress-track">
-                        <div
-                            class="progress-fill"
-                            style="--progress: 70%"
-                        ></div>
+                    <div class="skill-info">
+
+                        <div class="skill-name">
+
+                            <h3>
+                                HTML
+                            </h3>
+
+                            <strong>
+                                85%
+                            </strong>
+
+                        </div>
+
+                        <span>
+                            Structure
+                        </span>
+
+                        <div class="progress-track">
+
+                            <div
+                                class="progress-fill"
+                                style="--progress: 85%"
+                            ></div>
+
+                        </div>
+
                     </div>
 
                 </div>
 
 
+                <!-- CSS -->
+
                 <div class="skill-card glass-card reveal">
 
-                    <div class="skill-top">
-
-                        <div class="skill-icon git-icon">
-                            G
-                        </div>
-
-                        <div>
-                            <h3>Git</h3>
-                            <span>Version Control</span>
-                        </div>
-
-                        <strong>55%</strong>
-
+                    <div class="skill-icon css">
+                        #
                     </div>
 
-                    <div class="progress-track">
-                        <div
-                            class="progress-fill"
-                            style="--progress: 55%"
-                        ></div>
+                    <div class="skill-info">
+
+                        <div class="skill-name">
+
+                            <h3>
+                                CSS
+                            </h3>
+
+                            <strong>
+                                80%
+                            </strong>
+
+                        </div>
+
+                        <span>
+                            UI & Design
+                        </span>
+
+                        <div class="progress-track">
+
+                            <div
+                                class="progress-fill"
+                                style="--progress: 80%"
+                            ></div>
+
+                        </div>
+
                     </div>
 
                 </div>
 
 
+                <!-- Git -->
+
                 <div class="skill-card glass-card reveal">
 
-                    <div class="skill-top">
-
-                        <div class="skill-icon linux-icon">
-                            L
-                        </div>
-
-                        <div>
-                            <h3>Linux</h3>
-                            <span>Environment</span>
-                        </div>
-
-                        <strong>60%</strong>
-
+                    <div class="skill-icon git">
+                        G
                     </div>
 
-                    <div class="progress-track">
-                        <div
-                            class="progress-fill"
-                            style="--progress: 60%"
-                        ></div>
+                    <div class="skill-info">
+
+                        <div class="skill-name">
+
+                            <h3>
+                                Git
+                            </h3>
+
+                            <strong>
+                                70%
+                            </strong>
+
+                        </div>
+
+                        <span>
+                            Version Control
+                        </span>
+
+                        <div class="progress-track">
+
+                            <div
+                                class="progress-fill"
+                                style="--progress: 70%"
+                            ></div>
+
+                        </div>
+
                     </div>
 
                 </div>
 
 
+                <!-- Linux -->
+
                 <div class="skill-card glass-card reveal">
 
-                    <div class="skill-top">
+                    <div class="skill-icon linux">
+                        L
+                    </div>
 
-                        <div class="skill-icon backend-icon">
-                            API
+                    <div class="skill-info">
+
+                        <div class="skill-name">
+
+                            <h3>
+                                Linux
+                            </h3>
+
+                            <strong>
+                                65%
+                            </strong>
+
                         </div>
 
-                        <div>
-                            <h3>Backend</h3>
-                            <span>Development</span>
-                        </div>
+                        <span>
+                            Environment
+                        </span>
 
-                        <strong>45%</strong>
+                        <div class="progress-track">
+
+                            <div
+                                class="progress-fill"
+                                style="--progress: 65%"
+                            ></div>
+
+                        </div>
 
                     </div>
 
-                    <div class="progress-track">
-                        <div
-                            class="progress-fill"
-                            style="--progress: 45%"
-                        ></div>
+                </div>
+
+
+                <!-- SQL -->
+
+                <div class="skill-card glass-card reveal">
+
+                    <div class="skill-icon sql">
+                        DB
+                    </div>
+
+                    <div class="skill-info">
+
+                        <div class="skill-name">
+
+                            <h3>
+                                SQL
+                            </h3>
+
+                            <strong>
+                                60%
+                            </strong>
+
+                        </div>
+
+                        <span>
+                            Database
+                        </span>
+
+                        <div class="progress-track">
+
+                            <div
+                                class="progress-fill"
+                                style="--progress: 60%"
+                            ></div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- API -->
+
+                <div class="skill-card glass-card reveal">
+
+                    <div class="skill-icon api">
+                        API
+                    </div>
+
+                    <div class="skill-info">
+
+                        <div class="skill-name">
+
+                            <h3>
+                                REST API
+                            </h3>
+
+                            <strong>
+                                65%
+                            </strong>
+
+                        </div>
+
+                        <span>
+                            Backend
+                        </span>
+
+                        <div class="progress-track">
+
+                            <div
+                                class="progress-fill"
+                                style="--progress: 65%"
+                            ></div>
+
+                        </div>
+
                     </div>
 
                 </div>
@@ -437,9 +816,14 @@
         </section>
 
 
-        <!-- ================= SERVICES ================= -->
+        <!-- =================================================
+             SERVICES
+        ================================================== -->
 
-        <section id="services" class="section content-section">
+        <section
+            id="services"
+            class="section"
+        >
 
             <div class="section-heading reveal">
 
@@ -448,10 +832,12 @@
                 </span>
 
                 <h2>
+
                     What I can
                     <span class="gradient-text">
-                        build.
+                        build for you.
                     </span>
+
                 </h2>
 
             </div>
@@ -459,92 +845,140 @@
 
             <div class="services-grid">
 
-                <article class="service-card glass-card reveal">
 
-                    <span class="service-index">01</span>
+                <article
+                    class="service-card glass-card reveal"
+                >
+
+                    <span class="service-index">
+                        01
+                    </span>
 
                     <div class="service-icon">
                         &lt;/&gt;
                     </div>
 
-                    <h3>Web Development</h3>
+                    <h3>
+                        Web Development
+                    </h3>
 
                     <p>
-                        Modern responsive websites with
-                        clean structure, smooth interactions
-                        and professional UI.
+
+                        Responsive and modern websites with
+                        clean structure, professional UI and
+                        smooth interactions.
+
                     </p>
 
-                    <span class="service-arrow">↗</span>
+                    <a href="#contact">
+                        Learn more
+                        <span>→</span>
+                    </a>
 
                 </article>
 
 
-                <article class="service-card glass-card reveal">
+                <article
+                    class="service-card glass-card reveal"
+                >
 
-                    <span class="service-index">02</span>
+                    <span class="service-index">
+                        02
+                    </span>
 
-                    <div class="service-icon">
+                    <div class="service-icon python-service">
                         PY
                     </div>
 
-                    <h3>Python Development</h3>
+                    <h3>
+                        Python Development
+                    </h3>
 
                     <p>
+
                         Python programs, automation scripts
                         and practical software solutions.
+
                     </p>
 
-                    <span class="service-arrow">↗</span>
+                    <a href="#contact">
+                        Learn more
+                        <span>→</span>
+                    </a>
 
                 </article>
 
 
-                <article class="service-card glass-card reveal">
+                <article
+                    class="service-card glass-card reveal"
+                >
 
-                    <span class="service-index">03</span>
+                    <span class="service-index">
+                        03
+                    </span>
 
-                    <div class="service-icon">
+                    <div class="service-icon api-service">
                         API
                     </div>
 
-                    <h3>Backend Development</h3>
+                    <h3>
+                        Backend Development
+                    </h3>
 
                     <p>
-                        Backend applications, APIs,
+
+                        Backend applications, REST APIs,
                         databases and server-side logic
                         using Python and Flask.
+
                     </p>
 
-                    <span class="service-arrow">↗</span>
+                    <a href="#contact">
+                        Learn more
+                        <span>→</span>
+                    </a>
 
                 </article>
+
 
             </div>
 
         </section>
 
 
-        <!-- ================= PROJECTS ================= -->
+        <!-- =================================================
+             PROJECTS
+        ================================================== -->
 
-        <section id="projects" class="section content-section">
+        <section
+            id="projects"
+            class="section section-divider"
+        >
 
-            <div class="section-heading reveal">
+            <div class="section-heading projects-heading reveal">
 
-                <span class="section-label">
-                    SELECTED WORK
-                </span>
+                <div>
 
-                <h2>
-                    Projects built while
-                    <span class="gradient-text">
-                        learning.
+                    <span class="section-label">
+                        FEATURED PROJECTS
                     </span>
-                </h2>
+
+                    <h2>
+
+                        Some things
+                        <span class="gradient-text">
+                            I've built.
+                        </span>
+
+                    </h2>
+
+                </div>
 
                 <p>
-                    Practical projects that demonstrate
-                    programming logic and development skills.
+
+                    Practical projects demonstrating programming
+                    logic and development skills.
+
                 </p>
 
             </div>
@@ -552,141 +986,427 @@
 
             <div class="projects-grid">
 
-                <article class="project-card glass-card reveal">
 
-                    <div class="project-top">
+                <!-- Project 1 -->
 
-                        <span class="project-type">
-                            PYTHON
-                        </span>
+                <article
+                    class="project-card glass-card reveal"
+                >
 
-                        <span class="project-number">
-                            01
-                        </span>
+                    <div class="project-image project-image-one">
+
+                        <div class="code-window">
+
+                            <span></span>
+                            <span></span>
+                            <span></span>
+
+                            <div class="code-lines">
+
+                                <i></i>
+                                <i></i>
+                                <i></i>
+                                <i></i>
+                                <i></i>
+
+                            </div>
+
+                        </div>
 
                     </div>
 
-                    <h3>Password Analyzer</h3>
 
-                    <p>
-                        A Python project that analyzes
-                        password characteristics including
-                        digits, uppercase, lowercase and
-                        special characters.
-                    </p>
+                    <div class="project-content">
 
-                    <div class="project-tags">
-                        <span>Python</span>
-                        <span>Logic</span>
-                        <span>Validation</span>
+                        <div class="project-meta">
+
+                            <span>
+                                PYTHON
+                            </span>
+
+                            <small>
+                                01
+                            </small>
+
+                        </div>
+
+                        <h3>
+                            Password Analyzer
+                        </h3>
+
+                        <p>
+
+                            A Python tool that analyzes password
+                            characteristics and validates common
+                            password patterns.
+
+                        </p>
+
+
+                        <div class="project-tags">
+
+                            <span>Python</span>
+                            <span>Logic</span>
+                            <span>Validation</span>
+
+                        </div>
+
+
+                        <div class="project-links">
+
+                            <a href="#">
+
+                                Live Demo
+                                <span>↗</span>
+
+                            </a>
+
+                            <a href="#">
+
+                                GitHub
+                                <span>↗</span>
+
+                            </a>
+
+                        </div>
+
                     </div>
 
-                    <div class="project-footer">
-                        <span>Python Project</span>
-                        <span>↗</span>
+                </article>
+
+
+                <!-- Project 2 -->
+
+                <article
+                    class="project-card glass-card reveal"
+                >
+
+                    <div class="project-image project-image-two">
+
+                        <div class="factor-ui">
+
+                            <div class="factor-title">
+                                Factor Finder
+                            </div>
+
+                            <div class="factor-input">
+                                120
+                            </div>
+
+                            <div class="factor-result">
+                                1 · 2 · 3 · 4 · 5 · 6
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="project-content">
+
+                        <div class="project-meta">
+
+                            <span>
+                                PYTHON
+                            </span>
+
+                            <small>
+                                02
+                            </small>
+
+                        </div>
+
+                        <h3>
+                            Factor Finder
+                        </h3>
+
+                        <p>
+
+                            A program that finds all factors of
+                            a number using loops, conditions and
+                            mathematical logic.
+
+                        </p>
+
+
+                        <div class="project-tags">
+
+                            <span>Python</span>
+                            <span>Math</span>
+                            <span>Algorithms</span>
+
+                        </div>
+
+
+                        <div class="project-links">
+
+                            <a href="#">
+
+                                Live Demo
+                                <span>↗</span>
+
+                            </a>
+
+                            <a href="#">
+
+                                GitHub
+                                <span>↗</span>
+
+                            </a>
+
+                        </div>
+
                     </div>
 
                 </article>
 
 
-                <article class="project-card glass-card reveal">
+                <!-- Project 3 -->
 
-                    <div class="project-top">
+                <article
+                    class="project-card glass-card reveal"
+                >
 
-                        <span class="project-type">
-                            PYTHON
-                        </span>
+                    <div class="project-image project-image-three">
 
-                        <span class="project-number">
-                            02
-                        </span>
+                        <div class="even-ui">
+
+                            <strong>
+                                42
+                            </strong>
+
+                            <span>
+                                EVEN NUMBER
+                            </span>
+
+                        </div>
 
                     </div>
 
-                    <h3>Factor Finder</h3>
 
-                    <p>
-                        A program that calculates all factors
-                        of a number using loops, conditions
-                        and mathematical logic.
-                    </p>
+                    <div class="project-content">
 
-                    <div class="project-tags">
-                        <span>Python</span>
-                        <span>Loops</span>
-                        <span>Math</span>
-                    </div>
+                        <div class="project-meta">
 
-                    <div class="project-footer">
-                        <span>Python Project</span>
-                        <span>↗</span>
+                            <span>
+                                PYTHON
+                            </span>
+
+                            <small>
+                                03
+                            </small>
+
+                        </div>
+
+                        <h3>
+                            Even & Odd Checker
+                        </h3>
+
+                        <p>
+
+                            A simple Python project for identifying
+                            and working with even and odd numbers.
+
+                        </p>
+
+
+                        <div class="project-tags">
+
+                            <span>Python</span>
+                            <span>Logic</span>
+                            <span>Conditions</span>
+
+                        </div>
+
+
+                        <div class="project-links">
+
+                            <a href="#">
+
+                                Live Demo
+                                <span>↗</span>
+
+                            </a>
+
+                            <a href="#">
+
+                                GitHub
+                                <span>↗</span>
+
+                            </a>
+
+                        </div>
+
                     </div>
 
                 </article>
 
-
-                <article class="project-card glass-card reveal">
-
-                    <div class="project-top">
-
-                        <span class="project-type">
-                            PYTHON
-                        </span>
-
-                        <span class="project-number">
-                            03
-                        </span>
-
-                    </div>
-
-                    <h3>Even &amp; Odd Checker</h3>
-
-                    <p>
-                        A simple programming project for
-                        identifying and working with even
-                        and odd numbers.
-                    </p>
-
-                    <div class="project-tags">
-                        <span>Python</span>
-                        <span>Conditions</span>
-                        <span>Logic</span>
-                    </div>
-
-                    <div class="project-footer">
-                        <span>Python Project</span>
-                        <span>↗</span>
-                    </div>
-
-                </article>
 
             </div>
 
         </section>
 
 
-        <!-- ================= CONTACT ================= -->
+        <!-- =================================================
+             LEARNING JOURNEY
+        ================================================== -->
 
-        <section id="contact" class="section contact-section">
-
-            <div class="contact-glow"></div>
+        <section
+            id="journey"
+            class="section"
+        >
 
             <div class="section-heading reveal">
 
                 <span class="section-label">
-                    CONTACT
+                    MY JOURNEY
                 </span>
 
                 <h2>
+
+                    My learning
+                    <span class="gradient-text">
+                        path.
+                    </span>
+
+                </h2>
+
+                <p>
+
+                    A practical path from programming fundamentals
+                    toward professional backend development.
+
+                </p>
+
+            </div>
+
+
+            <div class="journey">
+
+                <div class="journey-line"></div>
+
+
+                <div class="journey-item reveal">
+
+                    <div class="journey-icon">
+                        01
+                    </div>
+
+                    <h3>
+                        Python
+                    </h3>
+
+                    <p>
+                        Fundamentals
+                    </p>
+
+                </div>
+
+
+                <div class="journey-item reveal">
+
+                    <div class="journey-icon">
+                        02
+                    </div>
+
+                    <h3>
+                        Web
+                    </h3>
+
+                    <p>
+                        Development
+                    </p>
+
+                </div>
+
+
+                <div class="journey-item reveal">
+
+                    <div class="journey-icon">
+                        03
+                    </div>
+
+                    <h3>
+                        Backend
+                    </h3>
+
+                    <p>
+                        Development
+                    </p>
+
+                </div>
+
+
+                <div class="journey-item reveal">
+
+                    <div class="journey-icon">
+                        04
+                    </div>
+
+                    <h3>
+                        REST API
+                    </h3>
+
+                    <p>
+                        & Databases
+                    </p>
+
+                </div>
+
+
+                <div class="journey-item reveal">
+
+                    <div class="journey-icon">
+                        05
+                    </div>
+
+                    <h3>
+                        Real World
+                    </h3>
+
+                    <p>
+                        Projects
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             CONTACT
+        ================================================== -->
+
+        <section
+            id="contact"
+            class="section contact-section section-divider"
+        >
+
+            <div class="contact-glow"></div>
+
+
+            <div class="section-heading reveal">
+
+                <span class="section-label">
+                    GET IN TOUCH
+                </span>
+
+                <h2>
+
                     Let's build something
                     <span class="gradient-text">
                         great.
                     </span>
+
                 </h2>
 
                 <p>
-                    Have a project, idea or opportunity?
-                    Send me a message.
+
+                    Have a project in mind or want to say hi?
+                    Feel free to contact me.
+
                 </p>
 
             </div>
@@ -694,10 +1414,13 @@
 
             <div class="contact-grid">
 
+
+                <!-- Contact Information -->
+
                 <div class="contact-info glass-card reveal">
 
                     <span class="contact-small">
-                        GET IN TOUCH
+                        CONTACT
                     </span>
 
                     <h3>
@@ -705,25 +1428,32 @@
                     </h3>
 
                     <p>
-                        I'm interested in learning,
-                        building projects and exploring
-                        new opportunities in technology.
+
+                        I'm interested in learning, building
+                        projects and exploring opportunities
+                        in technology.
+
                     </p>
 
 
                     <div class="contact-details">
 
+
                         <div class="contact-detail">
 
-                            <span class="detail-icon">
+                            <div class="detail-icon">
                                 @
-                            </span>
+                            </div>
 
                             <div>
 
-                                <small>Email</small>
+                                <small>
+                                    Email
+                                </small>
 
-                                <a href="mailto:your-email@example.com">
+                                <a
+                                    href="mailto:your-email@example.com"
+                                >
                                     your-email@example.com
                                 </a>
 
@@ -734,15 +1464,19 @@
 
                         <div class="contact-detail">
 
-                            <span class="detail-icon">
+                            <div class="detail-icon">
                                 BD
-                            </span>
+                            </div>
 
                             <div>
 
-                                <small>Location</small>
+                                <small>
+                                    Location
+                                </small>
 
-                                <span>Bangladesh</span>
+                                <span>
+                                    Bangladesh
+                                </span>
 
                             </div>
 
@@ -785,6 +1519,8 @@
                 </div>
 
 
+                <!-- Contact Form -->
+
                 <div class="contact-form-card glass-card reveal">
 
                     <form
@@ -793,6 +1529,7 @@
                     >
 
                         <div class="form-row">
+
 
                             <div class="form-group">
 
@@ -852,8 +1589,15 @@
                             type="submit"
                             class="submit-button"
                         >
-                            <span>Send Message</span>
-                            <span class="submit-arrow">↗</span>
+
+                            <span>
+                                Send Message
+                            </span>
+
+                            <span>
+                                ↗
+                            </span>
+
                         </button>
 
                     </form>
@@ -867,18 +1611,23 @@
     </main>
 
 
-    <!-- ================= FOOTER ================= -->
+    <!-- =====================================================
+         FOOTER
+    ====================================================== -->
 
     <footer class="site-footer">
 
         <div class="footer-inner">
+
 
             <a
                 href="#home"
                 class="brand footer-brand"
             >
 
-                <span class="brand-mark">N</span>
+                <span class="brand-mark">
+                    N
+                </span>
 
                 <span class="brand-text">
                     Nafiz<span>.</span>
@@ -892,16 +1641,210 @@
             </p>
 
 
+            <div class="footer-links">
+
+                <a href="#home">
+                    Home
+                </a>
+
+                <a href="#projects">
+                    Projects
+                </a>
+
+                <a href="#contact">
+                    Contact
+                </a>
+
+            </div>
+
+
             <a
                 href="#home"
                 class="back-top"
             >
-                Back to top ↑
+                ↑
             </a>
 
         </div>
 
     </footer>
+
+
+    <!-- =====================================================
+         MOBILE MENU + SCROLL SCRIPT
+    ====================================================== -->
+
+    <script>
+
+        const menuToggle =
+            document.getElementById("menuToggle");
+
+        const navLinks =
+            document.querySelector(".nav-links");
+
+        menuToggle.addEventListener("click", () => {
+
+            const isOpen =
+                navLinks.classList.toggle("open");
+
+            menuToggle.classList.toggle("open");
+
+            menuToggle.setAttribute(
+                "aria-expanded",
+                isOpen
+            );
+
+        });
+
+
+        /* Close mobile menu */
+
+        document
+            .querySelectorAll(".nav-links a")
+            .forEach(link => {
+
+                link.addEventListener("click", () => {
+
+                    navLinks.classList.remove("open");
+
+                    menuToggle.classList.remove("open");
+
+                    menuToggle.setAttribute(
+                        "aria-expanded",
+                        "false"
+                    );
+
+                });
+
+            });
+
+
+        /* Reveal animation */
+
+        const revealElements =
+            document.querySelectorAll(".reveal");
+
+
+        const revealObserver =
+            new IntersectionObserver(
+                (entries, observer) => {
+
+                    entries.forEach(entry => {
+
+                        if (entry.isIntersecting) {
+
+                            entry.target.classList.add("visible");
+
+                            observer.unobserve(
+                                entry.target
+                            );
+
+                        }
+
+                    });
+
+                },
+                {
+                    threshold: 0.12
+                }
+            );
+
+
+        revealElements.forEach(element => {
+
+            revealObserver.observe(element);
+
+        });
+
+
+        /* Active navigation */
+
+        const sections =
+            document.querySelectorAll("section[id]");
+
+        const navigationLinks =
+            document.querySelectorAll(".nav-links a");
+
+
+        const sectionObserver =
+            new IntersectionObserver(
+                (entries) => {
+
+                    entries.forEach(entry => {
+
+                        if (entry.isIntersecting) {
+
+                            navigationLinks
+                                .forEach(link => {
+
+                                    link.classList.remove(
+                                        "active"
+                                    );
+
+                                });
+
+
+                            const activeLink =
+                                document.querySelector(
+                                    `.nav-links a[href="#${entry.target.id}"]`
+                                );
+
+
+                            if (activeLink) {
+
+                                activeLink.classList.add(
+                                    "active"
+                                );
+
+                            }
+
+                        }
+
+                    });
+
+                },
+                {
+                    rootMargin:
+                        "-35% 0px -55% 0px"
+                }
+            );
+
+
+        sections.forEach(section => {
+
+            sectionObserver.observe(section);
+
+        });
+
+
+        /* Navbar scroll effect */
+
+        const header =
+            document.querySelector(".site-header");
+
+
+        window.addEventListener(
+            "scroll",
+            () => {
+
+                if (window.scrollY > 40) {
+
+                    header.classList.add(
+                        "scrolled"
+                    );
+
+                } else {
+
+                    header.classList.remove(
+                        "scrolled"
+                    );
+
+                }
+
+            }
+        );
+
+    </script>
 
 </body>
 </html>
