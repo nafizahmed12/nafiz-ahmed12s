@@ -90,6 +90,10 @@
                     Projects
                 </a>
 
+                <a href="#newsletter">
+                    Newsletter
+                </a>
+
                 <a href="#contact">
                     Contact
                 </a>
@@ -1369,6 +1373,100 @@
                     </p>
 
                 </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             NEWSLETTER / EMAIL LIST
+        ================================================== -->
+
+        <section id="newsletter" class="section">
+
+            <div class="section-heading reveal">
+
+                <span class="section-label">
+                    NEWSLETTER
+                </span>
+
+                <h2>
+
+                    Stay
+                    <span class="gradient-text">
+                        updated.
+                    </span>
+
+                </h2>
+
+                <p>
+
+                    Subscribe to get Python tips, project ideas
+                    and exclusive content directly to your inbox.
+
+                </p>
+
+            </div>
+
+
+            <div class="newsletter-card glass-card reveal">
+
+                <div class="newsletter-content">
+
+                    <div class="newsletter-icon">
+                        ✉️
+                    </div>
+
+                    <h3>
+                        Free Python Tips & Resources
+                    </h3>
+
+                    <p>
+
+                        Join my email list. No spam, unsubscribe
+                        anytime. Get my free Python cheat sheet!
+
+                    </p>
+
+                </div>
+
+
+                <form
+                    method="POST"
+                    action="{{ url_for('subscribe') }}"
+                    class="newsletter-form"
+                >
+
+                    <div class="newsletter-input-group">
+
+                        <input
+                            type="email"
+                            name="subscriber_email"
+                            placeholder="your@email.com"
+                            required
+                            autocomplete="email"
+                        >
+
+                        <button type="submit" class="submit-button">
+
+                            <span>
+                                Subscribe
+                            </span>
+
+                            <span>
+                                ↗
+                            </span>
+
+                        </button>
+
+                    </div>
+
+                    <small class="newsletter-note">
+                        🔒 Your email is safe. No spam, ever.
+                    </small>
+
+                </form>
 
             </div>
 
