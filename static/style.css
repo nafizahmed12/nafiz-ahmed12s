@@ -4208,3 +4208,19 @@ textarea {
     }
 
 }
+/* Mobile performance optimization */
+@media (max-width: 600px) {
+
+    .ambient,
+    .noise,
+    .hero-orb,
+    .profile-orbit {
+        animation: none !important;
+    }
+
+    .glass-card {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+
+}
