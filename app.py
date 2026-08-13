@@ -28,6 +28,15 @@ def create_database():
         )
     """)
 
+    # Email subscribers table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS subscribers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT NOT NULL UNIQUE,
+            subscribed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
     connection.commit()
     connection.close()
 
@@ -76,6 +85,39 @@ def contact():
     print("Message saved successfully!")
 
     return "Message saved successfully!"
+
+
+# =========================
+# NEWSLETTER SUBSCRIBE
+# =========================
+
+@app.route("/subscribe", methods=["POST"])
+def subscribe():
+
+    email = request.form.get("subscriber_email", "").strip()
+
+    if not email:
+        return "Email is required.", 400
+
+    try:
+        connection = sqlite3.connect("messages.db")
+        cursor = connection.cursor()
+
+        cursor.execute(
+            "INSERT INTO subscribers (email) VALUES (?)",
+            (email,)
+        )
+
+        connection.commit()
+        connection.close()
+
+        return "✅ Subscribed successfully! Check your inbox soon."
+
+    except sqlite3.IntegrityError:
+        return "⚠️ This email is already subscribed!", 409
+
+    except Exception as e:
+        return f"Error: {str(e)}", 500
 
 
 # =========================

@@ -2874,7 +2874,145 @@ textarea {
 
 
 /* =========================================================
-   25. CONTACT
+   25. NEWSLETTER
+   ========================================================= */
+
+.newsletter-card {
+
+    max-width: 600px;
+
+    margin: 0 auto;
+
+    padding: 38px;
+
+    text-align: center;
+
+}
+
+
+.newsletter-content {
+
+    margin-bottom: 24px;
+
+}
+
+
+.newsletter-icon {
+
+    width: 58px;
+    height: 58px;
+
+    margin: 0 auto 16px;
+
+    display: grid;
+
+    place-items: center;
+
+    font-size: 24px;
+
+    border-radius: 16px;
+
+    background: rgba(56,189,248,0.07);
+
+    border: 1px solid rgba(56,189,248,0.14);
+
+}
+
+
+.newsletter-content h3 {
+
+    color: white;
+
+    font-size: 20px;
+
+    margin-bottom: 8px;
+
+}
+
+
+.newsletter-content p {
+
+    color: var(--text-muted);
+
+    font-size: 13px;
+
+    line-height: 1.7;
+
+}
+
+
+.newsletter-form {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 12px;
+
+}
+
+
+.newsletter-input-group {
+
+    display: flex;
+
+    gap: 10px;
+
+}
+
+
+.newsletter-input-group input {
+
+    flex: 1;
+
+    padding: 13px 16px;
+
+    color: white;
+
+    background: rgba(2,6,23,0.65);
+
+    border: 1px solid rgba(148,163,184,0.13);
+
+    border-radius: 10px;
+
+    outline: none;
+
+    font-size: 13px;
+
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+
+}
+
+
+.newsletter-input-group input::placeholder {
+
+    color: #475569;
+
+}
+
+
+.newsletter-input-group input:focus {
+
+    border-color: rgba(56,189,248,0.5);
+
+    background: rgba(2,6,23,0.9);
+
+    box-shadow: 0 0 0 4px rgba(56,189,248,0.05);
+
+}
+
+
+.newsletter-note {
+
+    color: #475569;
+
+    font-size: 10px;
+
+}
+
+
+/* =========================================================
+   26. CONTACT
    ========================================================= */
 
 .contact-section {
@@ -3057,7 +3195,7 @@ textarea {
 
 
 /* =========================================================
-   26. SOCIAL LINKS
+   27. SOCIAL LINKS
    ========================================================= */
 
 .social-links {
@@ -3129,7 +3267,7 @@ textarea {
 
 
 /* =========================================================
-   27. FORM
+   28. FORM
    ========================================================= */
 
 .form-row {
@@ -3238,7 +3376,7 @@ textarea {
 
 
 /* =========================================================
-   28. SUBMIT
+   29. SUBMIT
    ========================================================= */
 
 .submit-button {
@@ -3295,7 +3433,7 @@ textarea {
 
 
 /* =========================================================
-   29. FOOTER
+   30. FOOTER
    ========================================================= */
 
 .site-footer {
@@ -3423,7 +3561,7 @@ textarea {
 
 
 /* =========================================================
-   30. REVEAL
+   31. REVEAL
    ========================================================= */
 
 .reveal {
@@ -3495,7 +3633,7 @@ textarea {
 
 
 /* =========================================================
-   31. SCROLLBAR
+   32. SCROLLBAR
    ========================================================= */
 
 ::-webkit-scrollbar {
@@ -3529,7 +3667,7 @@ textarea {
 
 
 /* =========================================================
-   32. TABLET
+   33. TABLET
    ========================================================= */
 
 @media (max-width: 950px) {
@@ -3576,7 +3714,7 @@ textarea {
 
 
 /* =========================================================
-   33. MOBILE
+   34. MOBILE
    ========================================================= */
 
 @media (max-width: 700px) {
@@ -3955,7 +4093,7 @@ textarea {
 
 
 /* =========================================================
-   34. SMALL MOBILE
+   35. SMALL MOBILE
    ========================================================= */
 
 @media (max-width: 400px) {
@@ -4030,7 +4168,7 @@ textarea {
 
 
 /* =========================================================
-   35. MOBILE PERFORMANCE
+   36. MOBILE PERFORMANCE
    ========================================================= */
 
 @media (max-width: 600px) {
@@ -4151,7 +4289,7 @@ textarea {
 
 
 /* =========================================================
-   36. TOUCH
+   37. TOUCH
    ========================================================= */
 
 @media (hover: none) and (pointer: coarse) {
@@ -4184,7 +4322,7 @@ textarea {
 
 
 /* =========================================================
-   37. REDUCED MOTION
+   38. REDUCED MOTION
    ========================================================= */
 
 @media (prefers-reduced-motion: reduce) {
@@ -4208,6 +4346,8 @@ textarea {
     }
 
 }
+
+
 /* Mobile performance optimization */
 @media (max-width: 600px) {
 
@@ -4221,6 +4361,33 @@ textarea {
     .glass-card {
         backdrop-filter: none !important;
         -webkit-backdrop-filter: none !important;
+    }
+
+}
+
+
+/* =========================================================
+   39. NEWSLETTER MOBILE
+   ========================================================= */
+
+@media (max-width: 700px) {
+
+    .newsletter-card {
+
+        padding: 25px 20px;
+
+    }
+
+    .newsletter-input-group {
+
+        flex-direction: column;
+
+    }
+
+    .newsletter-input-group input {
+
+        width: 100%;
+
     }
 
 }
