@@ -5,1753 +5,250 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta
-        name="description"
-        content="Nafiz Ahmed — Premium personal portfolio website."
-    >
+    <meta name="description" content="Nafiz Ahmed — Premium personal portfolio website.">
 
-    <meta
-        name="theme-color"
-        content="#030712"
-    >
+    <meta name="theme-color" content="#030712">
 
     <title>Nafiz Ahmed — Premium Portfolio</title>
 
-    <!-- CSS -->
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='style.css') }}"
-    >
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
 <body>
-
-    <!-- =====================================================
-         BACKGROUND
-    ====================================================== -->
 
     <div class="ambient ambient-one"></div>
     <div class="ambient ambient-two"></div>
     <div class="noise"></div>
 
-
-    <!-- =====================================================
-         HEADER
-    ====================================================== -->
-
     <header class="site-header" id="siteHeader">
-
         <nav class="navbar">
-
             <a href="#home" class="brand">
-
-                <span class="brand-mark">
-                    N
-                </span>
-
-                <span class="brand-text">
-                    Nafiz<span>.</span>
-                </span>
-
+                <span class="brand-mark">N</span>
+                <span class="brand-text">Nafiz<span>.</span></span>
             </a>
-
 
             <div class="nav-links" id="navLinks">
-
-                <a href="#home" class="active">
-                    Home
-                </a>
-
-                <a href="#about">
-                    About
-                </a>
-
-                <a href="#skills">
-                    Skills
-                </a>
-
-                <a href="#services">
-                    Services
-                </a>
-
-                <a href="#projects">
-                    Projects
-                </a>
-
-                <a href="#journey">
-                    Journey
-                </a>
-
-                <a href="#contact">
-                    Contact
-                </a>
-
+                <a href="#home" class="active">Home</a>
+                <a href="#about">About</a>
+                <a href="#skills">Skills</a>
+                <a href="#services">Services</a>
+                <a href="#projects">Projects</a>
+                <a href="#journey">Journey</a>
+                <a href="#contact">Contact</a>
             </div>
 
+            <div class="nav-auth">
+                <a href="{{ url_for('user_login') }}" class="nav-login">Login</a>
+                <a href="{{ url_for('register') }}" class="nav-cta">Register <span>→</span></a>
+            </div>
 
-            <a href="#contact" class="nav-cta">
-                Let's Talk <span>→</span>
-            </a>
-
-
-            <button
-                class="menu-toggle"
-                id="menuToggle"
-                type="button"
-                aria-label="Open menu"
-                aria-expanded="false"
-            >
-
+            <button class="menu-toggle" id="menuToggle" type="button" aria-label="Open menu" aria-expanded="false">
                 <span></span>
                 <span></span>
                 <span></span>
-
             </button>
-
         </nav>
-
     </header>
 
-
-
-    <!-- =====================================================
-         HERO
-    ====================================================== -->
-
     <main>
-
-        <section
-            class="hero"
-            id="home"
-        >
-
+        <section class="hero" id="home">
             <div class="hero-grid"></div>
-
             <div class="hero-orb orb-one"></div>
             <div class="hero-orb orb-two"></div>
 
-
             <div class="hero-content">
-
                 <div class="availability">
-
                     <span class="status-dot"></span>
-
                     Available for new opportunities
-
                 </div>
-
-
-                <!-- PROFILE -->
 
                 <div class="profile-wrapper">
-
                     <div class="profile-glow"></div>
-
                     <div class="profile-orbit orbit-one"></div>
-
                     <div class="profile-orbit orbit-two"></div>
-
-
-                    <img
-                        src="{{ url_for('static', filename='profile.jpg') }}"
-                        alt="Nafiz Ahmed"
-                        class="profile"
-                    >
-
+                    <img src="{{ url_for('static', filename='profile.jpg') }}" alt="Nafiz Ahmed" class="profile">
                 </div>
 
-
-                <div class="hero-eyebrow">
-                    PYTHON • WEB • TECHNOLOGY
-                </div>
-
+                <div class="hero-eyebrow">PYTHON • WEB • TECHNOLOGY</div>
 
                 <h1 class="hero-title">
-
                     Hi, I'm
-                    <span class="gradient-text">
-                        Nafiz Ahmed
-                    </span>
-
+                    <span class="gradient-text">Nafiz Ahmed</span>
                     <br>
-
                     I Build Digital Experiences.
-
                 </h1>
 
-
                 <p class="hero-description">
-
-                    A passionate developer focused on building
-                    modern websites, Python applications,
-                    APIs and digital solutions with clean
-                    design and powerful technology.
-
+                    A passionate developer focused on building modern websites, Python applications,
+                    APIs and digital solutions with clean design and powerful technology.
                 </p>
-
-
-                <!-- BUTTONS -->
 
                 <div class="hero-actions">
-
-                    <a
-                        href="#projects"
-                        class="btn btn-primary"
-                    >
-                        View My Work
-                        <span>→</span>
-                    </a>
-
-
-                    <a
-                        href="#contact"
-                        class="btn btn-secondary"
-                    >
-                        Contact Me
-                        <span>↗</span>
-                    </a>
-
+                    <a href="#projects" class="btn btn-primary">View My Work <span>→</span></a>
+                    <a href="#contact" class="btn btn-secondary">Contact Me <span>↗</span></a>
                 </div>
-
-
-                <!-- SOCIAL -->
 
                 <div class="hero-social">
-
-                    <span>
-                        CONNECT WITH ME
-                    </span>
-
-
+                    <span>CONNECT WITH ME</span>
                     <div class="social-mini">
-
-                        <a
-                            href="https://github.com/"
-                            target="_blank"
-                            rel="noopener"
-                        >
-                            GH
-                        </a>
-
-                        <a
-                            href="https://www.linkedin.com/"
-                            target="_blank"
-                            rel="noopener"
-                        >
-                            IN
-                        </a>
-
-                        <a
-                            href="#contact"
-                        >
-                            @
-                        </a>
-
+                        <a href="https://github.com/" target="_blank" rel="noopener">GH</a>
+                        <a href="https://www.linkedin.com/" target="_blank" rel="noopener">IN</a>
+                        <a href="#contact">@</a>
                     </div>
-
                 </div>
-
 
                 <div class="hero-tech">
-
                     <i>◆</i>
-
-                    Building with
-                    Python • Flask • HTML • CSS • JavaScript
-
+                    Building with Python • Flask • HTML • CSS • JavaScript
                 </div>
-
             </div>
-
 
             <div class="scroll-indicator">
-
-                <span>
-                    Scroll
-                </span>
-
+                <span>Scroll</span>
                 <div class="scroll-line"></div>
-
             </div>
-
         </section>
 
-
-
-        <!-- =================================================
-             ABOUT
-        ================================================== -->
-
-        <section
-            class="section section-divider"
-            id="about"
-        >
-
+        <section class="section section-divider" id="about">
             <div class="section-heading">
-
-                <span class="section-label">
-                    ABOUT ME
-                </span>
-
-                <h2>
-                    Turning Ideas Into
-                    <span class="gradient-text">
-                        Digital Reality
-                    </span>
-                </h2>
-
-                <p>
-                    I enjoy learning technology and turning
-                    ideas into useful digital products.
-                </p>
-
+                <span class="section-label">ABOUT ME</span>
+                <h2>Turning Ideas Into <span class="gradient-text">Digital Reality</span></h2>
+                <p>I enjoy learning technology and turning ideas into useful digital products.</p>
             </div>
-
 
             <div class="about-layout">
-
-                <article
-                    class="glass-card about-text reveal"
-                >
-
-                    <span class="card-number">
-                        01 / ABOUT
-                    </span>
-
-                    <h3>
-                        Developer & Technology Enthusiast
-                    </h3>
-
-                    <p>
-                        I'm Nafiz Ahmed, a developer focused on
-                        Python, web development and modern
-                        digital experiences.
-                    </p>
-
-                    <p>
-                        My goal is to continuously improve my
-                        skills and build practical projects
-                        that solve real-world problems.
-                    </p>
-
-                    <p>
-                        I believe great websites should not only
-                        look beautiful, but also be fast,
-                        responsive and easy to use.
-                    </p>
-
+                <article class="glass-card about-text reveal">
+                    <span class="card-number">01 / ABOUT</span>
+                    <h3>Developer & Technology Enthusiast</h3>
+                    <p>I'm Nafiz Ahmed, a developer focused on Python, web development and modern digital experiences.</p>
+                    <p>My goal is to continuously improve my skills and build practical projects that solve real-world problems.</p>
+                    <p>I believe great websites should not only look beautiful, but also be fast, responsive and easy to use.</p>
                 </article>
-
 
                 <div class="about-features">
-
-                    <article
-                        class="glass-card feature-card reveal"
-                    >
-
-                        <div class="feature-icon">
-                            ⚡
-                        </div>
-
-                        <div>
-
-                            <h3>
-                                Fast & Modern
-                            </h3>
-
-                            <p>
-                                Clean and responsive interfaces.
-                            </p>
-
-                        </div>
-
+                    <article class="glass-card feature-card reveal">
+                        <div class="feature-icon">⚡</div>
+                        <div><h3>Fast & Modern</h3><p>Clean and responsive interfaces.</p></div>
                     </article>
-
-
-                    <article
-                        class="glass-card feature-card reveal"
-                    >
-
-                        <div class="feature-icon">
-                            ◈
-                        </div>
-
-                        <div>
-
-                            <h3>
-                                Problem Solving
-                            </h3>
-
-                            <p>
-                                Practical solutions through code.
-                            </p>
-
-                        </div>
-
+                    <article class="glass-card feature-card reveal">
+                        <div class="feature-icon">◈</div>
+                        <div><h3>Problem Solving</h3><p>Practical solutions through code.</p></div>
                     </article>
-
-
-                    <article
-                        class="glass-card feature-card reveal"
-                    >
-
-                        <div class="feature-icon">
-                            ✓
-                        </div>
-
-                        <div>
-
-                            <h3>
-                                Continuous Learning
-                            </h3>
-
-                            <p>
-                                Always improving my skills.
-                            </p>
-
-                        </div>
-
+                    <article class="glass-card feature-card reveal">
+                        <div class="feature-icon">✓</div>
+                        <div><h3>Continuous Learning</h3><p>Always improving my skills.</p></div>
                     </article>
-
                 </div>
-
             </div>
-
         </section>
 
-
-
-        <!-- =================================================
-             SKILLS
-        ================================================== -->
-
-        <section
-            class="section section-divider"
-            id="skills"
-        >
-
+        <section class="section section-divider" id="skills">
             <div class="section-heading">
-
-                <span class="section-label">
-                    MY SKILLS
-                </span>
-
-                <h2>
-                    Tools I
-                    <span class="gradient-text">
-                        Work With
-                    </span>
-                </h2>
-
-                <p>
-                    Technologies and tools I use while
-                    learning and building projects.
-                </p>
-
+                <span class="section-label">MY SKILLS</span>
+                <h2>Tools I <span class="gradient-text">Work With</span></h2>
+                <p>Technologies and tools I use while learning and building projects.</p>
             </div>
-
 
             <div class="skills-grid">
-
-
-                <article
-                    class="glass-card skill-card reveal"
-                >
-
-                    <div class="skill-icon python">
-                        PY
-                    </div>
-
-                    <div class="skill-info">
-
-                        <div class="skill-name">
-
-                            <h3>
-                                Python
-                            </h3>
-
-                            <strong>
-                                85%
-                            </strong>
-
-                        </div>
-
-                        <span>
-                            Programming & Automation
-                        </span>
-
-                        <div class="progress-track">
-
-                            <div
-                                class="progress-fill"
-                                style="--progress:85%"
-                            ></div>
-
-                        </div>
-
-                    </div>
-
-                </article>
-
-
-                <article
-                    class="glass-card skill-card reveal"
-                >
-
-                    <div class="skill-icon flask">
-                        FL
-                    </div>
-
-                    <div class="skill-info">
-
-                        <div class="skill-name">
-
-                            <h3>
-                                Flask
-                            </h3>
-
-                            <strong>
-                                75%
-                            </strong>
-
-                        </div>
-
-                        <span>
-                            Python Web Framework
-                        </span>
-
-                        <div class="progress-track">
-
-                            <div
-                                class="progress-fill"
-                                style="--progress:75%"
-                            ></div>
-
-                        </div>
-
-                    </div>
-
-                </article>
-
-
-                <article
-                    class="glass-card skill-card reveal"
-                >
-
-                    <div class="skill-icon html">
-                        HTML
-                    </div>
-
-                    <div class="skill-info">
-
-                        <div class="skill-name">
-
-                            <h3>
-                                HTML
-                            </h3>
-
-                            <strong>
-                                90%
-                            </strong>
-
-                        </div>
-
-                        <span>
-                            Semantic Web Structure
-                        </span>
-
-                        <div class="progress-track">
-
-                            <div
-                                class="progress-fill"
-                                style="--progress:90%"
-                            ></div>
-
-                        </div>
-
-                    </div>
-
-                </article>
-
-
-                <article
-                    class="glass-card skill-card reveal"
-                >
-
-                    <div class="skill-icon css">
-                        CSS
-                    </div>
-
-                    <div class="skill-info">
-
-                        <div class="skill-name">
-
-                            <h3>
-                                CSS
-                            </h3>
-
-                            <strong>
-                                85%
-                            </strong>
-
-                        </div>
-
-                        <span>
-                            Responsive UI Design
-                        </span>
-
-                        <div class="progress-track">
-
-                            <div
-                                class="progress-fill"
-                                style="--progress:85%"
-                            ></div>
-
-                        </div>
-
-                    </div>
-
-                </article>
-
-
-                <article
-                    class="glass-card skill-card reveal"
-                >
-
-                    <div class="skill-icon git">
-                        GIT
-                    </div>
-
-                    <div class="skill-info">
-
-                        <div class="skill-name">
-
-                            <h3>
-                                Git
-                            </h3>
-
-                            <strong>
-                                70%
-                            </strong>
-
-                        </div>
-
-                        <span>
-                            Version Control
-                        </span>
-
-                        <div class="progress-track">
-
-                            <div
-                                class="progress-fill"
-                                style="--progress:70%"
-                            ></div>
-
-                        </div>
-
-                    </div>
-
-                </article>
-
-
-                <article
-                    class="glass-card skill-card reveal"
-                >
-
-                    <div class="skill-icon linux">
-                        LNX
-                    </div>
-
-                    <div class="skill-info">
-
-                        <div class="skill-name">
-
-                            <h3>
-                                Linux
-                            </h3>
-
-                            <strong>
-                                70%
-                            </strong>
-
-                        </div>
-
-                        <span>
-                            Linux Environment
-                        </span>
-
-                        <div class="progress-track">
-
-                            <div
-                                class="progress-fill"
-                                style="--progress:70%"
-                            ></div>
-
-                        </div>
-
-                    </div>
-
-                </article>
-
-
-                <article
-                    class="glass-card skill-card reveal"
-                >
-
-                    <div class="skill-icon sql">
-                        SQL
-                    </div>
-
-                    <div class="skill-info">
-
-                        <div class="skill-name">
-
-                            <h3>
-                                SQL
-                            </h3>
-
-                            <strong>
-                                65%
-                            </strong>
-
-                        </div>
-
-                        <span>
-                            Database Management
-                        </span>
-
-                        <div class="progress-track">
-
-                            <div
-                                class="progress-fill"
-                                style="--progress:65%"
-                            ></div>
-
-                        </div>
-
-                    </div>
-
-                </article>
-
-
-                <article
-                    class="glass-card skill-card reveal"
-                >
-
-                    <div class="skill-icon api">
-                        API
-                    </div>
-
-                    <div class="skill-info">
-
-                        <div class="skill-name">
-
-                            <h3>
-                                REST API
-                            </h3>
-
-                            <strong>
-                                70%
-                            </strong>
-
-                        </div>
-
-                        <span>
-                            Backend Integration
-                        </span>
-
-                        <div class="progress-track">
-
-                            <div
-                                class="progress-fill"
-                                style="--progress:70%"
-                            ></div>
-
-                        </div>
-
-                    </div>
-
-                </article>
-
+                <article class="glass-card skill-card reveal"><div class="skill-icon python">PY</div><div class="skill-info"><div class="skill-name"><h3>Python</h3><strong>85%</strong></div><span>Programming & Automation</span><div class="progress-track"><div class="progress-fill" style="--progress:85%"></div></div></div></article>
+                <article class="glass-card skill-card reveal"><div class="skill-icon flask">FL</div><div class="skill-info"><div class="skill-name"><h3>Flask</h3><strong>75%</strong></div><span>Python Web Framework</span><div class="progress-track"><div class="progress-fill" style="--progress:75%"></div></div></div></article>
+                <article class="glass-card skill-card reveal"><div class="skill-icon html">HTML</div><div class="skill-info"><div class="skill-name"><h3>HTML</h3><strong>90%</strong></div><span>Semantic Web Structure</span><div class="progress-track"><div class="progress-fill" style="--progress:90%"></div></div></div></article>
+                <article class="glass-card skill-card reveal"><div class="skill-icon css">CSS</div><div class="skill-info"><div class="skill-name"><h3>CSS</h3><strong>85%</strong></div><span>Responsive UI Design</span><div class="progress-track"><div class="progress-fill" style="--progress:85%"></div></div></div></article>
+                <article class="glass-card skill-card reveal"><div class="skill-icon git">GIT</div><div class="skill-info"><div class="skill-name"><h3>Git</h3><strong>70%</strong></div><span>Version Control</span><div class="progress-track"><div class="progress-fill" style="--progress:70%"></div></div></div></article>
+                <article class="glass-card skill-card reveal"><div class="skill-icon linux">LNX</div><div class="skill-info"><div class="skill-name"><h3>Linux</h3><strong>70%</strong></div><span>Linux Environment</span><div class="progress-track"><div class="progress-fill" style="--progress:70%"></div></div></div></article>
+                <article class="glass-card skill-card reveal"><div class="skill-icon sql">SQL</div><div class="skill-info"><div class="skill-name"><h3>SQL</h3><strong>65%</strong></div><span>Database Management</span><div class="progress-track"><div class="progress-fill" style="--progress:65%"></div></div></div></article>
+                <article class="glass-card skill-card reveal"><div class="skill-icon api">API</div><div class="skill-info"><div class="skill-name"><h3>REST API</h3><strong>70%</strong></div><span>Backend Integration</span><div class="progress-track"><div class="progress-fill" style="--progress:70%"></div></div></div></article>
             </div>
-
         </section>
 
-
-
-        <!-- =================================================
-             SERVICES
-        ================================================== -->
-
-        <section
-            class="section section-divider"
-            id="services"
-        >
-
+        <section class="section section-divider" id="services">
             <div class="section-heading">
-
-                <span class="section-label">
-                    SERVICES
-                </span>
-
-                <h2>
-                    What I
-                    <span class="gradient-text">
-                        Can Build
-                    </span>
-                </h2>
-
-                <p>
-                    Digital solutions designed with modern
-                    technologies and clean architecture.
-                </p>
-
+                <span class="section-label">SERVICES</span>
+                <h2>What I <span class="gradient-text">Can Build</span></h2>
+                <p>Digital solutions designed with modern technologies and clean architecture.</p>
             </div>
-
-
             <div class="services-grid">
-
-
-                <article
-                    class="glass-card service-card reveal"
-                >
-
-                    <span class="service-index">
-                        01
-                    </span>
-
-                    <div class="service-icon">
-                        &lt;/&gt;
-                    </div>
-
-                    <h3>
-                        Web Development
-                    </h3>
-
-                    <p>
-                        Responsive and modern websites using
-                        HTML, CSS, JavaScript and Python.
-                    </p>
-
-                    <a href="#contact">
-                        Start a project
-                        <span>↗</span>
-                    </a>
-
-                </article>
-
-
-                <article
-                    class="glass-card service-card reveal"
-                >
-
-                    <span class="service-index">
-                        02
-                    </span>
-
-                    <div class="service-icon python-service">
-                        PY
-                    </div>
-
-                    <h3>
-                        Python Development
-                    </h3>
-
-                    <p>
-                        Python scripts, automation tools,
-                        backend systems and practical
-                        applications.
-                    </p>
-
-                    <a href="#contact">
-                        Start a project
-                        <span>↗</span>
-                    </a>
-
-                </article>
-
-
-                <article
-                    class="glass-card service-card reveal"
-                >
-
-                    <span class="service-index">
-                        03
-                    </span>
-
-                    <div class="service-icon api-service">
-                        API
-                    </div>
-
-                    <h3>
-                        API Development
-                    </h3>
-
-                    <p>
-                        Simple and scalable REST APIs for
-                        websites and applications.
-                    </p>
-
-                    <a href="#contact">
-                        Start a project
-                        <span>↗</span>
-                    </a>
-
-                </article>
-
+                <article class="glass-card service-card reveal"><span class="service-index">01</span><div class="service-icon">&lt;/&gt;</div><h3>Web Development</h3><p>Responsive and modern websites using HTML, CSS, JavaScript and Python.</p><a href="#contact">Start a project <span>↗</span></a></article>
+                <article class="glass-card service-card reveal"><span class="service-index">02</span><div class="service-icon python-service">PY</div><h3>Python Development</h3><p>Python scripts, automation tools, backend systems and practical applications.</p><a href="#contact">Start a project <span>↗</span></a></article>
+                <article class="glass-card service-card reveal"><span class="service-index">03</span><div class="service-icon api-service">API</div><h3>API Development</h3><p>Simple and scalable REST APIs for websites and applications.</p><a href="#contact">Start a project <span>↗</span></a></article>
             </div>
-
         </section>
 
-
-
-        <!-- =================================================
-             PROJECTS
-        ================================================== -->
-
-        <section
-            class="section section-divider"
-            id="projects"
-        >
-
+        <section class="section section-divider" id="projects">
             <div class="section-heading projects-heading">
-
-                <div>
-
-                    <span class="section-label">
-                        SELECTED WORK
-                    </span>
-
-                    <h2>
-                        Featured
-                        <span class="gradient-text">
-                            Projects
-                        </span>
-                    </h2>
-
-                </div>
-
-                <p>
-                    A selection of practical projects and
-                    experiments built while learning.
-                </p>
-
+                <div><span class="section-label">SELECTED WORK</span><h2>Featured <span class="gradient-text">Projects</span></h2></div>
+                <p>A selection of practical projects and experiments built while learning.</p>
             </div>
-
-
             <div class="projects-grid">
-
-
-                <!-- PROJECT 01 -->
-
-                <article
-                    class="glass-card project-card reveal"
-                >
-
-                    <div class="project-image project-image-one">
-
-                        <div class="code-window">
-
-                            <span></span>
-                            <span></span>
-                            <span></span>
-
-                            <div class="code-lines">
-
-                                <i></i>
-                                <i></i>
-                                <i></i>
-                                <i></i>
-                                <i></i>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="project-content">
-
-                        <div class="project-meta">
-
-                            <span>
-                                PYTHON
-                            </span>
-
-                            <small>
-                                01
-                            </small>
-
-                        </div>
-
-                        <h3>
-                            Python Automation
-                        </h3>
-
-                        <p>
-                            A practical automation project
-                            designed to simplify repetitive
-                            tasks using Python.
-                        </p>
-
-
-                        <div class="project-tags">
-
-                            <span>
-                                Python
-                            </span>
-
-                            <span>
-                                Automation
-                            </span>
-
-                            <span>
-                                Scripts
-                            </span>
-
-                        </div>
-
-
-                        <div class="project-links">
-
-                            <a
-                                href="#contact"
-                            >
-                                View Project ↗
-                            </a>
-
-                            <a
-                                href="https://github.com/"
-                                target="_blank"
-                                rel="noopener"
-                            >
-                                GitHub ↗
-                            </a>
-
-                        </div>
-
-                    </div>
-
-                </article>
-
-
-
-                <!-- PROJECT 02 -->
-
-                <article
-                    class="glass-card project-card reveal"
-                >
-
-                    <div class="project-image project-image-two">
-
-                        <div class="factor-ui">
-
-                            <div class="factor-title">
-                                NUMBER ANALYZER
-                            </div>
-
-                            <div class="factor-input">
-                                144
-                            </div>
-
-                            <div class="factor-result">
-                                Result: 2 × 2 × 2 × 2 × 3 × 3
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="project-content">
-
-                        <div class="project-meta">
-
-                            <span>
-                                PYTHON
-                            </span>
-
-                            <small>
-                                02
-                            </small>
-
-                        </div>
-
-                        <h3>
-                            Number Analyzer
-                        </h3>
-
-                        <p>
-                            A simple interactive application
-                            for analyzing numbers and displaying
-                            useful mathematical results.
-                        </p>
-
-
-                        <div class="project-tags">
-
-                            <span>
-                                Python
-                            </span>
-
-                            <span>
-                                Logic
-                            </span>
-
-                            <span>
-                                Algorithms
-                            </span>
-
-                        </div>
-
-
-                        <div class="project-links">
-
-                            <a
-                                href="#contact"
-                            >
-                                View Project ↗
-                            </a>
-
-                            <a
-                                href="https://github.com/"
-                                target="_blank"
-                                rel="noopener"
-                            >
-                                GitHub ↗
-                            </a>
-
-                        </div>
-
-                    </div>
-
-                </article>
-
-
-
-                <!-- PROJECT 03 -->
-
-                <article
-                    class="glass-card project-card reveal"
-                >
-
-                    <div class="project-image project-image-three">
-
-                        <div class="even-ui">
-
-                            <strong>
-                                24
-                            </strong>
-
-                            <span>
-                                EVEN NUMBER
-                            </span>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="project-content">
-
-                        <div class="project-meta">
-
-                            <span>
-                                WEB APP
-                            </span>
-
-                            <small>
-                                03
-                            </small>
-
-                        </div>
-
-                        <h3>
-                            Number Checker
-                        </h3>
-
-                        <p>
-                            A clean web interface that checks
-                            numbers and instantly displays the
-                            result.
-                        </p>
-
-
-                        <div class="project-tags">
-
-                            <span>
-                                HTML
-                            </span>
-
-                            <span>
-                                CSS
-                            </span>
-
-                            <span>
-                                JavaScript
-                            </span>
-
-                        </div>
-
-
-                        <div class="project-links">
-
-                            <a
-                                href="#contact"
-                            >
-                                View Project ↗
-                            </a>
-
-                            <a
-                                href="https://github.com/"
-                                target="_blank"
-                                rel="noopener"
-                            >
-                                GitHub ↗
-                            </a>
-
-                        </div>
-
-                    </div>
-
-                </article>
-
+                <article class="glass-card project-card reveal"><div class="project-image project-image-one"><div class="code-window"><span></span><span></span><span></span><div class="code-lines"><i></i><i></i><i></i><i></i><i></i></div></div></div><div class="project-content"><div class="project-meta"><span>PYTHON</span><small>01</small></div><h3>Python Automation</h3><p>A practical automation project designed to simplify repetitive tasks using Python.</p><div class="project-tags"><span>Python</span><span>Automation</span><span>Scripts</span></div><div class="project-links"><a href="#contact">View Project ↗</a><a href="https://github.com/" target="_blank" rel="noopener">GitHub ↗</a></div></div></article>
+                <article class="glass-card project-card reveal"><div class="project-image project-image-two"><div class="factor-ui"><div class="factor-title">NUMBER ANALYZER</div><div class="factor-input">144</div><div class="factor-result">Result: 2 × 2 × 2 × 2 × 3 × 3</div></div></div><div class="project-content"><div class="project-meta"><span>PYTHON</span><small>02</small></div><h3>Number Analyzer</h3><p>A simple interactive application for analyzing numbers and displaying useful mathematical results.</p><div class="project-tags"><span>Python</span><span>Logic</span><span>Algorithms</span></div><div class="project-links"><a href="#contact">View Project ↗</a><a href="https://github.com/" target="_blank" rel="noopener">GitHub ↗</a></div></div></article>
+                <article class="glass-card project-card reveal"><div class="project-image project-image-three"><div class="even-ui"><strong>24</strong><span>EVEN NUMBER</span></div></div><div class="project-content"><div class="project-meta"><span>WEB APP</span><small>03</small></div><h3>Number Checker</h3><p>A clean web interface that checks numbers and instantly displays the result.</p><div class="project-tags"><span>HTML</span><span>CSS</span><span>JavaScript</span></div><div class="project-links"><a href="#contact">View Project ↗</a><a href="https://github.com/" target="_blank" rel="noopener">GitHub ↗</a></div></div></article>
             </div>
-
         </section>
 
-
-
-        <!-- =================================================
-             JOURNEY
-        ================================================== -->
-
-        <section
-            class="section section-divider"
-            id="journey"
-        >
-
+        <section class="section section-divider" id="journey">
             <div class="section-heading">
-
-                <span class="section-label">
-                    MY JOURNEY
-                </span>
-
-                <h2>
-                    Learning,
-                    <span class="gradient-text">
-                        Building,
-                    </span>
-                    Growing.
-                </h2>
-
-                <p>
-                    My development journey is focused on
-                    continuous learning and practical work.
-                </p>
-
+                <span class="section-label">MY JOURNEY</span>
+                <h2>Learning, <span class="gradient-text">Building,</span> Growing.</h2>
+                <p>My development journey is focused on continuous learning and practical work.</p>
             </div>
-
-
             <div class="journey">
-
                 <div class="journey-line"></div>
-
-
-                <div class="journey-item reveal">
-
-                    <div class="journey-icon">
-                        01
-                    </div>
-
-                    <h3>
-                        Started Coding
-                    </h3>
-
-                    <p>
-                        Programming fundamentals
-                    </p>
-
-                </div>
-
-
-                <div class="journey-item reveal">
-
-                    <div class="journey-icon">
-                        02
-                    </div>
-
-                    <h3>
-                        Learned Python
-                    </h3>
-
-                    <p>
-                        Logic & programming
-                    </p>
-
-                </div>
-
-
-                <div class="journey-item reveal">
-
-                    <div class="journey-icon">
-                        03
-                    </div>
-
-                    <h3>
-                        Web Development
-                    </h3>
-
-                    <p>
-                        Frontend & backend
-                    </p>
-
-                </div>
-
-
-                <div class="journey-item reveal">
-
-                    <div class="journey-icon">
-                        04
-                    </div>
-
-                    <h3>
-                        Build Projects
-                    </h3>
-
-                    <p>
-                        Practical experience
-                    </p>
-
-                </div>
-
-
-                <div class="journey-item reveal">
-
-                    <div class="journey-icon">
-                        05
-                    </div>
-
-                    <h3>
-                        Keep Growing
-                    </h3>
-
-                    <p>
-                        Professional development
-                    </p>
-
-                </div>
-
+                <div class="journey-item reveal"><div class="journey-icon">01</div><h3>Started Coding</h3><p>Programming fundamentals</p></div>
+                <div class="journey-item reveal"><div class="journey-icon">02</div><h3>Learned Python</h3><p>Logic & programming</p></div>
+                <div class="journey-item reveal"><div class="journey-icon">03</div><h3>Web Development</h3><p>Frontend & backend</p></div>
+                <div class="journey-item reveal"><div class="journey-icon">04</div><h3>Build Projects</h3><p>Practical experience</p></div>
+                <div class="journey-item reveal"><div class="journey-icon">05</div><h3>Keep Growing</h3><p>Professional development</p></div>
             </div>
-
         </section>
 
-
-
-        <!-- =================================================
-             NEWSLETTER
-        ================================================== -->
-
-        <section
-            class="section section-divider"
-        >
-
+        <section class="section section-divider">
             <div class="glass-card newsletter-card reveal">
-
-                <div class="newsletter-content">
-
-                    <div class="newsletter-icon">
-                        ✦
-                    </div>
-
-                    <h3>
-                        Stay Connected
-                    </h3>
-
-                    <p>
-                        Subscribe for updates, new projects
-                        and technology content.
-                    </p>
-
-                </div>
-
-
-                <form
-                    class="newsletter-form"
-                    id="newsletterForm"
-                >
-
-                    <div class="newsletter-input-group">
-
-                        <input
-                            type="email"
-                            name="email"
-                            placeholder="Enter your email address"
-                            required
-                        >
-
-                        <button
-                            type="submit"
-                            class="btn btn-primary"
-                        >
-                            Subscribe
-                        </button>
-
-                    </div>
-
-                    <span class="newsletter-note">
-                        No spam. Unsubscribe anytime.
-                    </span>
-
-                </form>
-
+                <div class="newsletter-content"><div class="newsletter-icon">✦</div><h3>Stay Connected</h3><p>Subscribe for updates, new projects and technology content.</p></div>
+                <form class="newsletter-form" id="newsletterForm"><div class="newsletter-input-group"><input type="email" name="email" placeholder="Enter your email address" required><button type="submit" class="btn btn-primary">Subscribe</button></div><span class="newsletter-note">No spam. Unsubscribe anytime.</span></form>
             </div>
-
         </section>
 
-
-
-        <!-- =================================================
-             CONTACT
-        ================================================== -->
-
-        <section
-            class="section contact-section section-divider"
-            id="contact"
-        >
-
+        <section class="section contact-section section-divider" id="contact">
             <div class="contact-glow"></div>
-
-
-            <div class="section-heading">
-
-                <span class="section-label">
-                    CONTACT
-                </span>
-
-                <h2>
-                    Let's Build
-                    <span class="gradient-text">
-                        Something Great
-                    </span>
-                </h2>
-
-                <p>
-                    Have an idea, project or opportunity?
-                    Let's talk.
-                </p>
-
-            </div>
-
-
+            <div class="section-heading"><span class="section-label">CONTACT</span><h2>Let's Build <span class="gradient-text">Something Great</span></h2><p>Have an idea, project or opportunity? Let's talk.</p></div>
             <div class="contact-grid">
-
-
-                <!-- CONTACT INFO -->
-
-                <div
-                    class="glass-card contact-info reveal"
-                >
-
-                    <span class="contact-small">
-                        GET IN TOUCH
-                    </span>
-
-                    <h3>
-                        Let's start a conversation.
-                    </h3>
-
-                    <p>
-                        I'm always interested in learning,
-                        building new projects and discussing
-                        interesting ideas.
-                    </p>
-
-
+                <div class="glass-card contact-info reveal">
+                    <span class="contact-small">GET IN TOUCH</span>
+                    <h3>Let's start a conversation.</h3>
+                    <p>I'm always interested in learning, building new projects and discussing interesting ideas.</p>
                     <div class="contact-details">
-
-
-                        <div class="contact-detail">
-
-                            <div class="detail-icon">
-                                @
-                            </div>
-
-                            <div>
-
-                                <small>
-                                    EMAIL
-                                </small>
-
-                                <a href="mailto:your@email.com">
-                                    your@email.com
-                                </a>
-
-                            </div>
-
-                        </div>
-
-
-                        <div class="contact-detail">
-
-                            <div class="detail-icon">
-                                GH
-                            </div>
-
-                            <div>
-
-                                <small>
-                                    GITHUB
-                                </small>
-
-                                <a
-                                    href="https://github.com/"
-                                    target="_blank"
-                                    rel="noopener"
-                                >
-                                    github.com
-                                </a>
-
-                            </div>
-
-                        </div>
-
-
-                        <div class="contact-detail">
-
-                            <div class="detail-icon">
-                                IN
-                            </div>
-
-                            <div>
-
-                                <small>
-                                    LINKEDIN
-                                </small>
-
-                                <a
-                                    href="https://www.linkedin.com/"
-                                    target="_blank"
-                                    rel="noopener"
-                                >
-                                    LinkedIn
-                                </a>
-
-                            </div>
-
-                        </div>
-
+                        <div class="contact-detail"><div class="detail-icon">@</div><div><small>EMAIL</small><a href="mailto:your@email.com">your@email.com</a></div></div>
+                        <div class="contact-detail"><div class="detail-icon">GH</div><div><small>GITHUB</small><a href="https://github.com/" target="_blank" rel="noopener">github.com</a></div></div>
+                        <div class="contact-detail"><div class="detail-icon">IN</div><div><small>LINKEDIN</small><a href="https://www.linkedin.com/" target="_blank" rel="noopener">LinkedIn</a></div></div>
                     </div>
-
-
-                    <div class="social-links">
-
-                        <a
-                            href="https://github.com/"
-                            target="_blank"
-                            rel="noopener"
-                        >
-                            <span>GH</span>
-                            GitHub
-                        </a>
-
-                        <a
-                            href="https://www.linkedin.com/"
-                            target="_blank"
-                            rel="noopener"
-                        >
-                            <span>IN</span>
-                            LinkedIn
-                        </a>
-
-                        <a href="mailto:your@email.com">
-                            <span>@</span>
-                            Email
-                        </a>
-
-                    </div>
-
+                    <div class="social-links"><a href="https://github.com/" target="_blank" rel="noopener"><span>GH</span>GitHub</a><a href="https://www.linkedin.com/" target="_blank" rel="noopener"><span>IN</span>LinkedIn</a><a href="mailto:your@email.com"><span>@</span>Email</a></div>
                 </div>
 
-
-
-                <!-- CONTACT FORM -->
-
-                <div
-                    class="glass-card contact-form-card reveal"
-                >
-
-                    <form
-                        id="contactForm"
-                        method="POST"
-                        action="/contact"
-                    >
-
+                <div class="glass-card contact-form-card reveal">
+                    <form id="contactForm" method="POST" action="/contact">
                         <div class="form-row">
-
-                            <div class="form-group">
-
-                                <label for="name">
-                                    YOUR NAME
-                                </label>
-
-                                <input
-                                    id="name"
-                                    name="name"
-                                    type="text"
-                                    placeholder="Your name"
-                                    required
-                                >
-
-                            </div>
-
-
-                            <div class="form-group">
-
-                                <label for="email">
-                                    EMAIL
-                                </label>
-
-                                <input
-                                    id="email"
-                                    name="email"
-                                    type="email"
-                                    placeholder="your@email.com"
-                                    required
-                                >
-
-                            </div>
-
+                            <div class="form-group"><label for="name">YOUR NAME</label><input id="name" name="name" type="text" placeholder="Your name" required></div>
+                            <div class="form-group"><label for="email">EMAIL</label><input id="email" name="email" type="email" placeholder="your@email.com" required></div>
                         </div>
-
-
-                        <div class="form-group">
-
-                            <label for="subject">
-                                SUBJECT
-                            </label>
-
-                            <input
-                                id="subject"
-                                name="subject"
-                                type="text"
-                                placeholder="What is this about?"
-                                required
-                            >
-
-                        </div>
-
-
-                        <div class="form-group">
-
-                            <label for="message">
-                                MESSAGE
-                            </label>
-
-                            <textarea
-                                id="message"
-                                name="message"
-                                placeholder="Tell me about your project..."
-                                required
-                            ></textarea>
-
-                        </div>
-
-
-                        <button
-                            type="submit"
-                            class="submit-button"
-                        >
-                            Send Message
-                            <span>→</span>
-                        </button>
-
+                        <div class="form-group"><label for="subject">SUBJECT</label><input id="subject" name="subject" type="text" placeholder="What is this about?" required></div>
+                        <div class="form-group"><label for="message">MESSAGE</label><textarea id="message" name="message" placeholder="Tell me about your project..." required></textarea></div>
+                        <button type="submit" class="submit-button">Send Message <span>→</span></button>
                     </form>
-
                 </div>
-
             </div>
-
         </section>
-
     </main>
 
-
-
-    <!-- =====================================================
-         FOOTER
-    ====================================================== -->
-
     <footer class="site-footer">
-
         <div class="footer-inner">
-
-
-            <a
-                href="#home"
-                class="brand footer-brand"
-            >
-
-                <span class="brand-mark">
-                    N
-                </span>
-
-                <span class="brand-text">
-                    Nafiz<span>.</span>
-                </span>
-
-            </a>
-
-
-            <p>
-                © 2026 Nafiz Ahmed. All rights reserved.
-            </p>
-
-
-            <div class="footer-links">
-
-                <a href="#home">
-                    Home
-                </a>
-
-                <a href="#about">
-                    About
-                </a>
-
-                <a href="#projects">
-                    Projects
-                </a>
-
-                <a href="#contact">
-                    Contact
-                </a>
-
-            </div>
-
-
-            <a
-                href="#home"
-                class="back-top"
-                aria-label="Back to top"
-            >
-                ↑
-            </a>
-
+            <a href="#home" class="brand footer-brand"><span class="brand-mark">N</span><span class="brand-text">Nafiz<span>.</span></span></a>
+            <p>© 2026 Nafiz Ahmed. All rights reserved.</p>
+            <div class="footer-links"><a href="#home">Home</a><a href="#about">About</a><a href="#projects">Projects</a><a href="#contact">Contact</a></div>
+            <a href="#home" class="back-top" aria-label="Back to top">↑</a>
         </div>
-
     </footer>
 
-
-
-    <!-- =====================================================
-         JAVASCRIPT
-    ====================================================== -->
-
-    <script
-        src="{{ url_for('static', filename='script.js') }}"
-    ></script>
-
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
