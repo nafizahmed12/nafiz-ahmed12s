@@ -1,0 +1,4 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Create Account</title><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head>
+<body><main class="section"><div class="glass-card" style="max-width:520px;margin:60px auto;padding:32px"><h1>Create Account</h1><p>Start building your website.</p>{% if error %}<p>{{ error }}</p>{% endif %}<form method="post"><input name="username" placeholder="Username" required><input type="email" name="email" placeholder="Email" required><input type="password" name="password" placeholder="Password" minlength="8" required><button class="btn btn-primary" type="submit">Register</button></form><p>Already have an account? <a href="{{ url_for('user_login') }}">Login</a></p></div></main></body></html>
