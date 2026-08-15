@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from sqlalchemy import text
 
 from database import SessionLocal
+from error_handlers import register_error_handlers
 from schema import (
     allow_contact,
     allow_login,
@@ -44,6 +45,7 @@ app.config.update(
     PERMANENT_SESSION_LIFETIME=timedelta(days=7),
     MAX_CONTENT_LENGTH=int(os.getenv("MAX_CONTENT_LENGTH", str(1 * 1024 * 1024))),
 )
+register_error_handlers(app)
 
 
 @app.after_request
