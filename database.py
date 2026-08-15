@@ -34,26 +34,20 @@ def create_database_engine():
     if url.startswith("sqlite"):
         connect_args = {"check_same_thread": False}
     else:
-        # Prevent a dead/unreachable PostgreSQL endpoint from blocking startup
-        # for several minutes. The value can be overridden on Render with
-        # DB_CONNECT_TIMEOUT when a different timeout is required.
-        connect_args = {
-            "connect_timeout": int(os.getenv("DB_CONNECT_TIMEOUT", "10")),
-        }
+        connect_args = {"connect_timeout": int(os.getenv("DB_CONNECT_TIMEOUT", "10"))}
 
-    engine_options = {
-        "connect_args": connect_args,
-        "pool_pre_ping": True,
-    }
+    engine_options = {"connect_args": connect_args, "pool_pre_ping": True}
 
     if not url.startswith("sqlite"):
-        engine_options.update({
-            "pool_size": int(os.getenv("DB_POOL_SIZE", "5")),
-            "max_overflow": int(os.getenv("DB_MAX_OVERFLOW", "10")),
-            "pool_timeout": int(os.getenv("DB_POOL_TIMEOUT", "30")),
-            "pool_recycle": int(os.getenv("DB_POOL_RECYCLE", "1800")),
-            "pool_use_lifo": True,
-        })
+        engine_options.update(
+            {
+                "pool_size": int(os.getenv("DB_POOL_SIZE", "5")),
+                "max_overflow": int(os.getenv("DB_MAX_OVERFLOW", "10")),
+                "pool_timeout": int(os.getenv("DB_POOL_TIMEOUT", "30")),
+                "pool_recycle": int(os.getenv("DB_POOL_RECYCLE", "1800")),
+                "pool_use_lifo": True,
+            }
+        )
 
     return create_engine(url, **engine_options)
 
@@ -72,12 +66,8 @@ def _cleanup_rate_limit_records(connection):
     if connection.dialect.name == "postgresql":
         cutoff_expression = "CURRENT_TIMESTAMP - INTERVAL '2 hours'"
     else:
-        # SQLite does not implement PostgreSQL's INTERVAL syntax.
         cutoff_expression = "datetime('now', '-2 hours')"
 
-    # The longest application rate-limit window is one hour. Keeping two hours
-    # of history gives every window enough room while preventing unbounded growth
-    # when the site receives traffic from many different IP addresses.
     for table_name in (
         "registration_rate_limits",
         "login_rate_limits",
@@ -98,54 +88,80 @@ def init_db():
     Base.metadata.create_all(bind=engine)
 
     with engine.begin() as connection:
-        connection.execute(text("""
-            CREATE TABLE IF NOT EXISTS registration_rate_limits (
-                rate_key VARCHAR(255) PRIMARY KEY,
-                window_started_at TIMESTAMPTZ NOT NULL,
-                request_count INTEGER NOT NULL DEFAULT 0
+        connection.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS registration_rate_limits (
+                    rate_key VARCHAR(255) PRIMARY KEY,
+                    window_started_at TIMESTAMPTZ NOT NULL,
+                    request_count INTEGER NOT NULL DEFAULT 0
+                )
+                """
             )
-        """))
-        connection.execute(text(
-            "CREATE INDEX IF NOT EXISTS ix_registration_rate_limits_window "
-            "ON registration_rate_limits (window_started_at)"
-        ))
-        connection.execute(text("""
-            CREATE TABLE IF NOT EXISTS login_rate_limits (
-                rate_key VARCHAR(255) PRIMARY KEY,
-                window_started_at TIMESTAMPTZ NOT NULL,
-                request_count INTEGER NOT NULL DEFAULT 0
+        )
+        connection.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_registration_rate_limits_window "
+                "ON registration_rate_limits (window_started_at)"
             )
-        ""))
-        connection.execute(text(
-            "CREATE INDEX IF NOT EXISTS ix_login_rate_limits_window "
-            "ON login_rate_limits (window_started_at)"
-        ))
-        connection.execute(text("""
-            CREATE TABLE IF NOT EXISTS contact_rate_limits (
-                rate_key VARCHAR(255) PRIMARY KEY,
-                window_started_at TIMESTAMPTZ NOT NULL,
-                request_count INTEGER NOT NULL DEFAULT 0
+        )
+        connection.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS login_rate_limits (
+                    rate_key VARCHAR(255) PRIMARY KEY,
+                    window_started_at TIMESTAMPTZ NOT NULL,
+                    request_count INTEGER NOT NULL DEFAULT 0
+                )
+                """
             )
-        """))
-        connection.execute(text(
-            "CREATE INDEX IF NOT EXISTS ix_contact_rate_limits_window "
-            "ON contact_rate_limits (window_started_at)"
-        ))
-        connection.execute(text("""
-            CREATE TABLE IF NOT EXISTS subscribe_rate_limits (
-                rate_key VARCHAR(255) PRIMARY KEY,
-                window_started_at TIMESTAMPTZ NOT NULL,
-                request_count INTEGER NOT NULL DEFAULT 0
+        )
+        connection.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_login_rate_limits_window "
+                "ON login_rate_limits (window_started_at)"
             )
-        """))
-        connection.execute(text(
-            "CREATE INDEX IF NOT EXISTS ix_subscribe_rate_limits_window "
-            "ON subscribe_rate_limits (window_started_at)"
-        ))
-        connection.execute(text(
-            "CREATE INDEX IF NOT EXISTS ix_websites_owner_id_id_desc "
-            "ON websites (owner_id, id DESC)"
-        ))
+        )
+        connection.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS contact_rate_limits (
+                    rate_key VARCHAR(255) PRIMARY KEY,
+                    window_started_at TIMESTAMPTZ NOT NULL,
+                    request_count INTEGER NOT NULL DEFAULT 0
+                )
+                """
+            )
+        )
+        connection.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_contact_rate_limits_window "
+                "ON contact_rate_limits (window_started_at)"
+            )
+        )
+        connection.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS subscribe_rate_limits (
+                    rate_key VARCHAR(255) PRIMARY KEY,
+                    window_started_at TIMESTAMPTZ NOT NULL,
+                    request_count INTEGER NOT NULL DEFAULT 0
+                )
+                """
+            )
+        )
+        connection.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_subscribe_rate_limits_window "
+                "ON subscribe_rate_limits (window_started_at)"
+            )
+        )
+        connection.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_websites_owner_id_id_desc "
+                "ON websites (owner_id, id DESC)"
+            )
+        )
         _cleanup_rate_limit_records(connection)
         connection.execute(text("SELECT 1"))
 
