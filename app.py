@@ -5,6 +5,7 @@ from urllib.parse import urlparse
 from flask import Flask, render_template, request, redirect, session, abort, flash, url_for, Response
 from dotenv import load_dotenv
 from sqlalchemy import text
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from database import SessionLocal
 from error_handlers import register_error_handlers
@@ -32,6 +33,10 @@ from schema import (
 load_dotenv()
 
 app = Flask(__name__)
+# Render sits behind a reverse proxy. Trust the single proxy hop so Flask
+# correctly detects HTTPS and reconstructs the public host/scheme for URLs.
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
+
 secret_key = os.getenv("SECRET_KEY")
 if not secret_key:
     if os.getenv("RENDER"):
@@ -438,32 +443,26 @@ def admin():
 
     total_pages = max(1, (total + per_page - 1) // per_page)
     subscriber_pages = max(1, (total_subscribers + per_page - 1) // per_page)
-    max_page = max(total_pages, subscriber_pages)
-    if page > max_page:
-        page = max_page
-        messages, total = get_messages(page=page, per_page=per_page)
-        subscribers, total_subscribers = get_subscribers(page=page, per_page=per_page)
-        total_pages = max(1, (total + per_page - 1) // per_page)
-        subscriber_pages = max(1, (total_subscribers + per_page - 1) // per_page)
-
     return render_template(
         "admin.html",
         stats=stats,
         messages=messages,
+        subscribers=subscribers,
         page=page,
         total_pages=total_pages,
-        total_messages=total,
-        subscribers=subscribers,
-        total_subscribers=total_subscribers,
         subscriber_pages=subscriber_pages,
     )
 
 
 @app.route("/logout")
 def logout():
-    session.clear()
+    session.pop("admin_logged_in", None)
+    session.pop("_permanent", None)
     return redirect(url_for("login"))
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
+    from database import init_db
+
+    init_db()
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT", "5000")))
