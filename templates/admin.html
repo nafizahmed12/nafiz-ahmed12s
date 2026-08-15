@@ -1,148 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin | Nafiz Ahmed</title>
-
     <style>
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            background: #0f172a;
-            color: #e2e8f0;
-            padding: 40px;
-        }
-
-        .container {
-            max-width: 1100px;
-            margin: auto;
-        }
-
-        h1 {
-            color: #38bdf8;
-            margin-bottom: 10px;
-        }
-
-        .subtitle {
-            color: #94a3b8;
-            margin-bottom: 30px;
-        }
-
-        .message {
-            background: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 20px;
-        }
-
-        .message h3 {
-            color: #facc15;
-            margin-bottom: 10px;
-        }
-
-        .message p {
-            margin: 8px 0;
-            color: #cbd5e1;
-        }
-
-        .empty {
-            background: #1e293b;
-            padding: 30px;
-            border-radius: 12px;
-            text-align: center;
-            color: #94a3b8;
-        }
-
-        .back {
-            display: inline-block;
-            margin-top: 25px;
-            padding: 12px 20px;
-            background: #38bdf8;
-            color: #0f172a;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: bold;
-        }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; background: #0f172a; color: #e2e8f0; padding: 40px; }
+        .container { max-width: 1100px; margin: auto; }
+        h1 { color: #38bdf8; margin-bottom: 10px; }
+        .subtitle { color: #94a3b8; margin-bottom: 30px; }
+        .message { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 25px; margin-bottom: 20px; }
+        .message h3 { color: #facc15; margin-bottom: 10px; }
+        .message p { margin: 8px 0; color: #cbd5e1; }
+        .empty { background: #1e293b; padding: 30px; border-radius: 12px; text-align: center; color: #94a3b8; }
+        .back, .page-link { display: inline-block; margin-top: 25px; padding: 12px 20px; background: #38bdf8; color: #0f172a; text-decoration: none; border-radius: 8px; font-weight: bold; }
+        .pagination { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+        .pagination .current { color: #cbd5e1; padding: 12px 6px; }
+        .page-link.disabled { opacity: .45; pointer-events: none; }
     </style>
-
 </head>
-
-
 <body>
-
 <div class="container">
-
-    <h1>
-        Admin Dashboard
-    </h1>
-
-    <p class="subtitle">
-        Contact Messages
-    </p>
-
-
+    <h1>Admin Dashboard</h1>
+    <p class="subtitle">Contact Messages — {{ total_messages }} total</p>
     {% if messages %}
-
         {% for message in messages %}
-
             <div class="message">
-
-                <h3>
-                    Message #{{ message["id"] }}
-                </h3>
-
-                <p>
-                    <strong>Name:</strong>
-                    {{ message["name"] }}
-                </p>
-
-                <p>
-                    <strong>Email:</strong>
-                    {{ message["email"] }}
-                </p>
-
-                <p>
-                    <strong>Message:</strong>
-                    {{ message["message"] }}
-                </p>
-
+                <h3>Message #{{ message["id"] }}</h3>
+                <p><strong>Name:</strong> {{ message["name"] }}</p>
+                <p><strong>Email:</strong> {{ message["email"] }}</p>
+                <p><strong>Message:</strong> {{ message["message"] }}</p>
             </div>
-
         {% endfor %}
-
     {% else %}
-
-        <div class="empty">
-
-            No messages found.
-
-        </div>
-
+        <div class="empty">No messages found.</div>
     {% endif %}
-
-
-    <a
-        class="back"
-        href="/"
-    >
-        ← Back to Website
-    </a>
-
+    <div class="pagination">
+        <a class="page-link{% if page <= 1 %} disabled{% endif %}" href="{{ url_for('admin', page=page-1) }}">← Previous</a>
+        <span class="current">Page {{ page }} of {{ total_pages }}</span>
+        <a class="page-link{% if page >= total_pages %} disabled{% endif %}" href="{{ url_for('admin', page=page+1) }}">Next →</a>
+    </div>
+    <a class="back" href="/">← Back to Website</a>
 </div>
-
 </body>
-
 </html>

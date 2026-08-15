@@ -269,8 +269,23 @@ def login():
 def admin():
     if not session.get("admin_logged_in"):
         return redirect("/login")
-    messages = get_messages()
-    return render_template("admin.html", messages=messages)
+    try:
+        page = max(1, int(request.args.get("page", "1")))
+    except ValueError:
+        page = 1
+    per_page = 50
+    messages, total = get_messages(page=page, per_page=per_page)
+    total_pages = max(1, (total + per_page - 1) // per_page)
+    if page > total_pages:
+        page = total_pages
+        messages, total = get_messages(page=page, per_page=per_page)
+    return render_template(
+        "admin.html",
+        messages=messages,
+        page=page,
+        total_pages=total_pages,
+        total_messages=total,
+    )
 
 
 @app.route("/logout")
