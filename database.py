@@ -67,6 +67,29 @@ SessionLocal = sessionmaker(
 )
 
 
+def _cleanup_rate_limit_records(connection):
+    """Remove expired rate-limit keys so the protection tables stay bounded."""
+    # The longest application rate-limit window is one hour. Keeping two hours
+    # of history gives every window enough room while preventing unbounded growth
+    # when the site receives traffic from many different IP addresses.
+    connection.execute(text("""
+        DELETE FROM registration_rate_limits
+        WHERE window_started_at < CURRENT_TIMESTAMP - INTERVAL '2 hours'
+    """))
+    connection.execute(text("""
+        DELETE FROM login_rate_limits
+        WHERE window_started_at < CURRENT_TIMESTAMP - INTERVAL '2 hours'
+    """))
+    connection.execute(text("""
+        DELETE FROM contact_rate_limits
+        WHERE window_started_at < CURRENT_TIMESTAMP - INTERVAL '2 hours'
+    """))
+    connection.execute(text("""
+        DELETE FROM subscribe_rate_limits
+        WHERE window_started_at < CURRENT_TIMESTAMP - INTERVAL '2 hours'
+    """))
+
+
 def init_db():
     from models import User, Website, Message, Subscriber  # noqa: F401
 
@@ -121,6 +144,7 @@ def init_db():
             "CREATE INDEX IF NOT EXISTS ix_websites_owner_id_id_desc "
             "ON websites (owner_id, id DESC)"
         ))
+        _cleanup_rate_limit_records(connection)
         connection.execute(text("SELECT 1"))
 
     print(f"Database initialized successfully using {engine.url.get_backend_name()}")
