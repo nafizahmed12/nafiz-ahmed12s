@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://nafiz-ahmed12s.onrender.com/sitemap.xml
