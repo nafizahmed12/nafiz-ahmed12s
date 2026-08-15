@@ -7,8 +7,10 @@ from dotenv import load_dotenv
 
 from database import init_db
 from schema import (
+    allow_contact,
     allow_login,
     allow_registration,
+    allow_subscription,
     authenticate_user,
     change_password,
     create_message,
@@ -92,6 +94,14 @@ def require_user():
     return user
 
 
+def valid_email(email):
+    email = (email or "").strip()
+    if len(email) > 255 or email.count("@") != 1:
+        return False
+    local, domain = email.rsplit("@", 1)
+    return bool(local and domain and "." in domain and not any(c.isspace() for c in email))
+
+
 @app.route("/")
 def home():
     host_slug = get_host_site_slug()
@@ -122,7 +132,7 @@ def register():
 
         if len(username) < 3 or len(username) > 80:
             return render_template("register.html", error="Username must be 3-80 characters."), 400
-        if "@" not in email or len(email) > 255:
+        if not valid_email(email):
             return render_template("register.html", error="Enter a valid email address."), 400
         if len(password) < 8:
             return render_template("register.html", error="Password must be at least 8 characters."), 400
@@ -236,7 +246,7 @@ def account():
             if len(username) < 3 or len(username) > 80:
                 flash("Username must be 3-80 characters.", "error")
                 return redirect(url_for("account"))
-            if "@" not in email or len(email) > 255:
+            if not valid_email(email):
                 flash("Enter a valid email address.", "error")
                 return redirect(url_for("account"))
             ok, message = update_user_profile(user.id, username, email)
@@ -279,20 +289,33 @@ def user_logout():
 
 @app.route("/contact", methods=["POST"])
 def contact():
+    if not allow_contact(request.remote_addr, limit=5, window_seconds=900):
+        return "Too many messages from this network. Please try again later.", 429
+
     name = request.form.get("name", "").strip()
-    email = request.form.get("email", "").strip()
+    email = request.form.get("email", "").strip().lower()
     message = request.form.get("message", "").strip()
-    if not name or not email or not message:
-        return "All fields are required.", 400
+
+    if len(name) < 2 or len(name) > 120:
+        return "Name must be between 2 and 120 characters.", 400
+    if not valid_email(email):
+        return "Enter a valid email address.", 400
+    if len(message) < 5 or len(message) > 5000:
+        return "Message must be between 5 and 5000 characters.", 400
+
     create_message(name, email, message)
     return "Message saved successfully!"
 
 
 @app.route("/subscribe", methods=["POST"])
 def subscribe():
-    email = request.form.get("subscriber_email", "").strip()
-    if not email:
-        return "Email is required.", 400
+    if not allow_subscription(request.remote_addr, limit=10, window_seconds=3600):
+        return "Too many subscription attempts. Please try again later.", 429
+
+    email = request.form.get("subscriber_email", "").strip().lower()
+    if not valid_email(email):
+        return "Enter a valid email address.", 400
+
     if create_subscriber(email):
         return "Subscribed successfully!"
     return "This email is already subscribed!", 409
