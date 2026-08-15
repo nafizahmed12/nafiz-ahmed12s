@@ -107,14 +107,35 @@ document.addEventListener("DOMContentLoaded", () => {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     }
 
+    function getFormStatus(form) {
+        let status = form.querySelector(".form-status");
+        if (!status) {
+            status = document.createElement("div");
+            status.className = "form-status";
+            status.setAttribute("role", "status");
+            status.setAttribute("aria-live", "polite");
+            status.setAttribute("aria-atomic", "true");
+            status.style.marginTop = "10px";
+            status.style.minHeight = "1.2em";
+            form.appendChild(status);
+        }
+        return status;
+    }
+
     async function submitForm(form, url, prepareData, successMessage) {
         const submitButton = form.querySelector('button[type="submit"]');
         const originalText = submitButton ? submitButton.textContent : "";
+        const status = getFormStatus(form);
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => controller.abort(), 15000);
 
         if (submitButton) {
             submitButton.disabled = true;
+            submitButton.setAttribute("aria-busy", "true");
             submitButton.textContent = "Sending...";
         }
+        status.textContent = "Sending your request...";
+        status.dataset.state = "loading";
 
         try {
             const formData = new FormData(form);
@@ -124,7 +145,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 method: "POST",
                 body: formData,
                 credentials: "same-origin",
-                headers: { "X-Requested-With": "XMLHttpRequest" }
+                headers: { "X-Requested-With": "XMLHttpRequest" },
+                signal: controller.signal
             });
 
             const text = await response.text();
@@ -133,14 +155,22 @@ document.addEventListener("DOMContentLoaded", () => {
                 throw new Error(text || "Request failed.");
             }
 
-            alert(successMessage || text || "Request completed successfully.");
+            status.textContent = successMessage || text || "Request completed successfully.";
+            status.dataset.state = "success";
             form.reset();
         } catch (error) {
             console.error("Form submission error:", error);
-            alert("Something went wrong. Please try again.");
+            if (error.name === "AbortError") {
+                status.textContent = "The request timed out. Please try again.";
+            } else {
+                status.textContent = "Something went wrong. Please try again.";
+            }
+            status.dataset.state = "error";
         } finally {
+            window.clearTimeout(timeoutId);
             if (submitButton) {
                 submitButton.disabled = false;
+                submitButton.removeAttribute("aria-busy");
                 submitButton.textContent = originalText;
             }
         }
@@ -157,7 +187,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const email = emailInput ? emailInput.value.trim() : "";
 
             if (!email || !isValidEmail(email)) {
-                alert("Please enter a valid email address.");
+                getFormStatus(newsletterForm).textContent = "Please enter a valid email address.";
+                getFormStatus(newsletterForm).dataset.state = "error";
+                if (emailInput) emailInput.focus();
                 return;
             }
 
@@ -188,15 +220,21 @@ document.addEventListener("DOMContentLoaded", () => {
             const message = messageInput ? messageInput.value.trim() : "";
 
             if (!name) {
-                alert("Please enter your name.");
+                getFormStatus(contactForm).textContent = "Please enter your name.";
+                getFormStatus(contactForm).dataset.state = "error";
+                if (nameInput) nameInput.focus();
                 return;
             }
             if (!email || !isValidEmail(email)) {
-                alert("Please enter a valid email address.");
+                getFormStatus(contactForm).textContent = "Please enter a valid email address.";
+                getFormStatus(contactForm).dataset.state = "error";
+                if (emailInput) emailInput.focus();
                 return;
             }
             if (!message) {
-                alert("Please enter your message.");
+                getFormStatus(contactForm).textContent = "Please enter your message.";
+                getFormStatus(contactForm).dataset.state = "error";
+                if (messageInput) messageInput.focus();
                 return;
             }
 
