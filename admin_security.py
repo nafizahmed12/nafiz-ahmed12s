@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timezone
 
-from flask import redirect, request, session, url_for
+from flask import redirect, session, url_for
 
 
 ADMIN_IDLE_TIMEOUT_SECONDS = int(os.getenv("ADMIN_IDLE_TIMEOUT_SECONDS", "1800"))
@@ -19,6 +19,14 @@ def register_admin_session_guard(app):
         now = datetime.now(timezone.utc).timestamp()
         authenticated_at = session.get("admin_authenticated_at")
         last_activity = session.get("admin_last_activity")
+
+        # Sessions created before this hardening release do not have timestamps.
+        # Initialize them once so an already-authenticated admin is not logged out
+        # unexpectedly during deployment.
+        if authenticated_at is None or last_activity is None:
+            session["admin_authenticated_at"] = now
+            session["admin_last_activity"] = now
+            return None
 
         try:
             authenticated_at = float(authenticated_at)
