@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -23,12 +23,51 @@ def create_user(username, email, password):
         return user
 
 
-def authenticate_user(username, password):
+def authenticate_user(identifier, password):
+    identifier = identifier.strip()
     with SessionLocal() as db:
-        user = db.scalar(select(User).where(User.username == username.strip()))
+        user = db.scalar(
+            select(User).where(
+                (User.username == identifier) | (User.email == identifier.lower())
+            )
+        )
         if user and check_password_hash(user.password_hash, password):
             return user
         return None
+
+
+def get_user(user_id):
+    with SessionLocal() as db:
+        return db.get(User, user_id)
+
+
+def update_user_profile(user_id, username, email):
+    with SessionLocal() as db:
+        user = db.get(User, user_id)
+        if user is None:
+            return False, "User not found."
+        user.username = username.strip()
+        user.email = email.strip().lower()
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            return False, "Username or email is already in use."
+        return True, "Profile updated successfully."
+
+
+def change_password(user_id, current_password, new_password):
+    with SessionLocal() as db:
+        user = db.get(User, user_id)
+        if user is None or not check_password_hash(user.password_hash, current_password):
+            return False, "Current password is incorrect."
+        if len(new_password) < 8:
+            return False, "New password must be at least 8 characters."
+        if current_password == new_password:
+            return False, "New password must be different from the current password."
+        user.password_hash = generate_password_hash(new_password)
+        db.commit()
+        return True, "Password changed successfully."
 
 
 def create_website(owner_id, name, slug, title="My Website", content=""):
@@ -59,6 +98,21 @@ def get_user_websites(owner_id):
                 .order_by(Website.id.desc())
             )
         )
+
+
+def delete_website(owner_id, website_id):
+    with SessionLocal() as db:
+        website = db.scalar(
+            select(Website).where(
+                Website.id == website_id,
+                Website.owner_id == owner_id,
+            )
+        )
+        if website is None:
+            return False
+        db.delete(website)
+        db.commit()
+        return True
 
 
 def get_website_by_slug(slug):
