@@ -39,17 +39,25 @@ def create_database_engine():
 
     if not url.startswith("sqlite"):
         engine_options.update({
+            # Keep per-instance DB usage bounded so horizontal scaling does not
+            # create an uncontrolled number of PostgreSQL connections.
             "pool_size": int(os.getenv("DB_POOL_SIZE", "5")),
             "max_overflow": int(os.getenv("DB_MAX_OVERFLOW", "10")),
             "pool_timeout": int(os.getenv("DB_POOL_TIMEOUT", "30")),
             "pool_recycle": int(os.getenv("DB_POOL_RECYCLE", "1800")),
+            "pool_use_lifo": True,
         })
 
     return create_engine(url, **engine_options)
 
 
 engine = create_database_engine()
-SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, expire_on_commit=False)
+SessionLocal = sessionmaker(
+    bind=engine,
+    autoflush=False,
+    autocommit=False,
+    expire_on_commit=False,
+)
 
 
 def init_db():
