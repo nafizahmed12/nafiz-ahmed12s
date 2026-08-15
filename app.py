@@ -2,7 +2,7 @@ import os
 from datetime import timedelta
 from urllib.parse import urlparse
 
-from flask import Flask, render_template, request, redirect, session, abort, flash, url_for
+from flask import Flask, render_template, request, redirect, session, abort, flash, url_for, Response
 from dotenv import load_dotenv
 from sqlalchemy import text
 
@@ -149,6 +149,41 @@ def readiness():
     except Exception:
         app.logger.exception("Readiness check failed")
         return {"status": "not_ready", "database": "unavailable"}, 503
+
+
+@app.route("/robots.txt")
+def robots_txt():
+    """Serve the SEO crawler policy from the site root."""
+    content = """User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /login
+Disallow: /logout
+Disallow: /dashboard
+Disallow: /account
+Disallow: /register
+Disallow: /user-login
+Disallow: /user-logout
+
+Sitemap: https://nafiz-ahmed12s.onrender.com/sitemap.xml
+"""
+    return Response(content, mimetype="text/plain")
+
+
+@app.route("/sitemap.xml")
+def sitemap_xml():
+    """Serve a minimal XML sitemap for the public homepage."""
+    site_url = url_for("home", _external=True)
+    content = f'''<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>{site_url}</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>
+'''
+    return Response(content, mimetype="application/xml")
 
 
 @app.route("/")
