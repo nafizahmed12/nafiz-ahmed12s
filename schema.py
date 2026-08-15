@@ -93,19 +93,37 @@ def _allow_rate_limited_request(table_name, key, limit, window_seconds):
         return True
 
 
+def _safe_rate_key(value, max_length=255):
+    return (value or "unknown").strip()[:max_length] or "unknown"
+
+
 def allow_registration(ip_address, limit=10, window_seconds=3600):
-    key = (ip_address or "unknown").strip()[:255] or "unknown"
+    key = _safe_rate_key(ip_address)
     return _allow_rate_limited_request(
         "registration_rate_limits", key, limit, window_seconds
     )
 
 
 def allow_login(ip_address, identifier, limit=10, window_seconds=900):
-    ip_key = (ip_address or "unknown").strip()[:200] or "unknown"
-    identity_key = (identifier or "unknown").strip().lower()[:255] or "unknown"
+    ip_key = _safe_rate_key(ip_address, 200)
+    identity_key = _safe_rate_key(identifier, 255).lower()
     key = f"{ip_key}:{identity_key}"
     return _allow_rate_limited_request(
         "login_rate_limits", key, limit, window_seconds
+    )
+
+
+def allow_contact(ip_address, limit=5, window_seconds=900):
+    key = _safe_rate_key(ip_address)
+    return _allow_rate_limited_request(
+        "contact_rate_limits", key, limit, window_seconds
+    )
+
+
+def allow_subscription(ip_address, limit=10, window_seconds=3600):
+    key = _safe_rate_key(ip_address)
+    return _allow_rate_limited_request(
+        "subscribe_rate_limits", key, limit, window_seconds
     )
 
 
