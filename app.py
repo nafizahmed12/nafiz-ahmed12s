@@ -1,5 +1,6 @@
 import os
 from datetime import timedelta
+from urllib.parse import urlparse
 
 from flask import Flask, render_template, request, redirect, session, abort, flash, url_for
 from dotenv import load_dotenv
@@ -36,6 +37,31 @@ app.config.update(
     PERMANENT_SESSION_LIFETIME=timedelta(days=7),
     MAX_CONTENT_LENGTH=int(os.getenv("MAX_CONTENT_LENGTH", str(1 * 1024 * 1024))),
 )
+
+
+@app.before_request
+def protect_state_changing_requests():
+    """Reject cross-site browser POST requests before they reach application logic.
+
+    This adds a server-side CSRF defense without requiring every existing HTML form
+    to be rewritten. Same-origin requests from the site's own pages are allowed.
+    """
+    if request.method != "POST":
+        return None
+
+    origin = request.headers.get("Origin")
+    referer = request.headers.get("Referer")
+    expected = f"{request.scheme}://{request.host}"
+
+    source = origin or referer
+    if source:
+        parsed = urlparse(source)
+        actual = f"{parsed.scheme}://{parsed.netloc}"
+        if actual != expected:
+            abort(403, description="Cross-site request blocked.")
+
+    return None
+
 
 init_db()
 
