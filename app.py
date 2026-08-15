@@ -23,7 +23,12 @@ from schema import (
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "dev-change-this-secret")
+secret_key = os.getenv("SECRET_KEY")
+if not secret_key:
+    if os.getenv("RENDER"):
+        raise RuntimeError("SECRET_KEY environment variable is required in production.")
+    secret_key = "dev-only-change-this-secret"
+app.secret_key = secret_key
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
