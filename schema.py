@@ -276,3 +276,14 @@ def get_subscribers(page=1, per_page=50):
         )
         total = db.scalar(select(func.count()).select_from(Subscriber)) or 0
         return subscribers, total
+
+
+def get_admin_stats():
+    """Return high-level counts for the protected admin dashboard."""
+    with SessionLocal() as db:
+        return {
+            "users": db.scalar(select(func.count()).select_from(User)) or 0,
+            "websites": db.scalar(select(func.count()).select_from(Website)) or 0,
+            "messages": db.scalar(select(func.count()).select_from(Message)) or 0,
+            "subscribers": db.scalar(select(func.count()).select_from(Subscriber)) or 0,
+        }
