@@ -17,6 +17,7 @@ from schema import (
     create_website,
     delete_website,
     get_messages,
+    get_subscribers,
     get_user,
     get_user_websites,
     get_website_by_slug,
@@ -321,12 +322,22 @@ def admin():
     if page > total_pages:
         page = total_pages
         messages, total = get_messages(page=page, per_page=per_page)
+    subscribers, total_subscribers = get_subscribers(page=page, per_page=per_page)
+    subscriber_pages = max(1, (total_subscribers + per_page - 1) // per_page)
+    if page > subscriber_pages:
+        page = subscriber_pages
+        messages, total = get_messages(page=page, per_page=per_page)
+        subscribers, total_subscribers = get_subscribers(page=page, per_page=per_page)
+        total_pages = max(1, (total + per_page - 1) // per_page)
     return render_template(
         "admin.html",
         messages=messages,
         page=page,
         total_pages=total_pages,
         total_messages=total,
+        subscribers=subscribers,
+        total_subscribers=total_subscribers,
+        subscriber_pages=subscriber_pages,
     )
 
 
