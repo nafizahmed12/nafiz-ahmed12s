@@ -31,11 +31,25 @@ def get_database_url():
 def create_database_engine():
     url = get_database_url()
     connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
-    return create_engine(url, connect_args=connect_args, pool_pre_ping=True)
+
+    engine_options = {
+        "connect_args": connect_args,
+        "pool_pre_ping": True,
+    }
+
+    if not url.startswith("sqlite"):
+        engine_options.update({
+            "pool_size": int(os.getenv("DB_POOL_SIZE", "5")),
+            "max_overflow": int(os.getenv("DB_MAX_OVERFLOW", "10")),
+            "pool_timeout": int(os.getenv("DB_POOL_TIMEOUT", "30")),
+            "pool_recycle": int(os.getenv("DB_POOL_RECYCLE", "1800")),
+        })
+
+    return create_engine(url, **engine_options)
 
 
 engine = create_database_engine()
-SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, expire_on_commit=False)
 
 
 def init_db():
