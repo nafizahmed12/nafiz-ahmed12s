@@ -44,6 +44,27 @@ app.config.update(
 )
 
 
+@app.after_request
+def add_security_headers(response):
+    """Add baseline browser security headers without changing the existing UI."""
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault(
+        "Permissions-Policy",
+        "camera=(), microphone=(), geolocation=(), payment=()",
+    )
+
+    # Only advertise HSTS when the request is actually HTTPS. This avoids
+    # accidentally pinning a local HTTP development environment.
+    if request.is_secure:
+        response.headers.setdefault(
+            "Strict-Transport-Security",
+            "max-age=31536000; includeSubDomains",
+        )
+    return response
+
+
 @app.before_request
 def protect_state_changing_requests():
     """Reject cross-site browser POST requests before they reach application logic."""
