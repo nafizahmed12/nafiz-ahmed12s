@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Account Settings — Nafiz Ahmed</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .account{max-width:900px;margin:0 auto;padding:45px 22px 70px}.top{display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;margin-bottom:30px}.panel{padding:28px;margin-bottom:20px}.panel form{display:grid;gap:13px}.panel input{width:100%;box-sizing:border-box}.flash{padding:12px 14px;border-radius:12px;margin-bottom:16px;background:rgba(255,255,255,.06)}.muted{opacity:.7}
+    </style>
+</head>
+<body>
+<main class="account">
+    <div class="top">
+        <div><span class="section-label">ACCOUNT</span><h1>Account settings</h1><p class="muted">Manage your profile and password.</p></div>
+        <div><a class="btn btn-secondary" href="{{ url_for('dashboard') }}">← Dashboard</a></div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}<div class="flash">{{ message }}</div>{% endfor %}
+    {% endwith %}
+
+    <section class="glass-card panel">
+        <span class="section-label">PROFILE</span>
+        <h2>Personal information</h2>
+        <form method="post">
+            <input type="hidden" name="action" value="profile">
+            <input name="username" value="{{ user.username }}" minlength="3" maxlength="80" autocomplete="username" required>
+            <input type="email" name="email" value="{{ user.email }}" maxlength="255" autocomplete="email" required>
+            <button class="btn btn-primary" type="submit">Save Profile</button>
+        </form>
+    </section>
+
+    <section class="glass-card panel">
+        <span class="section-label">SECURITY</span>
+        <h2>Change password</h2>
+        <p class="muted">Use a strong password with at least 8 characters.</p>
+        <form method="post" autocomplete="off">
+            <input type="hidden" name="action" value="password">
+            <input type="password" name="current_password" placeholder="Current password" autocomplete="current-password" required>
+            <input type="password" name="new_password" placeholder="New password" minlength="8" autocomplete="new-password" required>
+            <input type="password" name="confirm_password" placeholder="Confirm new password" minlength="8" autocomplete="new-password" required>
+            <button class="btn btn-primary" type="submit">Change Password</button>
+        </form>
+    </section>
+
+    <section class="glass-card panel">
+        <span class="section-label">SESSION</span>
+        <h2>Sign out</h2>
+        <p class="muted">Log out from this browser when you are finished.</p>
+        <a class="btn btn-secondary" href="{{ url_for('user_logout') }}">Logout</a>
+    </section>
+</main>
+</body>
+</html>
