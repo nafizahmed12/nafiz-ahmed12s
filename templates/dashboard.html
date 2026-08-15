@@ -1,2 +1,75 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dashboard</title><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head><body><main class="section"><div class="section-heading"><span class="section-label">DASHBOARD</span><h1>Welcome, {{ username }}</h1><p>Create and manage your websites.</p></div><div class="glass-card" style="padding:28px;max-width:700px;margin:auto"><h2>Create Website</h2>{% if error %}<p>{{ error }}</p>{% endif %}<form method="post" action="{{ url_for('create_website_route') }}"><input name="name" placeholder="Website name" required><input name="slug" placeholder="unique-slug" pattern="[a-z0-9-]+" required><input name="title" placeholder="Website title" required><textarea name="content" placeholder="Website content" rows="6"></textarea><button class="btn btn-primary" type="submit">Create Website</button></form></div><div class="skills-grid" style="margin-top:30px">{% for site in websites %}<article class="glass-card skill-card" style="padding:24px"><h3>{{ site.name }}</h3><p>{{ site.title }}</p><a class="btn btn-secondary" href="{{ url_for('published_site', slug=site.slug) }}">View</a></article>{% else %}<p>No websites yet.</p>{% endfor %}</div><p><a href="{{ url_for('user_logout') }}">Logout</a></p></main></body></html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Dashboard — Nafiz Ahmed</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body{min-height:100vh}.dash{max-width:1180px;margin:0 auto;padding:36px 22px 70px}.dash-nav{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:35px}.dash-brand{font-weight:800;font-size:22px}.dash-actions{display:flex;gap:10px;flex-wrap:wrap}.dash-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:24px 0 34px}.stat{padding:22px}.stat strong{display:block;font-size:30px;margin-top:6px}.panel{padding:26px;margin-bottom:22px}.panel form{display:grid;gap:13px}.panel input,.panel textarea{width:100%;box-sizing:border-box}.site-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.site-card{padding:22px}.site-card .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.flash{padding:12px 14px;border-radius:12px;margin-bottom:16px;background:rgba(255,255,255,.06)}.muted{opacity:.7}.empty{padding:25px;text-align:center;border:1px dashed rgba(255,255,255,.15);border-radius:16px}.danger{border:1px solid rgba(255,80,80,.25)}@media(max-width:800px){.dash-grid,.site-grid{grid-template-columns:1fr}}
+    </style>
+</head>
+<body>
+<main class="dash">
+    <header class="dash-nav">
+        <div><div class="dash-brand">Nafiz<span class="gradient-text">.</span></div><span class="muted">User Dashboard</span></div>
+        <div class="dash-actions">
+            <a class="btn btn-secondary" href="{{ url_for('home') }}">View Home</a>
+            <a class="btn btn-secondary" href="{{ url_for('account') }}">Account Settings</a>
+            <a class="btn btn-primary" href="{{ url_for('user_logout') }}">Logout</a>
+        </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}<div class="flash">{{ message }}</div>{% endfor %}
+    {% endwith %}
+
+    <section class="section-heading">
+        <span class="section-label">DASHBOARD</span>
+        <h1>Welcome, <span class="gradient-text">{{ user.username }}</span></h1>
+        <p>Manage your account and published websites from one place.</p>
+    </section>
+
+    <section class="dash-grid">
+        <div class="glass-card stat"><span class="section-label">WEBSITES</span><strong>{{ websites|length }}</strong><span class="muted">Your published sites</span></div>
+        <div class="glass-card stat"><span class="section-label">ACCOUNT</span><strong>Active</strong><span class="muted">Secure authenticated session</span></div>
+        <div class="glass-card stat"><span class="section-label">EMAIL</span><strong style="font-size:18px;word-break:break-word">{{ user.email }}</strong><span class="muted">Account email</span></div>
+    </section>
+
+    <section class="glass-card panel">
+        <span class="section-label">CREATE WEBSITE</span>
+        <h2>Launch a new site</h2>
+        <p class="muted">Choose a unique slug. Your site will be available at <code>/site/your-slug</code>.</p>
+        <form method="post" action="{{ url_for('create_website_route') }}">
+            <input name="name" placeholder="Website name" maxlength="120" required>
+            <input name="slug" placeholder="unique-slug" pattern="[a-z0-9-]+" maxlength="120" required>
+            <input name="title" placeholder="Website title" maxlength="200" required>
+            <textarea name="content" placeholder="Website content" rows="6"></textarea>
+            <button class="btn btn-primary" type="submit">Create Website <span>→</span></button>
+        </form>
+    </section>
+
+    <section>
+        <div class="section-heading" style="text-align:left;margin-bottom:18px"><span class="section-label">YOUR WEBSITES</span><h2>Published projects</h2></div>
+        <div class="site-grid">
+            {% for site in websites %}
+            <article class="glass-card site-card">
+                <span class="section-label">/site/{{ site.slug }}</span>
+                <h3>{{ site.name }}</h3>
+                <p>{{ site.title }}</p>
+                <p class="muted">{{ site.content|truncate(130) }}</p>
+                <div class="actions">
+                    <a class="btn btn-secondary" href="{{ url_for('published_site', slug=site.slug) }}" target="_blank" rel="noopener">View</a>
+                    <form method="post" action="{{ url_for('delete_website_route', website_id=site.id) }}" onsubmit="return confirm('Delete this website permanently?');">
+                        <button class="btn btn-secondary" type="submit">Delete</button>
+                    </form>
+                </div>
+            </article>
+            {% else %}
+            <div class="glass-card empty"><h3>No websites yet.</h3><p class="muted">Create your first website above.</p></div>
+            {% endfor %}
+        </div>
+    </section>
+</main>
+</body>
+</html>
