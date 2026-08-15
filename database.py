@@ -68,26 +68,28 @@ SessionLocal = sessionmaker(
 
 
 def _cleanup_rate_limit_records(connection):
-    """Remove expired rate-limit keys so the protection tables stay bounded."""
+    """Remove expired rate-limit keys using backend-compatible SQL."""
+    if connection.dialect.name == "postgresql":
+        cutoff_expression = "CURRENT_TIMESTAMP - INTERVAL '2 hours'"
+    else:
+        # SQLite does not implement PostgreSQL's INTERVAL syntax.
+        cutoff_expression = "datetime('now', '-2 hours')"
+
     # The longest application rate-limit window is one hour. Keeping two hours
     # of history gives every window enough room while preventing unbounded growth
     # when the site receives traffic from many different IP addresses.
-    connection.execute(text("""
-        DELETE FROM registration_rate_limits
-        WHERE window_started_at < CURRENT_TIMESTAMP - INTERVAL '2 hours'
-    """))
-    connection.execute(text("""
-        DELETE FROM login_rate_limits
-        WHERE window_started_at < CURRENT_TIMESTAMP - INTERVAL '2 hours'
-    """))
-    connection.execute(text("""
-        DELETE FROM contact_rate_limits
-        WHERE window_started_at < CURRENT_TIMESTAMP - INTERVAL '2 hours'
-    """))
-    connection.execute(text("""
-        DELETE FROM subscribe_rate_limits
-        WHERE window_started_at < CURRENT_TIMESTAMP - INTERVAL '2 hours'
-    """))
+    for table_name in (
+        "registration_rate_limits",
+        "login_rate_limits",
+        "contact_rate_limits",
+        "subscribe_rate_limits",
+    ):
+        connection.execute(
+            text(
+                f"DELETE FROM {table_name} "
+                f"WHERE window_started_at < {cutoff_expression}"
+            )
+        )
 
 
 def init_db():
@@ -113,7 +115,7 @@ def init_db():
                 window_started_at TIMESTAMPTZ NOT NULL,
                 request_count INTEGER NOT NULL DEFAULT 0
             )
-        """))
+        ""))
         connection.execute(text(
             "CREATE INDEX IF NOT EXISTS ix_login_rate_limits_window "
             "ON login_rate_limits (window_started_at)"
