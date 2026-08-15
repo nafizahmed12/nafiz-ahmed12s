@@ -80,6 +80,12 @@ def init_db():
             "CREATE INDEX IF NOT EXISTS ix_registration_rate_limits_window "
             "ON registration_rate_limits (window_started_at)"
         ))
+        # Composite index for the high-frequency per-user website listing.
+        # This matches WHERE owner_id = ? ORDER BY id DESC efficiently.
+        connection.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_websites_owner_id_id_desc "
+            "ON websites (owner_id, id DESC)"
+        ))
         connection.execute(text("SELECT 1"))
 
     print(f"Database initialized successfully using {engine.url.get_backend_name()}")
