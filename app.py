@@ -4,7 +4,9 @@ from urllib.parse import urlparse
 
 from flask import Flask, render_template, request, redirect, session, abort, flash, url_for
 from dotenv import load_dotenv
+from sqlalchemy import text
 
+from database import SessionLocal
 from schema import (
     allow_contact,
     allow_login,
@@ -52,11 +54,9 @@ def add_security_headers(response):
     response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
     response.headers.setdefault(
         "Permissions-Policy",
-        "camera=(), microphone=(), geolocation=(), payment=()",
+        "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()",
     )
 
-    # Only advertise HSTS when the request is actually HTTPS. This avoids
-    # accidentally pinning a local HTTP development environment.
     if request.is_secure:
         response.headers.setdefault(
             "Strict-Transport-Security",
@@ -122,7 +122,20 @@ def valid_email(email):
 
 @app.route("/health")
 def health():
+    """Cheap liveness probe for Render and uptime monitoring."""
     return {"status": "ok"}, 200
+
+
+@app.route("/health/ready")
+def readiness():
+    """Readiness probe that verifies the application can reach its database."""
+    try:
+        with SessionLocal() as db:
+            db.execute(text("SELECT 1"))
+        return {"status": "ready", "database": "ok"}, 200
+    except Exception:
+        app.logger.exception("Readiness check failed")
+        return {"status": "not_ready", "database": "unavailable"}, 503
 
 
 @app.route("/")
