@@ -1,15 +1,34 @@
 import os
 import sqlite3
-from flask import Flask, render_template, request, redirect, session, abort
+from datetime import timedelta
+
+from flask import Flask, render_template, request, redirect, session, abort, flash, url_for
 from dotenv import load_dotenv
 
 from database import init_db
-from schema import authenticate_user, create_user, create_website, get_user_websites, get_website_by_slug
+from schema import (
+    authenticate_user,
+    change_password,
+    create_user,
+    create_website,
+    delete_website,
+    get_user,
+    get_user_websites,
+    get_website_by_slug,
+    update_user_profile,
+)
 
 load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "dev-change-this-secret")
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=os.getenv("SESSION_COOKIE_SECURE", "1") == "1",
+    PERMANENT_SESSION_LIFETIME=timedelta(days=7),
+)
+
 init_db()
 
 
@@ -26,6 +45,20 @@ def get_host_site_slug():
     return None
 
 
+def current_user():
+    user_id = session.get("user_id")
+    return get_user(user_id) if user_id else None
+
+
+def require_user():
+    user = current_user()
+    if user is None:
+        session.pop("user_id", None)
+        session.pop("username", None)
+        return None
+    return user
+
+
 @app.route("/")
 def home():
     host_slug = get_host_site_slug()
@@ -39,58 +72,151 @@ def home():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
+    if session.get("user_id"):
+        return redirect(url_for("dashboard"))
+
     if request.method == "POST":
         username = request.form.get("username", "").strip()
-        email = request.form.get("email", "").strip()
+        email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
-        if not username or not email or len(password) < 8:
-            return render_template("register.html", error="Username, email and an 8+ character password are required."), 400
+        confirm_password = request.form.get("confirm_password", "")
+
+        if len(username) < 3 or len(username) > 80:
+            return render_template("register.html", error="Username must be 3-80 characters."), 400
+        if "@" not in email or len(email) > 255:
+            return render_template("register.html", error="Enter a valid email address."), 400
+        if len(password) < 8:
+            return render_template("register.html", error="Password must be at least 8 characters."), 400
+        if password != confirm_password:
+            return render_template("register.html", error="Passwords do not match."), 400
+
         user = create_user(username, email, password)
         if user is None:
             return render_template("register.html", error="Username or email is already in use."), 409
+
+        session.clear()
+        session.permanent = True
         session["user_id"] = user.id
         session["username"] = user.username
-        return redirect("/dashboard")
+        flash("Account created successfully. Welcome!", "success")
+        return redirect(url_for("dashboard"))
+
     return render_template("register.html")
 
 
 @app.route("/user-login", methods=["GET", "POST"])
 def user_login():
+    if session.get("user_id"):
+        return redirect(url_for("dashboard"))
+
     if request.method == "POST":
-        user = authenticate_user(request.form.get("username", "").strip(), request.form.get("password", ""))
+        identifier = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        user = authenticate_user(identifier, password)
         if user is None:
-            return render_template("user_login.html", error="Invalid username or password."), 401
+            return render_template("user_login.html", error="Invalid username/email or password."), 401
+
+        session.clear()
+        session.permanent = True
         session["user_id"] = user.id
         session["username"] = user.username
-        return redirect("/dashboard")
+        flash("Welcome back!", "success")
+        return redirect(url_for("dashboard"))
+
     return render_template("user_login.html")
 
 
 @app.route("/dashboard")
 def dashboard():
-    user_id = session.get("user_id")
-    if not user_id:
-        return redirect("/user-login")
-    return render_template("dashboard.html", username=session.get("username", "User"), websites=get_user_websites(user_id))
+    user = require_user()
+    if user is None:
+        return redirect(url_for("user_login"))
+    websites = get_user_websites(user.id)
+    return render_template(
+        "dashboard.html",
+        user=user,
+        username=user.username,
+        websites=websites,
+    )
 
 
 @app.route("/dashboard/websites", methods=["POST"])
 def create_website_route():
-    user_id = session.get("user_id")
-    if not user_id:
-        return redirect("/user-login")
+    user = require_user()
+    if user is None:
+        return redirect(url_for("user_login"))
+
     name = request.form.get("name", "").strip()
     slug = request.form.get("slug", "").strip().lower()
     title = request.form.get("title", "My Website").strip()
     content = request.form.get("content", "").strip()
+
     if not name or not slug or not title:
-        return render_template("dashboard.html", username=session.get("username", "User"), websites=get_user_websites(user_id), error="Name, slug and title are required."), 400
+        flash("Name, slug and title are required.", "error")
+        return redirect(url_for("dashboard"))
     if not all(c.isalnum() or c == "-" for c in slug) or slug.startswith("-") or slug.endswith("-"):
-        return render_template("dashboard.html", username=session.get("username", "User"), websites=get_user_websites(user_id), error="Slug may contain only letters, numbers and hyphens."), 400
-    website = create_website(user_id, name, slug, title, content)
+        flash("Slug may contain only letters, numbers and hyphens.", "error")
+        return redirect(url_for("dashboard"))
+
+    website = create_website(user.id, name, slug, title, content)
     if website is None:
-        return render_template("dashboard.html", username=session.get("username", "User"), websites=get_user_websites(user_id), error="That slug is already taken."), 409
-    return redirect("/dashboard")
+        flash("That slug is already taken. Choose another one.", "error")
+        return redirect(url_for("dashboard"))
+
+    flash("Website created successfully.", "success")
+    return redirect(url_for("dashboard"))
+
+
+@app.route("/dashboard/websites/<int:website_id>/delete", methods=["POST"])
+def delete_website_route(website_id):
+    user = require_user()
+    if user is None:
+        return redirect(url_for("user_login"))
+
+    if delete_website(user.id, website_id):
+        flash("Website deleted successfully.", "success")
+    else:
+        flash("Website not found or you do not have permission to delete it.", "error")
+    return redirect(url_for("dashboard"))
+
+
+@app.route("/account", methods=["GET", "POST"])
+def account():
+    user = require_user()
+    if user is None:
+        return redirect(url_for("user_login"))
+
+    if request.method == "POST":
+        action = request.form.get("action", "")
+
+        if action == "profile":
+            username = request.form.get("username", "").strip()
+            email = request.form.get("email", "").strip().lower()
+            if len(username) < 3 or len(username) > 80:
+                flash("Username must be 3-80 characters.", "error")
+                return redirect(url_for("account"))
+            if "@" not in email or len(email) > 255:
+                flash("Enter a valid email address.", "error")
+                return redirect(url_for("account"))
+            ok, message = update_user_profile(user.id, username, email)
+            if ok:
+                session["username"] = username
+            flash(message, "success" if ok else "error")
+            return redirect(url_for("account"))
+
+        if action == "password":
+            current_password = request.form.get("current_password", "")
+            new_password = request.form.get("new_password", "")
+            confirm_password = request.form.get("confirm_password", "")
+            if new_password != confirm_password:
+                flash("New passwords do not match.", "error")
+                return redirect(url_for("account"))
+            ok, message = change_password(user.id, current_password, new_password)
+            flash(message, "success" if ok else "error")
+            return redirect(url_for("account"))
+
+    user = get_user(user.id)
+    return render_template("account.html", user=user)
 
 
 @app.route("/site/<slug>")
@@ -105,7 +231,9 @@ def published_site(slug):
 def user_logout():
     session.pop("user_id", None)
     session.pop("username", None)
-    return redirect("/user-login")
+    session.pop("_permanent", None)
+    flash("You have been logged out.", "success")
+    return redirect(url_for("user_login"))
 
 
 # Existing contact/newsletter storage is kept temporarily for compatibility.
