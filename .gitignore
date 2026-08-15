@@ -1,4 +1,6 @@
 .env
+.env.*
+!.env.example
 messages.db
 __pycache__/
 *.pyc
