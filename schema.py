@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -139,6 +139,18 @@ def create_subscriber(email):
         return True
 
 
-def get_messages():
+def get_messages(page=1, per_page=50):
+    page = max(1, int(page))
+    per_page = max(1, min(int(per_page), 100))
+    offset = (page - 1) * per_page
     with SessionLocal() as db:
-        return list(db.scalars(select(Message).order_by(Message.id.desc())))
+        messages = list(
+            db.scalars(
+                select(Message)
+                .order_by(Message.id.desc())
+                .offset(offset)
+                .limit(per_page)
+            )
+        )
+        total = db.scalar(select(func.count()).select_from(Message)) or 0
+        return messages, total
