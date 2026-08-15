@@ -39,8 +39,6 @@ def create_database_engine():
 
     if not url.startswith("sqlite"):
         engine_options.update({
-            # Keep per-instance DB usage bounded so horizontal scaling does not
-            # create an uncontrolled number of PostgreSQL connections.
             "pool_size": int(os.getenv("DB_POOL_SIZE", "5")),
             "max_overflow": int(os.getenv("DB_MAX_OVERFLOW", "10")),
             "pool_timeout": int(os.getenv("DB_POOL_TIMEOUT", "30")),
@@ -61,13 +59,10 @@ SessionLocal = sessionmaker(
 
 
 def init_db():
-    # Import all models so SQLAlchemy creates every required table.
     from models import User, Website, Message, Subscriber  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
 
-    # Registration rate-limit storage is intentionally kept in PostgreSQL so
-    # limits remain effective when Render runs multiple application instances.
     with engine.begin() as connection:
         connection.execute(text("""
             CREATE TABLE IF NOT EXISTS registration_rate_limits (
@@ -80,8 +75,17 @@ def init_db():
             "CREATE INDEX IF NOT EXISTS ix_registration_rate_limits_window "
             "ON registration_rate_limits (window_started_at)"
         ))
-        # Composite index for the high-frequency per-user website listing.
-        # This matches WHERE owner_id = ? ORDER BY id DESC efficiently.
+        connection.execute(text("""
+            CREATE TABLE IF NOT EXISTS login_rate_limits (
+                rate_key VARCHAR(255) PRIMARY KEY,
+                window_started_at TIMESTAMPTZ NOT NULL,
+                request_count INTEGER NOT NULL DEFAULT 0
+            )
+        """))
+        connection.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_login_rate_limits_window "
+            "ON login_rate_limits (window_started_at)"
+        ))
         connection.execute(text(
             "CREATE INDEX IF NOT EXISTS ix_websites_owner_id_id_desc "
             "ON websites (owner_id, id DESC)"
