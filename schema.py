@@ -1,9 +1,9 @@
-from sqlalchemy import delete, select
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from database import SessionLocal
-from models import User, Website
+from models import User, Website, Message, Subscriber
 
 
 def create_user(username, email, password):
@@ -118,3 +118,27 @@ def delete_website(owner_id, website_id):
 def get_website_by_slug(slug):
     with SessionLocal() as db:
         return db.scalar(select(Website).where(Website.slug == slug.lower()))
+
+
+def create_message(name, email, message):
+    with SessionLocal() as db:
+        db.add(Message(name=name.strip(), email=email.strip().lower(), message=message.strip()))
+        db.commit()
+        return True
+
+
+def create_subscriber(email):
+    with SessionLocal() as db:
+        subscriber = Subscriber(email=email.strip().lower())
+        db.add(subscriber)
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            return False
+        return True
+
+
+def get_messages():
+    with SessionLocal() as db:
+        return list(db.scalars(select(Message).order_by(Message.id.desc())))
