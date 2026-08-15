@@ -1,12 +1,25 @@
 import json
 import logging
+import uuid
 
-from flask import jsonify, request, url_for
+from flask import g, jsonify, request, url_for
 
 
 def register_error_handlers(app):
     """Register production-safe error handlers and homepage SEO metadata."""
     app.logger.setLevel(logging.INFO)
+
+    @app.before_request
+    def assign_request_id():
+        """Give every request a short correlation ID for production debugging."""
+        incoming = request.headers.get("X-Request-ID", "").strip()
+        g.request_id = incoming[:80] if incoming else uuid.uuid4().hex
+
+    @app.after_request
+    def add_request_id(response):
+        """Expose the request correlation ID without trusting it as application data."""
+        response.headers["X-Request-ID"] = getattr(g, "request_id", "")
+        return response
 
     @app.after_request
     def add_homepage_seo(response):
@@ -34,7 +47,8 @@ def register_error_handlers(app):
     @app.errorhandler(400)
     def handle_bad_request(error):
         app.logger.warning(
-            "Bad request: path=%s method=%s remote=%s error=%s",
+            "Bad request: request_id=%s path=%s method=%s remote=%s error=%s",
+            getattr(g, "request_id", "-"),
             request.path,
             request.method,
             request.remote_addr,
@@ -45,7 +59,8 @@ def register_error_handlers(app):
     @app.errorhandler(403)
     def handle_forbidden(error):
         app.logger.warning(
-            "Forbidden request: path=%s method=%s remote=%s error=%s",
+            "Forbidden request: request_id=%s path=%s method=%s remote=%s error=%s",
+            getattr(g, "request_id", "-"),
             request.path,
             request.method,
             request.remote_addr,
@@ -60,7 +75,8 @@ def register_error_handlers(app):
     @app.errorhandler(413)
     def handle_request_too_large(error):
         app.logger.warning(
-            "Request too large: path=%s method=%s remote=%s",
+            "Request too large: request_id=%s path=%s method=%s remote=%s",
+            getattr(g, "request_id", "-"),
             request.path,
             request.method,
             request.remote_addr,
@@ -74,7 +90,8 @@ def register_error_handlers(app):
     @app.errorhandler(500)
     def handle_internal_error(error):
         app.logger.exception(
-            "Unhandled application error: path=%s method=%s remote=%s",
+            "Unhandled application error: request_id=%s path=%s method=%s remote=%s",
+            getattr(g, "request_id", "-"),
             request.path,
             request.method,
             request.remote_addr,
@@ -85,5 +102,8 @@ def register_error_handlers(app):
 def _response(code, message):
     """Return JSON for API-style requests and plain text otherwise."""
     if request.path.startswith("/health/") or request.path == "/health" or request.accept_mimetypes.best == "application/json":
-        return jsonify({"error": code, "message": message})
+        payload = {"error": code, "message": message}
+        if getattr(g, "request_id", None):
+            payload["request_id"] = g.request_id
+        return jsonify(payload)
     return message
