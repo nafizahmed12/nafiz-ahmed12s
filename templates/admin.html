@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex,nofollow">
-    <title>Admin | Nafiz Ahmed</title>
+    <title>Admin Dashboard | Nafiz Ahmed</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         :root { color-scheme: dark; }
@@ -15,7 +15,7 @@
             padding: 32px 18px 60px;
             min-height: 100vh;
         }
-        .container { max-width: 1120px; margin: auto; }
+        .container { max-width: 1180px; margin: auto; }
         .header {
             display: flex;
             justify-content: space-between;
@@ -24,7 +24,8 @@
             margin-bottom: 28px;
             flex-wrap: wrap;
         }
-        h1 { color: #7dd3fc; font-size: clamp(1.8rem, 4vw, 2.5rem); margin-bottom: 8px; }
+        .eyebrow { color: #38bdf8; font-size: .78rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; margin-bottom: 8px; }
+        h1 { color: #f8fafc; font-size: clamp(2rem, 4vw, 2.8rem); margin-bottom: 8px; }
         .subtitle { color: #94a3b8; }
         .logout, .back, .page-link {
             display: inline-block;
@@ -39,18 +40,19 @@
         .logout:hover, .back:hover, .page-link:hover { border-color: #38bdf8; color: #7dd3fc; }
         .stats {
             display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 16px;
             margin-bottom: 24px;
         }
         .stat {
-            background: rgba(15, 23, 42, .82);
+            background: linear-gradient(145deg, rgba(15, 23, 42, .94), rgba(15, 23, 42, .68));
             border: 1px solid #334155;
             border-radius: 16px;
             padding: 20px;
+            box-shadow: 0 16px 40px rgba(0,0,0,.18);
         }
-        .stat-label { color: #94a3b8; font-size: .9rem; }
-        .stat-value { display: block; color: #f8fafc; font-size: 1.8rem; margin-top: 5px; }
+        .stat-label { color: #94a3b8; font-size: .86rem; }
+        .stat-value { display: block; color: #f8fafc; font-size: 2rem; margin-top: 6px; }
         .section {
             background: rgba(15, 23, 42, .82);
             border: 1px solid #334155;
@@ -58,8 +60,11 @@
             padding: 22px;
             margin-bottom: 22px;
             overflow: hidden;
+            box-shadow: 0 18px 50px rgba(0,0,0,.16);
         }
-        .section h2 { color: #f8fafc; margin-bottom: 16px; font-size: 1.2rem; }
+        .section-head { display: flex; justify-content: space-between; gap: 16px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+        .section h2 { color: #f8fafc; font-size: 1.2rem; }
+        .section-count { color: #64748b; font-size: .85rem; }
         .message, .subscriber {
             background: #111827;
             border: 1px solid #263449;
@@ -76,6 +81,8 @@
         .pagination .current { color: #cbd5e1; padding: 11px 5px; }
         .page-link.disabled { opacity: .4; pointer-events: none; }
         .footer { margin-top: 24px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+        .note { color: #64748b; font-size: .84rem; margin-top: 18px; }
+        @media (max-width: 900px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 640px) {
             body { padding: 22px 12px 40px; }
             .stats { grid-template-columns: 1fr; }
@@ -87,25 +94,25 @@
 <div class="container">
     <div class="header">
         <div>
+            <div class="eyebrow">Private control center</div>
             <h1>Admin Dashboard</h1>
-            <p class="subtitle">Manage contact messages and newsletter subscribers.</p>
+            <p class="subtitle">Monitor users, websites, contact messages and newsletter growth.</p>
         </div>
         <a class="logout" href="{{ url_for('logout') }}">Log out</a>
     </div>
 
     <div class="stats">
-        <div class="stat">
-            <span class="stat-label">Contact messages</span>
-            <strong class="stat-value">{{ total_messages }}</strong>
-        </div>
-        <div class="stat">
-            <span class="stat-label">Newsletter subscribers</span>
-            <strong class="stat-value">{{ total_subscribers }}</strong>
-        </div>
+        <div class="stat"><span class="stat-label">Registered users</span><strong class="stat-value">{{ stats.users }}</strong></div>
+        <div class="stat"><span class="stat-label">Websites created</span><strong class="stat-value">{{ stats.websites }}</strong></div>
+        <div class="stat"><span class="stat-label">Contact messages</span><strong class="stat-value">{{ stats.messages }}</strong></div>
+        <div class="stat"><span class="stat-label">Newsletter subscribers</span><strong class="stat-value">{{ stats.subscribers }}</strong></div>
     </div>
 
     <section class="section">
-        <h2>Recent Contact Messages</h2>
+        <div class="section-head">
+            <h2>Recent Contact Messages</h2>
+            <span class="section-count">{{ total_messages }} total</span>
+        </div>
         {% if messages %}
             {% for message in messages %}
                 <article class="message">
@@ -113,9 +120,7 @@
                     <p><strong>Name:</strong> {{ message.name }}</p>
                     <p><strong>Email:</strong> {{ message.email }}</p>
                     <p><strong>Message:</strong> {{ message.message }}</p>
-                    {% if message.created_at %}
-                        <p><strong>Received:</strong> {{ message.created_at }}</p>
-                    {% endif %}
+                    {% if message.created_at %}<p><strong>Received:</strong> {{ message.created_at }}</p>{% endif %}
                 </article>
             {% endfor %}
         {% else %}
@@ -124,14 +129,15 @@
     </section>
 
     <section class="section">
-        <h2>Newsletter Subscribers</h2>
+        <div class="section-head">
+            <h2>Newsletter Subscribers</h2>
+            <span class="section-count">{{ total_subscribers }} total</span>
+        </div>
         {% if subscribers %}
             {% for subscriber in subscribers %}
                 <article class="subscriber">
                     <p><strong>#{{ subscriber.id }}</strong> — <span class="email">{{ subscriber.email }}</span></p>
-                    {% if subscriber.subscribed_at %}
-                        <p>Subscribed: {{ subscriber.subscribed_at }}</p>
-                    {% endif %}
+                    {% if subscriber.subscribed_at %}<p>Subscribed: {{ subscriber.subscribed_at }}</p>{% endif %}
                 </article>
             {% endfor %}
         {% else %}
@@ -140,10 +146,13 @@
     </section>
 
     <div class="footer">
-        <div class="pagination">
-            <a class="page-link{% if page <= 1 %} disabled{% endif %}" href="{{ url_for('admin', page=page-1) }}">← Previous</a>
-            <span class="current">Page {{ page }} of {{ total_pages }}</span>
-            <a class="page-link{% if page >= total_pages %} disabled{% endif %}" href="{{ url_for('admin', page=page+1) }}">Next →</a>
+        <div>
+            <div class="pagination">
+                <a class="page-link{% if page <= 1 %} disabled{% endif %}" href="{{ url_for('admin', page=page-1) }}">← Previous</a>
+                <span class="current">Page {{ page }} of {{ total_pages if total_pages > subscriber_pages else subscriber_pages }}</span>
+                <a class="page-link{% if page >= total_pages and page >= subscriber_pages %} disabled{% endif %}" href="{{ url_for('admin', page=page+1) }}">Next →</a>
+            </div>
+            <p class="note">Dashboard data is protected behind the admin session. Login attempts are rate-limited.</p>
         </div>
         <a class="back" href="{{ url_for('home') }}">← Back to Website</a>
     </div>
