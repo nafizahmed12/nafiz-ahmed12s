@@ -1,4 +1,6 @@
-from sqlalchemy import func, select
+from datetime import datetime, timedelta, timezone
+
+from sqlalchemy import func, select, text
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -21,6 +23,76 @@ def create_user(username, email, password):
             return None
         db.refresh(user)
         return user
+
+
+def allow_registration(ip_address, limit=10, window_seconds=3600):
+    """Atomically allow a limited number of registrations per IP per window."""
+    key = (ip_address or "unknown").strip()[:255] or "unknown"
+    now = datetime.now(timezone.utc)
+    window = timedelta(seconds=window_seconds)
+
+    with SessionLocal() as db:
+        if db.bind.dialect.name == "postgresql":
+            result = db.execute(
+                text("""
+                    INSERT INTO registration_rate_limits
+                        (rate_key, window_started_at, request_count)
+                    VALUES (:key, :now, 1)
+                    ON CONFLICT (rate_key) DO UPDATE SET
+                        request_count = CASE
+                            WHEN registration_rate_limits.window_started_at <= :cutoff
+                                THEN 1
+                            ELSE registration_rate_limits.request_count + 1
+                        END,
+                        window_started_at = CASE
+                            WHEN registration_rate_limits.window_started_at <= :cutoff
+                                THEN :now
+                            ELSE registration_rate_limits.window_started_at
+                        END
+                    RETURNING request_count
+                """),
+                {"key": key, "now": now, "cutoff": now - window},
+            ).scalar_one()
+            db.commit()
+            return result <= limit
+
+        # SQLite fallback for local development.
+        row = db.execute(
+            text("SELECT window_started_at, request_count FROM registration_rate_limits WHERE rate_key = :key"),
+            {"key": key},
+        ).first()
+        if row is None:
+            db.execute(
+                text("INSERT INTO registration_rate_limits (rate_key, window_started_at, request_count) VALUES (:key, :now, 1)"),
+                {"key": key, "now": now},
+            )
+            db.commit()
+            return True
+
+        started_at = row.window_started_at
+        if isinstance(started_at, str):
+            started_at = datetime.fromisoformat(started_at)
+        if started_at.tzinfo is None:
+            started_at = started_at.replace(tzinfo=timezone.utc)
+
+        if now - started_at >= window:
+            db.execute(
+                text("UPDATE registration_rate_limits SET window_started_at = :now, request_count = 1 WHERE rate_key = :key"),
+                {"key": key, "now": now},
+            )
+            db.commit()
+            return True
+
+        if row.request_count >= limit:
+            db.rollback()
+            return False
+
+        db.execute(
+            text("UPDATE registration_rate_limits SET request_count = request_count + 1 WHERE rate_key = :key"),
+            {"key": key},
+        )
+        db.commit()
+        return True
 
 
 def authenticate_user(identifier, password):

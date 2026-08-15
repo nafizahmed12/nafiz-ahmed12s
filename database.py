@@ -66,7 +66,20 @@ def init_db():
 
     Base.metadata.create_all(bind=engine)
 
-    with engine.connect() as connection:
+    # Registration rate-limit storage is intentionally kept in PostgreSQL so
+    # limits remain effective when Render runs multiple application instances.
+    with engine.begin() as connection:
+        connection.execute(text("""
+            CREATE TABLE IF NOT EXISTS registration_rate_limits (
+                rate_key VARCHAR(255) PRIMARY KEY,
+                window_started_at TIMESTAMPTZ NOT NULL,
+                request_count INTEGER NOT NULL DEFAULT 0
+            )
+        """))
+        connection.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_registration_rate_limits_window "
+            "ON registration_rate_limits (window_started_at)"
+        ))
         connection.execute(text("SELECT 1"))
 
     print(f"Database initialized successfully using {engine.url.get_backend_name()}")

@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 
 from database import init_db
 from schema import (
+    allow_registration,
     authenticate_user,
     change_password,
     create_message,
@@ -110,6 +111,15 @@ def register():
         return redirect(url_for("dashboard"))
 
     if request.method == "POST":
+        # Protect the database and password hashing from signup floods while
+        # allowing normal users to register freely. The limit is shared across
+        # all Render instances because it is stored in PostgreSQL.
+        if not allow_registration(request.remote_addr, limit=10, window_seconds=3600):
+            return render_template(
+                "register.html",
+                error="Too many registration attempts from this network. Please try again later.",
+            ), 429
+
         username = request.form.get("username", "").strip()
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
