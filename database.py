@@ -86,6 +86,28 @@ def init_db():
             "CREATE INDEX IF NOT EXISTS ix_login_rate_limits_window "
             "ON login_rate_limits (window_started_at)"
         ))
+        connection.execute(text("""
+            CREATE TABLE IF NOT EXISTS contact_rate_limits (
+                rate_key VARCHAR(255) PRIMARY KEY,
+                window_started_at TIMESTAMPTZ NOT NULL,
+                request_count INTEGER NOT NULL DEFAULT 0
+            )
+        """))
+        connection.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_contact_rate_limits_window "
+            "ON contact_rate_limits (window_started_at)"
+        ))
+        connection.execute(text("""
+            CREATE TABLE IF NOT EXISTS subscribe_rate_limits (
+                rate_key VARCHAR(255) PRIMARY KEY,
+                window_started_at TIMESTAMPTZ NOT NULL,
+                request_count INTEGER NOT NULL DEFAULT 0
+            )
+        """))
+        connection.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_subscribe_rate_limits_window "
+            "ON subscribe_rate_limits (window_started_at)"
+        ))
         connection.execute(text(
             "CREATE INDEX IF NOT EXISTS ix_websites_owner_id_id_desc "
             "ON websites (owner_id, id DESC)"
