@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 
 from database import init_db
 from schema import (
+    allow_login,
     allow_registration,
     authenticate_user,
     change_password,
@@ -42,11 +43,7 @@ app.config.update(
 
 @app.before_request
 def protect_state_changing_requests():
-    """Reject cross-site browser POST requests before they reach application logic.
-
-    This adds a server-side CSRF defense without requiring every existing HTML form
-    to be rewritten. Same-origin requests from the site's own pages are allowed.
-    """
+    """Reject cross-site browser POST requests before they reach application logic."""
     if request.method != "POST":
         return None
 
@@ -111,9 +108,6 @@ def register():
         return redirect(url_for("dashboard"))
 
     if request.method == "POST":
-        # Protect the database and password hashing from signup floods while
-        # allowing normal users to register freely. The limit is shared across
-        # all Render instances because it is stored in PostgreSQL.
         if not allow_registration(request.remote_addr, limit=10, window_seconds=3600):
             return render_template(
                 "register.html",
@@ -156,6 +150,13 @@ def user_login():
     if request.method == "POST":
         identifier = request.form.get("username", "").strip()
         password = request.form.get("password", "")
+
+        if not allow_login(request.remote_addr, identifier, limit=10, window_seconds=900):
+            return render_template(
+                "user_login.html",
+                error="Too many login attempts. Please try again in a few minutes.",
+            ), 429
+
         user = authenticate_user(identifier, password)
         if user is None:
             return render_template("user_login.html", error="Invalid username/email or password."), 401
