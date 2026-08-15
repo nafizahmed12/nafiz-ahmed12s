@@ -18,6 +18,7 @@ from schema import (
     create_user,
     create_website,
     delete_website,
+    get_admin_stats,
     get_messages,
     get_subscribers,
     get_user,
@@ -324,9 +325,15 @@ def subscribe():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        if request.form.get("username", "") == os.getenv("ADMIN_USERNAME") and request.form.get("password", "") == os.getenv("ADMIN_PASSWORD"):
+        username = request.form.get("username", "").strip()
+        if not allow_login(request.remote_addr, f"admin:{username}", limit=5, window_seconds=900):
+            return "Too many admin login attempts. Please try again in a few minutes.", 429
+
+        if username == os.getenv("ADMIN_USERNAME") and request.form.get("password", "") == os.getenv("ADMIN_PASSWORD"):
+            session.clear()
+            session.permanent = True
             session["admin_logged_in"] = True
-            return redirect("/admin")
+            return redirect(url_for("admin"))
         return "Invalid username or password.", 401
     return render_template("login.html")
 
@@ -334,26 +341,31 @@ def login():
 @app.route("/admin")
 def admin():
     if not session.get("admin_logged_in"):
-        return redirect("/login")
+        return redirect(url_for("login"))
+
     try:
         page = max(1, int(request.args.get("page", "1")))
     except ValueError:
         page = 1
+
     per_page = 50
+    stats = get_admin_stats()
     messages, total = get_messages(page=page, per_page=per_page)
-    total_pages = max(1, (total + per_page - 1) // per_page)
-    if page > total_pages:
-        page = total_pages
-        messages, total = get_messages(page=page, per_page=per_page)
     subscribers, total_subscribers = get_subscribers(page=page, per_page=per_page)
+
+    total_pages = max(1, (total + per_page - 1) // per_page)
     subscriber_pages = max(1, (total_subscribers + per_page - 1) // per_page)
-    if page > subscriber_pages:
-        page = subscriber_pages
+    max_page = max(total_pages, subscriber_pages)
+    if page > max_page:
+        page = max_page
         messages, total = get_messages(page=page, per_page=per_page)
         subscribers, total_subscribers = get_subscribers(page=page, per_page=per_page)
         total_pages = max(1, (total + per_page - 1) // per_page)
+        subscriber_pages = max(1, (total_subscribers + per_page - 1) // per_page)
+
     return render_template(
         "admin.html",
+        stats=stats,
         messages=messages,
         page=page,
         total_pages=total_pages,
@@ -367,7 +379,7 @@ def admin():
 @app.route("/logout")
 def logout():
     session.clear()
-    return redirect("/login")
+    return redirect(url_for("login"))
 
 
 if __name__ == "__main__":
