@@ -4,10 +4,13 @@ import uuid
 
 from flask import g, jsonify, request, url_for
 
+from admin_security import register_admin_session_guard
+
 
 def register_error_handlers(app):
     """Register production-safe error handlers and homepage SEO metadata."""
     app.logger.setLevel(logging.INFO)
+    register_admin_session_guard(app)
 
     @app.before_request
     def assign_request_id():
