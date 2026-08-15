@@ -67,6 +67,17 @@ def add_security_headers(response):
     return response
 
 
+@app.after_request
+def prevent_sensitive_page_caching(response):
+    """Prevent browsers/proxies from caching authenticated or admin pages."""
+    sensitive_paths = ("/dashboard", "/account", "/admin", "/login", "/user-login")
+    if any(request.path == path or request.path.startswith(f"{path}/") for path in sensitive_paths):
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
+
+
 @app.before_request
 def protect_state_changing_requests():
     """Reject cross-site browser POST requests before they reach application logic."""
