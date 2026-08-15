@@ -1,5 +1,4 @@
 import os
-import sqlite3
 from datetime import timedelta
 
 from flask import Flask, render_template, request, redirect, session, abort, flash, url_for
@@ -9,9 +8,12 @@ from database import init_db
 from schema import (
     authenticate_user,
     change_password,
+    create_message,
+    create_subscriber,
     create_user,
     create_website,
     delete_website,
+    get_messages,
     get_user,
     get_user_websites,
     get_website_by_slug,
@@ -231,19 +233,6 @@ def user_logout():
     return redirect(url_for("user_login"))
 
 
-# Existing contact/newsletter storage is kept temporarily for compatibility.
-def create_legacy_database():
-    connection = sqlite3.connect("messages.db")
-    cursor = connection.cursor()
-    cursor.execute("CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT NOT NULL, message TEXT NOT NULL)")
-    cursor.execute("CREATE TABLE IF NOT EXISTS subscribers (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT NOT NULL UNIQUE, subscribed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)")
-    connection.commit()
-    connection.close()
-
-
-create_legacy_database()
-
-
 @app.route("/contact", methods=["POST"])
 def contact():
     name = request.form.get("name", "").strip()
@@ -251,10 +240,7 @@ def contact():
     message = request.form.get("message", "").strip()
     if not name or not email or not message:
         return "All fields are required.", 400
-    connection = sqlite3.connect("messages.db")
-    connection.execute("INSERT INTO messages (name, email, message) VALUES (?, ?, ?)", (name, email, message))
-    connection.commit()
-    connection.close()
+    create_message(name, email, message)
     return "Message saved successfully!"
 
 
@@ -263,14 +249,9 @@ def subscribe():
     email = request.form.get("subscriber_email", "").strip()
     if not email:
         return "Email is required.", 400
-    try:
-        connection = sqlite3.connect("messages.db")
-        connection.execute("INSERT INTO subscribers (email) VALUES (?)", (email,))
-        connection.commit()
-        connection.close()
+    if create_subscriber(email):
         return "Subscribed successfully!"
-    except sqlite3.IntegrityError:
-        return "This email is already subscribed!", 409
+    return "This email is already subscribed!", 409
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -287,10 +268,7 @@ def login():
 def admin():
     if not session.get("admin_logged_in"):
         return redirect("/login")
-    connection = sqlite3.connect("messages.db")
-    connection.row_factory = sqlite3.Row
-    messages = connection.execute("SELECT * FROM messages ORDER BY id DESC").fetchall()
-    connection.close()
+    messages = get_messages()
     return render_template("admin.html", messages=messages)
 
 
