@@ -25,7 +25,7 @@ app.secret_key = os.getenv("SECRET_KEY", "dev-change-this-secret")
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
-    SESSION_COOKIE_SECURE=os.getenv("SESSION_COOKIE_SECURE", "1") == "1",
+    SESSION_COOKIE_SECURE=os.getenv("SESSION_COOKIE_SECURE", "1" if os.getenv("RENDER") else "0") == "1",
     PERMANENT_SESSION_LIFETIME=timedelta(days=7),
 )
 
@@ -132,12 +132,7 @@ def dashboard():
     if user is None:
         return redirect(url_for("user_login"))
     websites = get_user_websites(user.id)
-    return render_template(
-        "dashboard.html",
-        user=user,
-        username=user.username,
-        websites=websites,
-    )
+    return render_template("dashboard.html", user=user, username=user.username, websites=websites)
 
 
 @app.route("/dashboard/websites", methods=["POST"])
