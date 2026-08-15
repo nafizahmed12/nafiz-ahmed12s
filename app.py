@@ -5,7 +5,6 @@ from urllib.parse import urlparse
 from flask import Flask, render_template, request, redirect, session, abort, flash, url_for
 from dotenv import load_dotenv
 
-from database import init_db
 from schema import (
     allow_contact,
     allow_login,
@@ -65,9 +64,6 @@ def protect_state_changing_requests():
     return None
 
 
-init_db()
-
-
 def get_host_site_slug():
     base_domain = os.getenv("BASE_DOMAIN", "").strip().lower().rstrip(".")
     host = request.host.split(":", 1)[0].lower().rstrip(".")
@@ -101,6 +97,11 @@ def valid_email(email):
         return False
     local, domain = email.rsplit("@", 1)
     return bool(local and domain and "." in domain and not any(c.isspace() for c in email))
+
+
+@app.route("/health")
+def health():
+    return {"status": "ok"}, 200
 
 
 @app.route("/")
