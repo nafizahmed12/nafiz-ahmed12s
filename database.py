@@ -30,7 +30,16 @@ def get_database_url():
 
 def create_database_engine():
     url = get_database_url()
-    connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
+
+    if url.startswith("sqlite"):
+        connect_args = {"check_same_thread": False}
+    else:
+        # Prevent a dead/unreachable PostgreSQL endpoint from blocking startup
+        # for several minutes. The value can be overridden on Render with
+        # DB_CONNECT_TIMEOUT when a different timeout is required.
+        connect_args = {
+            "connect_timeout": int(os.getenv("DB_CONNECT_TIMEOUT", "10")),
+        }
 
     engine_options = {
         "connect_args": connect_args,
