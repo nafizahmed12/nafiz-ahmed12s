@@ -25,29 +25,28 @@ def create_user(username, email, password):
         return user
 
 
-def allow_registration(ip_address, limit=10, window_seconds=3600):
-    """Atomically allow a limited number of registrations per IP per window."""
-    key = (ip_address or "unknown").strip()[:255] or "unknown"
+def _allow_rate_limited_request(table_name, key, limit, window_seconds):
+    """Atomically allow requests using shared PostgreSQL storage."""
     now = datetime.now(timezone.utc)
     window = timedelta(seconds=window_seconds)
 
     with SessionLocal() as db:
         if db.bind.dialect.name == "postgresql":
             result = db.execute(
-                text("""
-                    INSERT INTO registration_rate_limits
+                text(f"""
+                    INSERT INTO {table_name}
                         (rate_key, window_started_at, request_count)
                     VALUES (:key, :now, 1)
                     ON CONFLICT (rate_key) DO UPDATE SET
                         request_count = CASE
-                            WHEN registration_rate_limits.window_started_at <= :cutoff
+                            WHEN {table_name}.window_started_at <= :cutoff
                                 THEN 1
-                            ELSE registration_rate_limits.request_count + 1
+                            ELSE {table_name}.request_count + 1
                         END,
                         window_started_at = CASE
-                            WHEN registration_rate_limits.window_started_at <= :cutoff
+                            WHEN {table_name}.window_started_at <= :cutoff
                                 THEN :now
-                            ELSE registration_rate_limits.window_started_at
+                            ELSE {table_name}.window_started_at
                         END
                     RETURNING request_count
                 """),
@@ -56,14 +55,13 @@ def allow_registration(ip_address, limit=10, window_seconds=3600):
             db.commit()
             return result <= limit
 
-        # SQLite fallback for local development.
         row = db.execute(
-            text("SELECT window_started_at, request_count FROM registration_rate_limits WHERE rate_key = :key"),
+            text(f"SELECT window_started_at, request_count FROM {table_name} WHERE rate_key = :key"),
             {"key": key},
         ).first()
         if row is None:
             db.execute(
-                text("INSERT INTO registration_rate_limits (rate_key, window_started_at, request_count) VALUES (:key, :now, 1)"),
+                text(f"INSERT INTO {table_name} (rate_key, window_started_at, request_count) VALUES (:key, :now, 1)"),
                 {"key": key, "now": now},
             )
             db.commit()
@@ -77,7 +75,7 @@ def allow_registration(ip_address, limit=10, window_seconds=3600):
 
         if now - started_at >= window:
             db.execute(
-                text("UPDATE registration_rate_limits SET window_started_at = :now, request_count = 1 WHERE rate_key = :key"),
+                text(f"UPDATE {table_name} SET window_started_at = :now, request_count = 1 WHERE rate_key = :key"),
                 {"key": key, "now": now},
             )
             db.commit()
@@ -88,11 +86,27 @@ def allow_registration(ip_address, limit=10, window_seconds=3600):
             return False
 
         db.execute(
-            text("UPDATE registration_rate_limits SET request_count = request_count + 1 WHERE rate_key = :key"),
+            text(f"UPDATE {table_name} SET request_count = request_count + 1 WHERE rate_key = :key"),
             {"key": key},
         )
         db.commit()
         return True
+
+
+def allow_registration(ip_address, limit=10, window_seconds=3600):
+    key = (ip_address or "unknown").strip()[:255] or "unknown"
+    return _allow_rate_limited_request(
+        "registration_rate_limits", key, limit, window_seconds
+    )
+
+
+def allow_login(ip_address, identifier, limit=10, window_seconds=900):
+    ip_key = (ip_address or "unknown").strip()[:200] or "unknown"
+    identity_key = (identifier or "unknown").strip().lower()[:255] or "unknown"
+    key = f"{ip_key}:{identity_key}"
+    return _allow_rate_limited_request(
+        "login_rate_limits", key, limit, window_seconds
+    )
 
 
 def authenticate_user(identifier, password):
