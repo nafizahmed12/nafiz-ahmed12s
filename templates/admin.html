@@ -3,45 +3,150 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex,nofollow">
     <title>Admin | Nafiz Ahmed</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: Arial, sans-serif; background: #0f172a; color: #e2e8f0; padding: 40px; }
-        .container { max-width: 1100px; margin: auto; }
-        h1 { color: #38bdf8; margin-bottom: 10px; }
-        .subtitle { color: #94a3b8; margin-bottom: 30px; }
-        .message { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 25px; margin-bottom: 20px; }
-        .message h3 { color: #facc15; margin-bottom: 10px; }
-        .message p { margin: 8px 0; color: #cbd5e1; }
-        .empty { background: #1e293b; padding: 30px; border-radius: 12px; text-align: center; color: #94a3b8; }
-        .back, .page-link { display: inline-block; margin-top: 25px; padding: 12px 20px; background: #38bdf8; color: #0f172a; text-decoration: none; border-radius: 8px; font-weight: bold; }
-        .pagination { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
-        .pagination .current { color: #cbd5e1; padding: 12px 6px; }
-        .page-link.disabled { opacity: .45; pointer-events: none; }
+        :root { color-scheme: dark; }
+        body {
+            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: radial-gradient(circle at top, #172554 0, #0f172a 42%, #020617 100%);
+            color: #e2e8f0;
+            padding: 32px 18px 60px;
+            min-height: 100vh;
+        }
+        .container { max-width: 1120px; margin: auto; }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            align-items: flex-start;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+        }
+        h1 { color: #7dd3fc; font-size: clamp(1.8rem, 4vw, 2.5rem); margin-bottom: 8px; }
+        .subtitle { color: #94a3b8; }
+        .logout, .back, .page-link {
+            display: inline-block;
+            padding: 11px 16px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 700;
+            border: 1px solid #334155;
+            background: #111827;
+            color: #e2e8f0;
+        }
+        .logout:hover, .back:hover, .page-link:hover { border-color: #38bdf8; color: #7dd3fc; }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat {
+            background: rgba(15, 23, 42, .82);
+            border: 1px solid #334155;
+            border-radius: 16px;
+            padding: 20px;
+        }
+        .stat-label { color: #94a3b8; font-size: .9rem; }
+        .stat-value { display: block; color: #f8fafc; font-size: 1.8rem; margin-top: 5px; }
+        .section {
+            background: rgba(15, 23, 42, .82);
+            border: 1px solid #334155;
+            border-radius: 18px;
+            padding: 22px;
+            margin-bottom: 22px;
+            overflow: hidden;
+        }
+        .section h2 { color: #f8fafc; margin-bottom: 16px; font-size: 1.2rem; }
+        .message, .subscriber {
+            background: #111827;
+            border: 1px solid #263449;
+            border-radius: 12px;
+            padding: 17px;
+            margin-bottom: 12px;
+        }
+        .message:last-child, .subscriber:last-child { margin-bottom: 0; }
+        .message h3 { color: #facc15; margin-bottom: 8px; }
+        .message p, .subscriber p { margin: 7px 0; color: #cbd5e1; overflow-wrap: anywhere; }
+        .subscriber .email { color: #7dd3fc; font-weight: 700; }
+        .empty { background: #111827; padding: 24px; border-radius: 12px; text-align: center; color: #94a3b8; }
+        .pagination { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 18px; }
+        .pagination .current { color: #cbd5e1; padding: 11px 5px; }
+        .page-link.disabled { opacity: .4; pointer-events: none; }
+        .footer { margin-top: 24px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+        @media (max-width: 640px) {
+            body { padding: 22px 12px 40px; }
+            .stats { grid-template-columns: 1fr; }
+            .section { padding: 16px; }
+        }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>Admin Dashboard</h1>
-    <p class="subtitle">Contact Messages — {{ total_messages }} total</p>
-    {% if messages %}
-        {% for message in messages %}
-            <div class="message">
-                <h3>Message #{{ message["id"] }}</h3>
-                <p><strong>Name:</strong> {{ message["name"] }}</p>
-                <p><strong>Email:</strong> {{ message["email"] }}</p>
-                <p><strong>Message:</strong> {{ message["message"] }}</p>
-            </div>
-        {% endfor %}
-    {% else %}
-        <div class="empty">No messages found.</div>
-    {% endif %}
-    <div class="pagination">
-        <a class="page-link{% if page <= 1 %} disabled{% endif %}" href="{{ url_for('admin', page=page-1) }}">← Previous</a>
-        <span class="current">Page {{ page }} of {{ total_pages }}</span>
-        <a class="page-link{% if page >= total_pages %} disabled{% endif %}" href="{{ url_for('admin', page=page+1) }}">Next →</a>
+    <div class="header">
+        <div>
+            <h1>Admin Dashboard</h1>
+            <p class="subtitle">Manage contact messages and newsletter subscribers.</p>
+        </div>
+        <a class="logout" href="{{ url_for('logout') }}">Log out</a>
     </div>
-    <a class="back" href="/">← Back to Website</a>
+
+    <div class="stats">
+        <div class="stat">
+            <span class="stat-label">Contact messages</span>
+            <strong class="stat-value">{{ total_messages }}</strong>
+        </div>
+        <div class="stat">
+            <span class="stat-label">Newsletter subscribers</span>
+            <strong class="stat-value">{{ total_subscribers }}</strong>
+        </div>
+    </div>
+
+    <section class="section">
+        <h2>Recent Contact Messages</h2>
+        {% if messages %}
+            {% for message in messages %}
+                <article class="message">
+                    <h3>Message #{{ message.id }}</h3>
+                    <p><strong>Name:</strong> {{ message.name }}</p>
+                    <p><strong>Email:</strong> {{ message.email }}</p>
+                    <p><strong>Message:</strong> {{ message.message }}</p>
+                    {% if message.created_at %}
+                        <p><strong>Received:</strong> {{ message.created_at }}</p>
+                    {% endif %}
+                </article>
+            {% endfor %}
+        {% else %}
+            <div class="empty">No messages found.</div>
+        {% endif %}
+    </section>
+
+    <section class="section">
+        <h2>Newsletter Subscribers</h2>
+        {% if subscribers %}
+            {% for subscriber in subscribers %}
+                <article class="subscriber">
+                    <p><strong>#{{ subscriber.id }}</strong> — <span class="email">{{ subscriber.email }}</span></p>
+                    {% if subscriber.subscribed_at %}
+                        <p>Subscribed: {{ subscriber.subscribed_at }}</p>
+                    {% endif %}
+                </article>
+            {% endfor %}
+        {% else %}
+            <div class="empty">No subscribers yet.</div>
+        {% endif %}
+    </section>
+
+    <div class="footer">
+        <div class="pagination">
+            <a class="page-link{% if page <= 1 %} disabled{% endif %}" href="{{ url_for('admin', page=page-1) }}">← Previous</a>
+            <span class="current">Page {{ page }} of {{ total_pages }}</span>
+            <a class="page-link{% if page >= total_pages %} disabled{% endif %}" href="{{ url_for('admin', page=page+1) }}">Next →</a>
+        </div>
+        <a class="back" href="{{ url_for('home') }}">← Back to Website</a>
+    </div>
 </div>
 </body>
 </html>
