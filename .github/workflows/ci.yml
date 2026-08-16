@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Compile Python files
+        run: python -m compileall -q .
+
+      - name: Import application
+        env:
+          SECRET_KEY: ci-test-secret
+          DATABASE_URL: sqlite:///ci_test.db
+          ADMIN_USERNAME: ci-admin
+          ADMIN_PASSWORD: ci-password
+        run: python -c "import app; print('Application import OK')"
+
+      - name: Health smoke test
+        env:
+          SECRET_KEY: ci-test-secret
+          DATABASE_URL: sqlite:///ci_test.db
+          ADMIN_USERNAME: ci-admin
+          ADMIN_PASSWORD: ci-password
+        run: |
+          python - <<'PY'
+          import app
+          client = app.app.test_client()
+          for path in ('/health', '/health/ready'):
+              response = client.get(path)
+              print(path, response.status_code, response.get_data(as_text=True))
+              if response.status_code != 200:
+                  raise SystemExit(1)
+          PY
