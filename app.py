@@ -9,6 +9,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 from database import SessionLocal
 from error_handlers import register_error_handlers
+from commerce_routes import register_commerce_routes
 from schema import (
     allow_contact,
     allow_login,
@@ -51,6 +52,7 @@ app.config.update(
     MAX_CONTENT_LENGTH=int(os.getenv("MAX_CONTENT_LENGTH", str(1 * 1024 * 1024))),
 )
 register_error_handlers(app)
+register_commerce_routes(app)
 
 
 @app.after_request
