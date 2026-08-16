@@ -16,65 +16,29 @@
             min-height: 100vh;
         }
         .container { max-width: 1180px; margin: auto; }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            gap: 20px;
-            align-items: flex-start;
-            margin-bottom: 28px;
-            flex-wrap: wrap;
-        }
+        .header { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; margin-bottom: 28px; flex-wrap: wrap; }
         .eyebrow { color: #38bdf8; font-size: .78rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; margin-bottom: 8px; }
         h1 { color: #f8fafc; font-size: clamp(2rem, 4vw, 2.8rem); margin-bottom: 8px; }
         .subtitle { color: #94a3b8; }
-        .logout, .back, .page-link {
-            display: inline-block;
-            padding: 11px 16px;
-            border-radius: 10px;
-            text-decoration: none;
-            font-weight: 700;
-            border: 1px solid #334155;
-            background: #111827;
-            color: #e2e8f0;
+        .logout, .back, .page-link, .button {
+            display: inline-block; padding: 11px 16px; border-radius: 10px; text-decoration: none;
+            font-weight: 700; border: 1px solid #334155; background: #111827; color: #e2e8f0; cursor: pointer;
         }
-        .logout:hover, .back:hover, .page-link:hover { border-color: #38bdf8; color: #7dd3fc; }
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-        .stat {
-            background: linear-gradient(145deg, rgba(15, 23, 42, .94), rgba(15, 23, 42, .68));
-            border: 1px solid #334155;
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 16px 40px rgba(0,0,0,.18);
-        }
+        .logout:hover, .back:hover, .page-link:hover, .button:hover { border-color: #38bdf8; color: #7dd3fc; }
+        .button.primary { background: linear-gradient(135deg, #2563eb, #0ea5e9); border-color: #38bdf8; color: white; }
+        .button.danger { border-color: #7f1d1d; color: #fca5a5; }
+        .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .stat { background: linear-gradient(145deg, rgba(15, 23, 42, .94), rgba(15, 23, 42, .68)); border: 1px solid #334155; border-radius: 16px; padding: 20px; box-shadow: 0 16px 40px rgba(0,0,0,.18); }
         .stat-label { color: #94a3b8; font-size: .86rem; }
         .stat-value { display: block; color: #f8fafc; font-size: 2rem; margin-top: 6px; }
-        .section {
-            background: rgba(15, 23, 42, .82);
-            border: 1px solid #334155;
-            border-radius: 18px;
-            padding: 22px;
-            margin-bottom: 22px;
-            overflow: hidden;
-            box-shadow: 0 18px 50px rgba(0,0,0,.16);
-        }
+        .section { background: rgba(15, 23, 42, .82); border: 1px solid #334155; border-radius: 18px; padding: 22px; margin-bottom: 22px; overflow: hidden; box-shadow: 0 18px 50px rgba(0,0,0,.16); }
         .section-head { display: flex; justify-content: space-between; gap: 16px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
         .section h2 { color: #f8fafc; font-size: 1.2rem; }
         .section-count { color: #64748b; font-size: .85rem; }
-        .message, .subscriber {
-            background: #111827;
-            border: 1px solid #263449;
-            border-radius: 12px;
-            padding: 17px;
-            margin-bottom: 12px;
-        }
-        .message:last-child, .subscriber:last-child { margin-bottom: 0; }
+        .message, .subscriber, .product-card { background: #111827; border: 1px solid #263449; border-radius: 12px; padding: 17px; margin-bottom: 12px; }
+        .message:last-child, .subscriber:last-child, .product-card:last-child { margin-bottom: 0; }
         .message h3 { color: #facc15; margin-bottom: 8px; }
-        .message p, .subscriber p { margin: 7px 0; color: #cbd5e1; overflow-wrap: anywhere; }
+        .message p, .subscriber p, .product-card p { margin: 7px 0; color: #cbd5e1; overflow-wrap: anywhere; }
         .subscriber .email { color: #7dd3fc; font-weight: 700; }
         .empty { background: #111827; padding: 24px; border-radius: 12px; text-align: center; color: #94a3b8; }
         .pagination { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 18px; }
@@ -82,12 +46,31 @@
         .page-link.disabled { opacity: .4; pointer-events: none; }
         .footer { margin-top: 24px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
         .note { color: #64748b; font-size: .84rem; margin-top: 18px; }
-        @media (max-width: 900px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-        @media (max-width: 640px) {
-            body { padding: 22px 12px 40px; }
-            .stats { grid-template-columns: 1fr; }
-            .section { padding: 16px; }
-        }
+        .flash { padding: 13px 16px; border-radius: 12px; margin-bottom: 18px; border: 1px solid #334155; background: #111827; }
+        .flash.success { border-color: #166534; color: #bbf7d0; }
+        .flash.error { border-color: #991b1b; color: #fecaca; }
+        .product-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+        .field { display: flex; flex-direction: column; gap: 7px; }
+        .field.full { grid-column: 1 / -1; }
+        .field label { color: #cbd5e1; font-size: .86rem; font-weight: 700; }
+        .field input, .field textarea, .field select { width: 100%; border: 1px solid #334155; border-radius: 10px; background: #020617; color: #f8fafc; padding: 12px 13px; outline: none; }
+        .field textarea { min-height: 100px; resize: vertical; }
+        .field input:focus, .field textarea:focus, .field select:focus { border-color: #38bdf8; }
+        .form-actions { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+        .checkbox { display: flex; gap: 8px; align-items: center; color: #cbd5e1; }
+        .product-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+        .product-card { margin: 0; }
+        .product-top { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+        .product-name { color: #f8fafc; font-size: 1.05rem; font-weight: 800; }
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 999px; font-size: .72rem; font-weight: 800; background: #172554; color: #93c5fd; border: 1px solid #1e40af; }
+        .badge.archived { background: #450a0a; color: #fecaca; border-color: #7f1d1d; }
+        .product-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 12px; margin: 12px 0; }
+        .product-meta span { color: #94a3b8; font-size: .82rem; }
+        .product-actions { display: flex; gap: 8px; margin-top: 12px; }
+        .product-actions button { padding: 8px 11px; font-size: .8rem; }
+        .product-image { width: 100%; max-height: 180px; object-fit: cover; border-radius: 10px; border: 1px solid #334155; margin-bottom: 12px; }
+        @media (max-width: 900px) { .stats, .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 640px) { body { padding: 22px 12px 40px; } .stats, .product-grid, .product-form { grid-template-columns: 1fr; } .field.full, .form-actions { grid-column: auto; } .section { padding: 16px; } }
     </style>
 </head>
 <body>
@@ -96,10 +79,16 @@
         <div>
             <div class="eyebrow">Private control center</div>
             <h1>Admin Dashboard</h1>
-            <p class="subtitle">Monitor users, websites, contact messages and newsletter growth.</p>
+            <p class="subtitle">Manage products, monitor users, websites, contact messages and newsletter growth.</p>
         </div>
         <a class="logout" href="{{ url_for('logout') }}">Log out</a>
     </div>
+
+    {% with flashes = get_flashed_messages(with_categories=true) %}
+        {% for category, message in flashes %}
+            <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+    {% endwith %}
 
     <div class="stats">
         <div class="stat"><span class="stat-label">Registered users</span><strong class="stat-value">{{ stats.users }}</strong></div>
@@ -110,8 +99,75 @@
 
     <section class="section">
         <div class="section-head">
+            <h2>Add Product</h2>
+            <span class="section-count">Published products appear automatically in the Shop.</span>
+        </div>
+        <form class="product-form" method="post" action="{{ url_for('admin_product.create_admin_product') }}">
+            <div class="field">
+                <label for="name">Product name *</label>
+                <input id="name" name="name" required maxlength="200" placeholder="e.g. Premium Mango Box">
+            </div>
+            <div class="field">
+                <label for="slug">Slug *</label>
+                <input id="slug" name="slug" required maxlength="220" pattern="[A-Za-z0-9-]+" placeholder="premium-mango-box">
+            </div>
+            <div class="field">
+                <label for="product_type">Product type *</label>
+                <select id="product_type" name="product_type">
+                    <option value="physical">Physical</option>
+                    <option value="digital">Digital</option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="status">Status *</label>
+                <select id="status" name="status">
+                    <option value="published">Published</option>
+                    <option value="draft">Draft</option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="price">Price (BDT) *</label>
+                <input id="price" name="price" type="number" min="0" step="0.01" required placeholder="999">
+            </div>
+            <div class="field">
+                <label for="compare_at_price">Compare-at price</label>
+                <input id="compare_at_price" name="compare_at_price" type="number" min="0" step="0.01" placeholder="1199">
+            </div>
+            <div class="field">
+                <label for="sku">SKU</label>
+                <input id="sku" name="sku" maxlength="80" placeholder="MANGO-001">
+            </div>
+            <div class="field">
+                <label for="stock_quantity">Stock quantity</label>
+                <input id="stock_quantity" name="stock_quantity" type="number" min="0" step="1" value="0">
+            </div>
+            <div class="field full">
+                <label for="image_url">Product image URL</label>
+                <input id="image_url" name="image_url" type="url" placeholder="https://.../product-image.jpg">
+            </div>
+            <div class="field full">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" maxlength="5000" placeholder="Describe the product..."></textarea>
+            </div>
+            <div class="form-actions">
+                <label class="checkbox"><input type="checkbox" name="featured" value="1"> Featured product</label>
+                <button class="button primary" type="submit">+ Publish Product</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="section">
+        <div class="section-head">
+            <h2>Product Catalog</h2>
+            <span id="product-count" class="section-count">Loading...</span>
+        </div>
+        <div id="product-list" class="product-grid"><div class="empty">Loading products...</div></div>
+    </section>
+
+    <section class="section">
+        <div class="section-head">
             <h2>Recent Contact Messages</h2>
-            <span class="section-count">{{ total_messages }} total</span>
+            <span class="section-count">{{ stats.messages }} total</span>
         </div>
         {% if messages %}
             {% for message in messages %}
@@ -131,7 +187,7 @@
     <section class="section">
         <div class="section-head">
             <h2>Newsletter Subscribers</h2>
-            <span class="section-count">{{ total_subscribers }} total</span>
+            <span class="section-count">{{ stats.subscribers }} total</span>
         </div>
         {% if subscribers %}
             {% for subscriber in subscribers %}
@@ -157,5 +213,57 @@
         <a class="back" href="{{ url_for('home') }}">← Back to Website</a>
     </div>
 </div>
+
+<script>
+async function loadProducts() {
+    const list = document.getElementById('product-list');
+    const count = document.getElementById('product-count');
+    try {
+        const response = await fetch('{{ url_for("admin_product.admin_products") }}', {headers: {'Accept': 'application/json'}});
+        if (!response.ok) throw new Error('Unable to load products');
+        const data = await response.json();
+        count.textContent = `${data.items.length} product${data.items.length === 1 ? '' : 's'}`;
+        if (!data.items.length) {
+            list.innerHTML = '<div class="empty">No products yet. Use the form above to add your first product.</div>';
+            return;
+        }
+        list.innerHTML = data.items.map(product => `
+            <article class="product-card">
+                ${product.image_url ? `<img class="product-image" src="${escapeHtml(product.image_url)}" alt="${escapeHtml(product.name)}" loading="lazy">` : ''}
+                <div class="product-top">
+                    <div class="product-name">${escapeHtml(product.name)}</div>
+                    <span class="badge ${product.status === 'archived' ? 'archived' : ''}">${escapeHtml(product.status)}</span>
+                </div>
+                <p>${escapeHtml(product.description || 'No description')}</p>
+                <div class="product-meta">
+                    <span>Type: <strong>${escapeHtml(product.product_type)}</strong></span>
+                    <span>Price: <strong>${escapeHtml(product.currency)} ${escapeHtml(product.price)}</strong></span>
+                    <span>Stock: <strong>${escapeHtml(String(product.stock_quantity))}</strong></span>
+                    <span>SKU: <strong>${escapeHtml(product.sku || '—')}</strong></span>
+                </div>
+                <div class="product-actions">
+                    ${product.status !== 'archived' ? `<button class="button danger" onclick="archiveProduct(${product.id})">Archive</button>` : ''}
+                </div>
+            </article>
+        `).join('');
+    } catch (error) {
+        count.textContent = 'Error';
+        list.innerHTML = '<div class="empty">Could not load the product catalog.</div>';
+    }
+}
+
+function escapeHtml(value) {
+    return String(value).replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
+}
+
+async function archiveProduct(productId) {
+    if (!confirm('Archive this product? It will no longer appear in the Shop.')) return;
+    const response = await fetch(`/api/admin/products/${productId}/archive`, {method: 'POST', headers: {'Accept': 'application/json'}});
+    if (response.ok) loadProducts();
+    else alert('Could not archive the product.');
+}
+
+loadProducts();
+</script>
 </body>
 </html>
