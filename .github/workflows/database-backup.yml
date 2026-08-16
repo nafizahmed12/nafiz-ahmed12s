@@ -21,16 +21,16 @@ jobs:
 
       - name: Create compressed database backup
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
         run: |
           set -euo pipefail
-          test -n "$DATABASE_URL"
+          test -n "$BACKUP_DATABASE_URL"
           mkdir -p backup
           timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
           dump="backup/database-${timestamp}.dump"
           checksum="backup/database-${timestamp}.sha256"
 
-          pg_dump "$DATABASE_URL" \
+          pg_dump "$BACKUP_DATABASE_URL" \
             --format=custom \
             --no-owner \
             --no-privileges \
