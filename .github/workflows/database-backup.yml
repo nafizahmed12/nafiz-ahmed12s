@@ -27,8 +27,29 @@ jobs:
           test -n "$DATABASE_URL"
           mkdir -p backup
           timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
-          pg_dump "$DATABASE_URL" --format=custom --no-owner --no-privileges --file="backup/database-${timestamp}.dump"
-          sha256sum "backup/database-${timestamp}.dump" > "backup/database-${timestamp}.sha256"
+          dump="backup/database-${timestamp}.dump"
+          checksum="backup/database-${timestamp}.sha256"
+
+          pg_dump "$DATABASE_URL" \
+            --format=custom \
+            --no-owner \
+            --no-privileges \
+            --file="$dump"
+
+          test -s "$dump"
+          sha256sum "$dump" > "$checksum"
+
+      - name: Validate backup integrity
+        run: |
+          set -euo pipefail
+          dump="$(find backup -name '*.dump' -type f -print -quit)"
+          checksum="$(find backup -name '*.sha256' -type f -print -quit)"
+          test -n "$dump"
+          test -n "$checksum"
+          sha256sum --check "$checksum"
+          pg_restore --list "$dump" > backup/restore-manifest.txt
+          test -s backup/restore-manifest.txt
+          echo "Backup integrity validation passed."
 
       - name: Upload backup artifact
         uses: actions/upload-artifact@v4
