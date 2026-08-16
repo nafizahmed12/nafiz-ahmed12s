@@ -1,6 +1,6 @@
-Flask
-gunicorn
-python-dotenv
-SQLAlchemy
-psycopg2-binary
-alembic
+Flask==3.1.3
+gunicorn==26.0.0
+python-dotenv==1.2.2
+SQLAlchemy==2.0.52
+psycopg2-binary==2.9.12
+alembic==1.19.1
