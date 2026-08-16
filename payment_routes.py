@@ -1,14 +1,14 @@
 """Payment abstraction layer for the commerce API.
 
-This layer deliberately keeps gateway-specific credentials and SDKs out of the
-core order flow. It supports COD immediately and provides secure, idempotent
-payment-intent/webhook primitives for bKash, Nagad, SSLCommerz, and Stripe.
+Gateway credentials and SDKs stay outside the core order flow. COD/manual
+payments work immediately; online providers use the same idempotent payment
+record and signed webhook contract until their provider adapter is configured.
 """
 
 import hashlib
 import hmac
 import os
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from flask import Blueprint, jsonify, request, session
 from sqlalchemy import text
@@ -30,19 +30,17 @@ def _user_id():
 
 
 def _money(value):
-    return format(Decimal(str(value or 0)), ".2f")
+    try:
+        return format(Decimal(str(value or 0)), ".2f")
+    except (InvalidOperation, ValueError):
+        return "0.00"
 
 
 def _payment_payload(row):
     return {
-        "id": row["id"],
-        "order_id": row["order_id"],
-        "provider": row["provider"],
-        "status": row["status"],
-        "amount": _money(row["amount"]),
-        "currency": row["currency"],
-        "transaction_id": row["transaction_id"],
-        "provider_reference": row["provider_reference"],
+        "id": row["id"], "order_id": row["order_id"], "provider": row["provider"],
+        "status": row["status"], "amount": _money(row["amount"]), "currency": row["currency"],
+        "transaction_id": row["transaction_id"], "provider_reference": row["provider_reference"],
         "created_at": row["created_at"].isoformat() if row["created_at"] else None,
         "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
     }
@@ -62,7 +60,8 @@ def create_payment():
         return jsonify({"error": "transaction_id is too long."}), 400
     with SessionLocal() as db:
         order = db.execute(text("""SELECT id, status, payment_status, currency, total_amount
-            FROM commerce_orders WHERE id=:order_id AND user_id=:user_id FOR UPDATE"""), {"order_id": order_id, "user_id": user_id}).mappings().first()
+            FROM commerce_orders WHERE id=:order_id AND user_id=:user_id FOR UPDATE"""),
+            {"order_id": order_id, "user_id": user_id}).mappings().first()
         if order is None: return jsonify({"error": "Order not found."}), 404
         if order["status"] in {"cancelled", "refunded"}: return jsonify({"error": "This order cannot accept payment."}), 409
         if order["payment_status"] == "paid": return jsonify({"error": "Order is already paid."}), 409
@@ -74,13 +73,17 @@ def create_payment():
         payment_id = db.execute(text("""INSERT INTO payments
             (order_id,provider,transaction_id,status,amount,currency,provider_reference,created_at,updated_at)
             VALUES (:order_id,:provider,:transaction_id,:status,:amount,:currency,NULL,NOW(),NOW()) RETURNING id"""),
-            {"order_id": order_id, "provider": provider, "transaction_id": transaction_id, "status": status, "amount": order["total_amount"], "currency": order["currency"]}).scalar_one()
-        db.execute(text("UPDATE commerce_orders SET payment_status=:payment_status, updated_at=NOW() WHERE id=:order_id"), {"payment_status": status, "order_id": order_id})
+            {"order_id": order_id, "provider": provider, "transaction_id": transaction_id,
+             "status": status, "amount": order["total_amount"], "currency": order["currency"]}).scalar_one()
+        db.execute(text("UPDATE commerce_orders SET payment_status=:payment_status, updated_at=NOW() WHERE id=:order_id"),
+                   {"payment_status": status, "order_id": order_id})
         db.commit()
         payment = db.execute(text("""SELECT id,order_id,provider,status,amount,currency,transaction_id,provider_reference,created_at,updated_at
             FROM payments WHERE id=:payment_id"""), {"payment_id": payment_id}).mappings().one()
     response = {"payment": _payment_payload(payment), "reused": False}
-    response["next_step"] = "Gateway initiation must be completed by the configured provider adapter." if provider in ONLINE_PROVIDERS else "Collect payment on delivery; confirm through the protected webhook/admin flow."
+    response["next_step"] = ("Configure the provider adapter and redirect the customer to its checkout URL."
+                              if provider in ONLINE_PROVIDERS else
+                              "Collect payment on delivery/manual channel and confirm through the signed webhook.")
     return jsonify(response), 201
 
 
@@ -89,7 +92,8 @@ def list_payments(order_id):
     user_id = _user_id()
     if user_id is None: return jsonify({"error": "Authentication required."}), 401
     with SessionLocal() as db:
-        owns = db.execute(text("SELECT 1 FROM commerce_orders WHERE id=:order_id AND user_id=:user_id"), {"order_id": order_id, "user_id": user_id}).scalar_one_or_none()
+        owns = db.execute(text("SELECT 1 FROM commerce_orders WHERE id=:order_id AND user_id=:user_id"),
+                          {"order_id": order_id, "user_id": user_id}).scalar_one_or_none()
         if owns is None: return jsonify({"error": "Order not found."}), 404
         rows = db.execute(text("""SELECT id,order_id,provider,status,amount,currency,transaction_id,provider_reference,created_at,updated_at
             FROM payments WHERE order_id=:order_id ORDER BY id DESC"""), {"order_id": order_id}).mappings().all()
@@ -112,9 +116,12 @@ def payment_webhook():
     try: payment_id = int(body.get("payment_id"))
     except (TypeError, ValueError): return jsonify({"error": "payment_id is required."}), 400
     status = str(body.get("status", "")).strip().lower()
-    if status not in {"pending", "initiated", "paid", "failed", "cancelled", "refunded"}: return jsonify({"error": "Invalid payment status."}), 400
+    if status not in {"pending", "initiated", "paid", "failed", "cancelled", "refunded"}:
+        return jsonify({"error": "Invalid payment status."}), 400
     transaction_id = str(body.get("transaction_id", "")).strip() or None
     provider_reference = str(body.get("provider_reference", "")).strip() or None
+    if transaction_id and len(transaction_id) > 160: return jsonify({"error": "transaction_id is too long."}), 400
+    if provider_reference and len(provider_reference) > 180: return jsonify({"error": "provider_reference is too long."}), 400
     with SessionLocal() as db:
         payment = db.execute(text("""SELECT id,order_id,status,amount,currency,transaction_id,provider_reference
             FROM payments WHERE id=:payment_id FOR UPDATE"""), {"payment_id": payment_id}).mappings().first()
@@ -127,17 +134,13 @@ def payment_webhook():
         db.execute(text("""UPDATE commerce_orders SET payment_status=:payment_status,
             status=CASE WHEN :payment_status='paid' AND status='pending' THEN 'confirmed'
                         WHEN :payment_status IN ('cancelled','refunded') AND status NOT IN ('shipped','delivered') THEN :payment_status
-                        ELSE status END, updated_at=NOW() WHERE id=:order_id"""), {"payment_status": status, "order_id": payment["order_id"]})
+                        ELSE status END, updated_at=NOW() WHERE id=:order_id"""),
+            {"payment_status": status, "order_id": payment["order_id"]})
         db.commit()
     return jsonify({"ok": True, "payment_id": payment_id, "status": status})
 
 
 def register_payment_routes(app):
-    app.register_blueprint(payment_bp)
-    # Register supplier routes here so app.py does not need to be touched again.
-    # This keeps the core Flask bootstrap stable during production rollouts.
-    try:
-        from supplier_routes import register_supplier_routes
-        register_supplier_routes(app)
-    except ImportError:
-        pass
+    """Register payment endpoints exactly once."""
+    if payment_bp.name not in app.blueprints:
+        app.register_blueprint(payment_bp)
