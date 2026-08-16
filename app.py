@@ -13,6 +13,7 @@ from commerce_routes import register_commerce_routes
 from payment_routes import register_payment_routes
 from seller_routes import register_seller_routes
 from digital_affiliate_routes import register_digital_affiliate_routes
+from shop_routes import register_shop_routes
 from schema import (
     allow_contact, allow_login, allow_registration, allow_subscription,
     authenticate_user, change_password, create_message, create_subscriber,
@@ -36,6 +37,7 @@ register_commerce_routes(app)
 register_payment_routes(app)
 register_seller_routes(app)
 register_digital_affiliate_routes(app)
+register_shop_routes(app)
 
 @app.after_request
 def add_security_headers(response):
