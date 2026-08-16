@@ -49,3 +49,22 @@ jobs:
               if response.status_code != 200:
                   raise SystemExit(1)
           PY
+
+      - name: Validate Alembic configuration
+        env:
+          SECRET_KEY: ci-test-secret
+          DATABASE_URL: sqlite:///ci_test.db
+          ADMIN_USERNAME: ci-admin
+          ADMIN_PASSWORD: ci-password
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from alembic.config import Config
+          from alembic import command
+
+          root = Path.cwd()
+          config = Config(str(root / 'alembic.ini'))
+          config.set_main_option('script_location', str(root / 'alembic'))
+          command.check(config)
+          print('Alembic configuration validation OK')
+          PY
