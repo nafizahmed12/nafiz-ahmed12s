@@ -32,7 +32,6 @@ def _create_index_if_missing(index: str, table: str, columns: list[str], unique:
 
 
 def upgrade() -> None:
-    # Stable customer profile/preferences layer; does not alter existing users.
     if not _table_exists("customer_profiles"):
         op.create_table(
             "customer_profiles",
@@ -47,8 +46,6 @@ def upgrade() -> None:
         )
     _create_index_if_missing("ix_customer_profiles_user_id", "customer_profiles", ["user_id"], unique=True)
 
-    # Product reviews are kept separate from catalog/listing data so ratings
-    # can later be moderated without changing product ownership.
     if not _table_exists("product_reviews"):
         op.create_table(
             "product_reviews",
@@ -70,5 +67,4 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    # Non-destructive during production rollout.
     pass
