@@ -16,8 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Install PostgreSQL client
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Verify PostgreSQL 18 client
+        run: docker run --rm postgres:18 pg_dump --version
 
       - name: Create compressed database backup
         env:
@@ -29,12 +29,19 @@ jobs:
           timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
           dump="backup/database-${timestamp}.dump"
           checksum="backup/database-${timestamp}.sha256"
+          dump_name="$(basename "$dump")"
 
-          pg_dump "$BACKUP_DATABASE_URL" \
-            --format=custom \
-            --no-owner \
-            --no-privileges \
-            --file="$dump"
+          docker run --rm \
+            --env BACKUP_DATABASE_URL \
+            --env PGSSLMODE \
+            --env DUMP_FILE="$dump_name" \
+            --volume "$PWD/backup:/backup" \
+            postgres:18 \
+            sh -ec 'pg_dump "$BACKUP_DATABASE_URL" \
+              --format=custom \
+              --no-owner \
+              --no-privileges \
+              --file="/backup/$DUMP_FILE"'
 
           test -s "$dump"
           sha256sum "$dump" > "$checksum"
@@ -47,7 +54,14 @@ jobs:
           test -n "$dump"
           test -n "$checksum"
           sha256sum --check "$checksum"
-          pg_restore --list "$dump" > backup/restore-manifest.txt
+          dump_name="$(basename "$dump")"
+
+          docker run --rm \
+            --env DUMP_FILE="$dump_name" \
+            --volume "$PWD/backup:/backup" \
+            postgres:18 \
+            sh -ec 'pg_restore --list "/backup/$DUMP_FILE"' > backup/restore-manifest.txt
+
           test -s backup/restore-manifest.txt
           echo "Backup integrity validation passed."
 
