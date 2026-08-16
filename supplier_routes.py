@@ -19,7 +19,10 @@ def _money(v):
 
 
 def register_supplier_routes(app):
-    app.register_blueprint(supplier_bp)
+    # Keep startup idempotent. This prevents Gunicorn/app initialization
+    # from failing if the registration hook is invoked more than once.
+    if supplier_bp.name not in app.blueprints:
+        app.register_blueprint(supplier_bp)
 
 
 @supplier_bp.get("/supplier/products")
