@@ -3,6 +3,8 @@ from datetime import datetime, timezone
 
 from flask import redirect, session, url_for
 
+from admin_product_routes import register_admin_product_routes
+
 
 ADMIN_IDLE_TIMEOUT_SECONDS = int(os.getenv("ADMIN_IDLE_TIMEOUT_SECONDS", "1800"))
 ADMIN_ABSOLUTE_TIMEOUT_SECONDS = int(os.getenv("ADMIN_ABSOLUTE_TIMEOUT_SECONDS", "43200"))
@@ -10,6 +12,7 @@ ADMIN_ABSOLUTE_TIMEOUT_SECONDS = int(os.getenv("ADMIN_ABSOLUTE_TIMEOUT_SECONDS",
 
 def register_admin_session_guard(app):
     """Expire privileged admin sessions after idle/absolute time limits."""
+    register_admin_product_routes(app)
 
     @app.before_request
     def guard_admin_session():
