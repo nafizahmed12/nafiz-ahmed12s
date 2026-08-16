@@ -1,6 +1,6 @@
 """Add customer-facing commerce support metadata.
 
-Revision ID: 0006_customer_commerce_api_support
+Revision ID: 0006_customer_commerce_api
 Revises: 0005_checkout_payment_order
 """
 
@@ -8,7 +8,7 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 
-revision: str = "0006_customer_commerce_api_support"
+revision: str = "0006_customer_commerce_api"
 down_revision: Union[str, Sequence[str], None] = "0005_checkout_payment_order"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
