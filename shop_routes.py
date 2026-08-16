@@ -15,6 +15,39 @@ def checkout_page():
     return render_template("shop.html", checkout_mode=True)
 
 
+@shop_bp.get("/payment/success")
+def payment_success():
+    return render_template(
+        "payment_result.html",
+        title="Payment Successful",
+        icon="✓",
+        icon_bg="linear-gradient(135deg,#10b981,#059669)",
+        message="Your payment has been verified successfully. Your order is now confirmed.",
+    )
+
+
+@shop_bp.get("/payment/fail")
+def payment_fail():
+    return render_template(
+        "payment_result.html",
+        title="Payment Failed",
+        icon="!",
+        icon_bg="linear-gradient(135deg,#ef4444,#b91c1c)",
+        message="We could not complete the payment. You can return to the shop and try again.",
+    )
+
+
+@shop_bp.get("/payment/cancel")
+def payment_cancel():
+    return render_template(
+        "payment_result.html",
+        title="Payment Cancelled",
+        icon="×",
+        icon_bg="linear-gradient(135deg,#f59e0b,#d97706)",
+        message="The payment was cancelled. Your order was not marked as paid.",
+    )
+
+
 def register_shop_routes(app):
     if shop_bp.name not in app.blueprints:
         app.register_blueprint(shop_bp)
