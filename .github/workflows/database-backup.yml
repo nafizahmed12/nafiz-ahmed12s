@@ -1,0 +1,39 @@
+name: PostgreSQL Database Backup
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 2 * * *"
+
+permissions:
+  contents: read
+
+env:
+  PGSSLMODE: require
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Create compressed database backup
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          test -n "$DATABASE_URL"
+          mkdir -p backup
+          timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
+          pg_dump "$DATABASE_URL" --format=custom --no-owner --no-privileges --file="backup/database-${timestamp}.dump"
+          sha256sum "backup/database-${timestamp}.dump" > "backup/database-${timestamp}.sha256"
+
+      - name: Upload backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: postgres-backup-${{ github.run_id }}
+          path: backup/
+          retention-days: 14
+          if-no-files-found: error
