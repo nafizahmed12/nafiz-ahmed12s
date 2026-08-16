@@ -14,7 +14,7 @@ env:
 jobs:
   backup:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Verify PostgreSQL 18 client
         run: docker run --rm postgres:18 pg_dump --version
@@ -64,6 +64,51 @@ jobs:
 
           test -s backup/restore-manifest.txt
           echo "Backup integrity validation passed."
+
+      - name: Test full restore in PostgreSQL 18
+        run: |
+          set -euo pipefail
+          dump="$(find backup -name '*.dump' -type f -print -quit)"
+          dump_name="$(basename "$dump")"
+          container="postgres-restore-${GITHUB_RUN_ID}"
+
+          cleanup() {
+            docker rm -f "$container" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
+          docker run -d \
+            --name "$container" \
+            --env POSTGRES_PASSWORD=restore_test_password \
+            --env POSTGRES_DB=restore_test \
+            postgres:18 >/dev/null
+
+          for attempt in $(seq 1 30); do
+            if docker exec "$container" pg_isready -U postgres -d restore_test >/dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
+
+          docker exec "$container" pg_isready -U postgres -d restore_test
+          docker cp "$dump" "$container:/tmp/$dump_name"
+
+          docker exec "$container" \
+            pg_restore \
+              --username=postgres \
+              --dbname=restore_test \
+              --no-owner \
+              --no-privileges \
+              --exit-on-error \
+              "/tmp/$dump_name"
+
+          docker exec "$container" \
+            psql \
+              --username=postgres \
+              --dbname=restore_test \
+              --command='SELECT 1;' >/dev/null
+
+          echo "Full restore verification passed."
 
       - name: Upload backup artifact
         uses: actions/upload-artifact@v4
