@@ -200,6 +200,17 @@ def account():
             ok,msg=change_password(user.id,cur,new); flash(msg,"success" if ok else "error"); return redirect(url_for("account"))
     return render_template("account.html",user=get_user(user.id))
 
+@app.route("/orders")
+def orders_page():
+    user=require_user()
+    if user is None: return redirect(url_for("user_login"))
+    return render_template("orders.html", user=user)
+
+@app.route("/payment/<result>")
+def payment_result_page(result):
+    if result not in {"success", "fail", "cancel"}: abort(404)
+    return render_template("payment_result.html", result=result, order_id=request.args.get("order_id"))
+
 @app.route("/site/<slug>")
 def published_site(slug):
     website=get_website_by_slug(slug)
