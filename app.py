@@ -63,6 +63,22 @@ def add_security_headers(response):
         "Permissions-Policy",
         "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()",
     )
+    # CSP hardens the site against XSS, clickjacking and unsafe resource loading.
+    # Inline styles/scripts are currently allowed for compatibility with the existing templates.
+    response.headers.setdefault(
+        "Content-Security-Policy",
+        "default-src 'self'; "
+        "base-uri 'self'; "
+        "object-src 'none'; "
+        "frame-ancestors 'none'; "
+        "form-action 'self'; "
+        "img-src 'self' data: https:; "
+        "font-src 'self' data: https:; "
+        "style-src 'self' 'unsafe-inline' https:; "
+        "script-src 'self' 'unsafe-inline' https:; "
+        "connect-src 'self' https:; "
+        "media-src 'self' https:;",
+    )
 
     if request.is_secure:
         response.headers.setdefault(
