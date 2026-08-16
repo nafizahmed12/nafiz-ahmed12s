@@ -68,3 +68,12 @@ jobs:
           command.check(config)
           print('Alembic configuration validation OK')
           PY
+
+      - name: Run regression tests
+        env:
+          SECRET_KEY: ci-test-secret
+          DATABASE_URL: sqlite:///ci_test.db
+          ADMIN_USERNAME: ci-admin
+          ADMIN_PASSWORD: ci-password
+          RENDER: '0'
+        run: pytest -q
