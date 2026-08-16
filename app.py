@@ -11,6 +11,7 @@ from database import SessionLocal
 from error_handlers import register_error_handlers
 from commerce_routes import register_commerce_routes
 from payment_routes import register_payment_routes
+from seller_routes import register_seller_routes
 from schema import (
     allow_contact, allow_login, allow_registration, allow_subscription,
     authenticate_user, change_password, create_message, create_subscriber,
@@ -32,6 +33,7 @@ app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Lax", S
 register_error_handlers(app)
 register_commerce_routes(app)
 register_payment_routes(app)
+register_seller_routes(app)
 
 @app.after_request
 def add_security_headers(response):
@@ -171,7 +173,8 @@ def create_website_route():
 def delete_website_route(website_id):
     user=require_user()
     if user is None: return redirect(url_for("user_login"))
-    flash("Website deleted successfully." if delete_website(user.id,website_id) else "Website not found or you do not have permission to delete it.","success" if delete_website(user.id,website_id) else "error")
+    deleted=delete_website(user.id,website_id)
+    flash("Website deleted successfully." if deleted else "Website not found or you do not have permission to delete it.","success" if deleted else "error")
     return redirect(url_for("dashboard"))
 
 @app.route("/account",methods=["GET","POST"])
