@@ -12,6 +12,7 @@ from error_handlers import register_error_handlers
 from commerce_routes import register_commerce_routes
 from payment_routes import register_payment_routes
 from seller_routes import register_seller_routes
+from digital_affiliate_routes import register_digital_affiliate_routes
 from schema import (
     allow_contact, allow_login, allow_registration, allow_subscription,
     authenticate_user, change_password, create_message, create_subscriber,
@@ -34,6 +35,7 @@ register_error_handlers(app)
 register_commerce_routes(app)
 register_payment_routes(app)
 register_seller_routes(app)
+register_digital_affiliate_routes(app)
 
 @app.after_request
 def add_security_headers(response):
@@ -178,73 +180,3 @@ def delete_website_route(website_id):
     return redirect(url_for("dashboard"))
 
 @app.route("/account",methods=["GET","POST"])
-def account():
-    user=require_user()
-    if user is None: return redirect(url_for("user_login"))
-    if request.method=="POST":
-        action=request.form.get("action","")
-        if action=="profile":
-            username=request.form.get("username","").strip(); email=request.form.get("email","").strip().lower()
-            if len(username)<3 or len(username)>80: flash("Username must be 3-80 characters.","error"); return redirect(url_for("account"))
-            if not valid_email(email): flash("Enter a valid email address.","error"); return redirect(url_for("account"))
-            ok,msg=update_user_profile(user.id,username,email)
-            if ok: session["username"]=username
-            flash(msg,"success" if ok else "error"); return redirect(url_for("account"))
-        if action=="password":
-            cur=request.form.get("current_password",""); new=request.form.get("new_password",""); confirm=request.form.get("confirm_password","")
-            if new!=confirm: flash("New passwords do not match.","error"); return redirect(url_for("account"))
-            ok,msg=change_password(user.id,cur,new); flash(msg,"success" if ok else "error"); return redirect(url_for("account"))
-    return render_template("account.html",user=get_user(user.id))
-
-@app.route("/site/<slug>")
-def published_site(slug):
-    website=get_website_by_slug(slug)
-    if website is None: abort(404)
-    return render_template("published_site.html",website=website)
-
-@app.route("/user-logout")
-def user_logout():
-    session.pop("user_id",None); session.pop("username",None); session.pop("_permanent",None); flash("You have been logged out.","success"); return redirect(url_for("user_login"))
-
-@app.route("/contact",methods=["POST"])
-def contact():
-    if not allow_contact(request.remote_addr,limit=5,window_seconds=900): return "Too many messages from this network. Please try again later.",429
-    name=request.form.get("name","").strip(); email=request.form.get("email","").strip().lower(); message=request.form.get("message","").strip()
-    if len(name)<2 or len(name)>120: return "Name must be between 2 and 120 characters.",400
-    if not valid_email(email): return "Enter a valid email address.",400
-    if len(message)<5 or len(message)>5000: return "Message must be between 5 and 5000 characters.",400
-    create_message(name,email,message); return "Message saved successfully!"
-
-@app.route("/subscribe",methods=["POST"])
-def subscribe():
-    if not allow_subscription(request.remote_addr,limit=10,window_seconds=3600): return "Too many subscription attempts. Please try again later.",429
-    email=request.form.get("subscriber_email","").strip().lower()
-    if not valid_email(email): return "Enter a valid email address.",400
-    if create_subscriber(email): return "Subscribed successfully!"
-    return "This email is already subscribed!",409
-
-@app.route("/login",methods=["GET","POST"])
-def login():
-    if request.method=="POST":
-        username=request.form.get("username","").strip()
-        if not allow_login(request.remote_addr,f"admin:{username}",limit=5,window_seconds=900): return "Too many admin login attempts. Please try again in a few minutes.",429
-        if username==os.getenv("ADMIN_USERNAME") and request.form.get("password","")==os.getenv("ADMIN_PASSWORD"):
-            session.clear(); session.permanent=True; session["admin_logged_in"]=True; return redirect(url_for("admin"))
-        return "Invalid username or password.",401
-    return render_template("login.html")
-
-@app.route("/admin")
-def admin():
-    if not session.get("admin_logged_in"): return redirect(url_for("login"))
-    try: page=max(1,int(request.args.get("page","1")))
-    except ValueError: page=1
-    per_page=50; stats=get_admin_stats(); messages,total=get_messages(page=page,per_page=per_page); subscribers,total_subscribers=get_subscribers(page=page,per_page=per_page)
-    return render_template("admin.html",stats=stats,messages=messages,subscribers=subscribers,page=page,total_pages=max(1,(total+per_page-1)//per_page),subscriber_pages=max(1,(total_subscribers+per_page-1)//per_page))
-
-@app.route("/logout")
-def logout():
-    session.pop("admin_logged_in",None); session.pop("_permanent",None); return redirect(url_for("login"))
-
-if __name__=="__main__":
-    from database import init_db
-    init_db(); app.run(host="0.0.0.0",port=int(os.getenv("PORT","5000")))
