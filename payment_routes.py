@@ -8,7 +8,7 @@ from decimal import Decimal, InvalidOperation
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
-from flask import Blueprint, jsonify, request, session, redirect
+from flask import Blueprint, jsonify, request, session, redirect, render_template
 from sqlalchemy import text
 
 from database import SessionLocal
@@ -140,6 +140,7 @@ def _apply_payment_status(db, order_id, payment_id, status, transaction_id=None,
     db.execute(text("""UPDATE commerce_orders SET payment_status=:payment_status,
         status=CASE WHEN :payment_status='paid' AND status='pending' THEN 'confirmed'
                     WHEN :payment_status IN ('cancelled','refunded') AND status NOT IN ('shipped','delivered') THEN :payment_status
+                    WHEN :payment_status='failed' AND status='pending' THEN 'pending'
                     ELSE status END, updated_at=NOW() WHERE id=:order_id"""),
         {"payment_status": status, "order_id": order_id})
 
@@ -159,7 +160,6 @@ def _ssl_validate(tran_id):
     store_id = os.getenv("SSLCOMMERZ_STORE_ID", "").strip()
     store_pass = os.getenv("SSLCOMMERZ_STORE_PASSWORD", "").strip()
     if not store_id or not store_pass: return None
-    from urllib.parse import quote
     query = urlencode({"tran_id": tran_id, "store_id": store_id, "store_passwd": store_pass, "v": 1, "format": "json"})
     req = Request(f"{_ssl_base_url()}/validator/api/merchantTransIDvalidationAPI.php?{query}", method="GET")
     with urlopen(req, timeout=20) as response:
@@ -173,7 +173,6 @@ def _callback_url(name):
 
 @payment_bp.post("/orders/<int:order_id>/payments/sslcommerz/initiate")
 def sslcommerz_initiate(order_id):
-    """Create an SSLCommerz hosted checkout session and return GatewayPageURL."""
     user_id = _user_id()
     if user_id is None: return jsonify({"error": "Authentication required."}), 401
     store_id = os.getenv("SSLCOMMERZ_STORE_ID", "").strip()
@@ -206,14 +205,11 @@ def sslcommerz_initiate(order_id):
             "cus_add1": "Bangladesh", "cus_city": "Dhaka", "cus_state": "Dhaka", "cus_postcode": "1000", "cus_country": "Bangladesh",
             "shipping_method": "NO", "product_name": "Nafiz Commerce Order", "product_category": "General", "product_profile": "general",
         }
-        try:
-            result = _ssl_request("/gwprocess/v4/api.php", body)
+        try: result = _ssl_request("/gwprocess/v4/api.php", body)
         except Exception:
-            db.rollback()
-            return jsonify({"error": "Could not connect to SSLCommerz."}), 502
+            db.rollback(); return jsonify({"error": "Could not connect to SSLCommerz."}), 502
         if result.get("status") != "SUCCESS" or not result.get("GatewayPageURL"):
-            db.rollback()
-            return jsonify({"error": "SSLCommerz rejected the payment request.", "provider_response": result}), 502
+            db.rollback(); return jsonify({"error": "SSLCommerz rejected the payment request.", "provider_response": result}), 502
         db.execute(text("UPDATE payments SET provider_reference=:reference,transaction_id=:tran_id,status='initiated',updated_at=NOW() WHERE id=:payment_id"),
                    {"reference": result.get("sessionkey"), "tran_id": tran_id, "payment_id": payment["id"]})
         db.commit()
@@ -236,30 +232,37 @@ def _ssl_callback(status):
             if not (valid and amount_ok and currency_ok): return jsonify({"error": "Payment validation failed."}), 400
             _apply_payment_status(db, payment["order_id"], payment["id"], "paid", validation.get("bank_tran_id"), validation.get("val_id"))
             db.commit()
-            return redirect(f"{os.getenv('APP_BASE_URL','https://nafiz-ahmed12s.onrender.com').rstrip('/')}/payment/success")
+            return redirect(f"{os.getenv('APP_BASE_URL','https://nafiz-ahmed12s.onrender.com').rstrip('/')}/payment/success?order_id={payment['order_id']}")
         target = "failed" if status == "fail" else "cancelled"
         _apply_payment_status(db, payment["order_id"], payment["id"], target, body.get("bank_tran_id"), body.get("sessionkey"))
         db.commit()
-    return redirect(f"{os.getenv('APP_BASE_URL','https://nafiz-ahmed12s.onrender.com').rstrip('/')}/payment/{status}")
+    return redirect(f"{os.getenv('APP_BASE_URL','https://nafiz-ahmed12s.onrender.com').rstrip('/')}/payment/{status}?order_id={payment['order_id']}")
 
 
 @payment_bp.post("/payments/sslcommerz/success")
 def sslcommerz_success(): return _ssl_callback("success")
 
-
 @payment_bp.post("/payments/sslcommerz/fail")
 def sslcommerz_fail(): return _ssl_callback("fail")
 
-
 @payment_bp.post("/payments/sslcommerz/cancel")
 def sslcommerz_cancel(): return _ssl_callback("cancel")
-
 
 @payment_bp.post("/payments/sslcommerz/ipn")
 def sslcommerz_ipn(): return _ssl_callback("success")
 
 
+@payment_bp.get("/../payment/<string:result>")
+def invalid_result_route(result):
+    return redirect(f"/payment/{result}")
+
+
+@payment_bp.get("/payment-result/<string:result>")
+def payment_result(result):
+    if result not in {"success", "fail", "cancel"}: return jsonify({"error": "Invalid payment result."}), 404
+    return render_template("payment_result.html", result=result)
+
+
 def register_payment_routes(app):
-    """Register payment endpoints exactly once."""
     if payment_bp.name not in app.blueprints:
         app.register_blueprint(payment_bp)
