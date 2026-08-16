@@ -2,253 +2,46 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <meta name="description" content="Nafiz Ahmed — Premium personal portfolio website.">
-
+    <meta name="description" content="Nafiz — a unified platform to shop, sell, build websites, manage orders and grow online.">
     <meta name="theme-color" content="#030712">
-
-    <title>Nafiz Ahmed — Premium Portfolio</title>
-
+    <title>Nafiz. — Build • Sell • Earn • Grow</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .platform-page{min-height:100vh;background:#030712;color:#eef2ff;overflow:hidden}.platform-page a{text-decoration:none;color:inherit}.platform-shell{width:min(1180px,92%);margin:auto}
+        .platform-nav{position:sticky;top:18px;z-index:50;margin:18px auto 0;padding:14px 18px;border:1px solid rgba(148,163,184,.16);border-radius:18px;background:rgba(3,7,18,.78);backdrop-filter:blur(18px);display:flex;align-items:center;justify-content:space-between;gap:18px}.platform-brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px}.platform-brand-mark{display:grid;place-items:center;width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#38bdf8,#6366f1);color:white}.platform-brand span:last-child{color:#c7d2fe}.platform-links{display:flex;gap:20px;align-items:center;color:#94a3b8;font-size:14px}.platform-links a:hover{color:white}.platform-actions{display:flex;gap:9px;align-items:center}.platform-btn{padding:10px 15px;border-radius:11px;border:1px solid rgba(148,163,184,.18);font-weight:700;font-size:13px}.platform-btn.primary{background:linear-gradient(135deg,#38bdf8,#6366f1);color:white;border:0}.platform-btn.ghost{background:rgba(15,23,42,.7)}
+        .platform-hero{position:relative;padding:92px 0 56px;text-align:center}.platform-hero:before,.platform-hero:after{content:"";position:absolute;border-radius:50%;filter:blur(70px);opacity:.28;pointer-events:none}.platform-hero:before{width:360px;height:360px;background:#0ea5e9;left:-120px;top:60px}.platform-hero:after{width:360px;height:360px;background:#7c3aed;right:-120px;top:40px}.platform-kicker{display:inline-flex;padding:8px 13px;border-radius:999px;border:1px solid rgba(96,165,250,.25);background:rgba(30,41,59,.55);color:#7dd3fc;font-size:11px;font-weight:800;letter-spacing:2px}.platform-hero h1{position:relative;margin:22px auto 16px;max-width:900px;font-size:clamp(42px,7vw,78px);line-height:.98;letter-spacing:-3px}.platform-gradient{background:linear-gradient(90deg,#38bdf8,#818cf8,#c084fc);-webkit-background-clip:text;background-clip:text;color:transparent}.platform-hero p{position:relative;max-width:720px;margin:0 auto;color:#94a3b8;font-size:18px;line-height:1.7}.platform-hero-cta{position:relative;display:flex;justify-content:center;gap:12px;margin-top:30px;flex-wrap:wrap}.big-btn{padding:14px 22px;border-radius:13px;font-weight:800;border:1px solid rgba(148,163,184,.18)}.big-btn.primary{background:linear-gradient(135deg,#38bdf8,#6366f1)}.big-btn.dark{background:#0f172a}
+        .feature-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:20px 0 80px}.feature-card{position:relative;min-height:190px;padding:23px;border:1px solid rgba(148,163,184,.14);border-radius:20px;background:linear-gradient(145deg,rgba(15,23,42,.94),rgba(7,12,28,.88));box-shadow:0 20px 50px rgba(0,0,0,.18);transition:.25s}.feature-card:hover{transform:translateY(-5px);border-color:rgba(96,165,250,.4)}.feature-icon{font-size:28px;margin-bottom:22px}.feature-card h3{margin:0 0 8px;font-size:19px}.feature-card p{margin:0;color:#94a3b8;line-height:1.55;font-size:13px}.feature-card .feature-link{display:inline-block;margin-top:18px;color:#7dd3fc;font-size:13px;font-weight:800}.feature-card.pay{background:linear-gradient(145deg,rgba(14,116,144,.26),rgba(30,41,59,.9))}.feature-card.sell{background:linear-gradient(145deg,rgba(79,70,229,.24),rgba(30,41,59,.9))}.feature-card.build{background:linear-gradient(145deg,rgba(124,58,237,.22),rgba(30,41,59,.9))}.feature-card.grow{background:linear-gradient(145deg,rgba(5,150,105,.18),rgba(30,41,59,.9))}
+        .platform-section{padding:70px 0;border-top:1px solid rgba(148,163,184,.08)}.section-kicker{color:#818cf8;font-size:11px;font-weight:800;letter-spacing:3px}.platform-section h2{font-size:clamp(30px,4vw,48px);margin:10px 0}.platform-section .lead{color:#94a3b8;max-width:650px;line-height:1.7}.quick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:28px}.quick-card{padding:24px;border-radius:18px;border:1px solid rgba(148,163,184,.12);background:#080d1c}.quick-card strong{display:block;font-size:18px;margin-bottom:8px}.quick-card span{color:#94a3b8;font-size:13px;line-height:1.6}.quick-card a{display:inline-block;margin-top:16px;color:#7dd3fc;font-weight:800;font-size:13px}
+        .portfolio-strip{display:grid;grid-template-columns:1.2fr 1fr;gap:18px;margin-top:28px}.portfolio-card{padding:28px;border-radius:20px;border:1px solid rgba(148,163,184,.12);background:linear-gradient(145deg,#0b1224,#060b17)}.portfolio-card h3{font-size:25px;margin:0 0 12px}.portfolio-card p{color:#94a3b8;line-height:1.7}.skill-pills{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}.skill-pills span{padding:7px 10px;border-radius:999px;background:#111827;color:#cbd5e1;font-size:12px;border:1px solid rgba(148,163,184,.1)}
+        .platform-footer{padding:35px 0 50px;color:#64748b;text-align:center;border-top:1px solid rgba(148,163,184,.08);font-size:13px}.footer-nav{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;margin-bottom:15px;color:#94a3b8}.footer-nav a:hover{color:white}
+        @media(max-width:900px){.platform-links{display:none}.feature-grid{grid-template-columns:repeat(2,1fr)}.quick-grid{grid-template-columns:1fr 1fr}.portfolio-strip{grid-template-columns:1fr}}@media(max-width:560px){.platform-nav{top:8px}.platform-actions .ghost{display:none}.feature-grid,.quick-grid{grid-template-columns:1fr}.platform-hero{padding-top:70px}.platform-hero h1{letter-spacing:-1.5px}}
+    </style>
 </head>
-
 <body>
-
-    <div class="ambient ambient-one"></div>
-    <div class="ambient ambient-two"></div>
-    <div class="noise"></div>
-
-    <header class="site-header" id="siteHeader">
-        <nav class="navbar">
-            <a href="#home" class="brand">
-                <span class="brand-mark">N</span>
-                <span class="brand-text">Nafiz<span>.</span></span>
-            </a>
-
-            <div class="nav-links" id="navLinks">
-                <a href="#home" class="active">Home</a>
-                <a href="#about">About</a>
-                <a href="#skills">Skills</a>
-                <a href="#services">Services</a>
-                <a href="#projects">Projects</a>
-                <a href="#journey">Journey</a>
-                <a href="#contact">Contact</a>
-            </div>
-
-            <div class="nav-auth">
-                <a href="{{ url_for('user_login') }}" class="nav-login">Login</a>
-                <a href="{{ url_for('register') }}" class="nav-cta">Register <span>→</span></a>
-            </div>
-
-            <button class="menu-toggle" id="menuToggle" type="button" aria-label="Open menu" aria-expanded="false">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-        </nav>
+<div class="platform-page"><div class="platform-shell">
+    <header class="platform-nav">
+        <a class="platform-brand" href="{{ url_for('home') }}"><span class="platform-brand-mark">N</span><span>Nafiz<span>.</span></span></a>
+        <nav class="platform-links"><a href="#platform">Platform</a><a href="#portfolio">Portfolio</a><a href="#how">How it works</a><a href="#contact">Contact</a></nav>
+        <div class="platform-actions"><a class="platform-btn ghost" href="{{ url_for('user_login') }}">Login</a><a class="platform-btn primary" href="{{ url_for('register') }}">Create account →</a></div>
     </header>
-
     <main>
-        <section class="hero" id="home">
-            <div class="hero-grid"></div>
-            <div class="hero-orb orb-one"></div>
-            <div class="hero-orb orb-two"></div>
-
-            <div class="hero-content">
-                <div class="availability">
-                    <span class="status-dot"></span>
-                    Available for new opportunities
-                </div>
-
-                <div class="profile-wrapper">
-                    <div class="profile-glow"></div>
-                    <div class="profile-orbit orbit-one"></div>
-                    <div class="profile-orbit orbit-two"></div>
-                    <img src="{{ url_for('static', filename='profile.jpg') }}" alt="Nafiz Ahmed" class="profile">
-                </div>
-
-                <div class="hero-eyebrow">PYTHON • WEB • TECHNOLOGY</div>
-
-                <h1 class="hero-title">
-                    Hi, I'm
-                    <span class="gradient-text">Nafiz Ahmed</span>
-                    <br>
-                    I Build Digital Experiences.
-                </h1>
-
-                <p class="hero-description">
-                    A passionate developer focused on building modern websites, Python applications,
-                    APIs and digital solutions with clean design and powerful technology.
-                </p>
-
-                <div class="hero-actions">
-                    <a href="#projects" class="btn btn-primary">View My Work <span>→</span></a>
-                    <a href="#contact" class="btn btn-secondary">Contact Me <span>↗</span></a>
-                </div>
-
-                <div class="hero-social">
-                    <span>CONNECT WITH ME</span>
-                    <div class="social-mini">
-                        <a href="https://github.com/" target="_blank" rel="noopener">GH</a>
-                        <a href="https://www.linkedin.com/" target="_blank" rel="noopener">IN</a>
-                        <a href="#contact">@</a>
-                    </div>
-                </div>
-
-                <div class="hero-tech">
-                    <i>◆</i>
-                    Building with Python • Flask • HTML • CSS • JavaScript
-                </div>
-            </div>
-
-            <div class="scroll-indicator">
-                <span>Scroll</span>
-                <div class="scroll-line"></div>
-            </div>
+        <section class="platform-hero" id="platform"><span class="platform-kicker">NAFIZ DIGITAL PLATFORM</span><h1>Build. <span class="platform-gradient">Sell.</span> Pay. <span class="platform-gradient">Grow.</span></h1><p>এক জায়গা থেকে নিজের website তৈরি করো, products sell করো, secure payment নাও, orders manage করো এবং online income-এর জন্য platform grow করো.</p><div class="platform-hero-cta"><a class="big-btn primary" href="{{ url_for('shop') }}">🛒 Open Store</a><a class="big-btn dark" href="{{ url_for('dashboard') }}">🌐 Build Website</a></div></section>
+        <section class="feature-grid" aria-label="Platform features">
+            <a class="feature-card pay" href="{{ url_for('shop') }}"><div class="feature-icon">💳</div><h3>Payments</h3><p>Checkout থেকে SSLCommerz payment flow-এ যাও এবং online payment collect করো.</p><span class="feature-link">Pay securely →</span></a>
+            <a class="feature-card" href="{{ url_for('shop') }}"><div class="feature-icon">🛒</div><h3>Store</h3><p>Digital ও physical products দেখাও, cart এবং checkout ব্যবহার করো.</p><span class="feature-link">Shop now →</span></a>
+            <a class="feature-card build" href="{{ url_for('dashboard') }}"><div class="feature-icon">🌐</div><h3>Website Builder</h3><p>Dashboard থেকে নিজের site launch করো এবং unique slug-এ publish করো.</p><span class="feature-link">Launch a site →</span></a>
+            <a class="feature-card sell" href="{{ url_for('dashboard') }}"><div class="feature-icon">📦</div><h3>Sell & Manage</h3><p>Seller tools, products, stock এবং business operations এক জায়গায় রাখো.</p><span class="feature-link">Open dashboard →</span></a>
+            <a class="feature-card grow" href="{{ url_for('dashboard') }}"><div class="feature-icon">🔗</div><h3>Affiliate</h3><p>Affiliate profile তৈরি করে referral link ও conversion-based earning track করার foundation.</p><span class="feature-link">Go to dashboard →</span></a>
+            <a class="feature-card" href="{{ url_for('orders_page') }}"><div class="feature-icon">🚚</div><h3>Orders</h3><p>নিজের purchases এবং order status এক জায়গা থেকে দেখো.</p><span class="feature-link">View orders →</span></a>
+            <a class="feature-card" href="#contact"><div class="feature-icon">📢</div><h3>Advertising</h3><p>Future advertising placements, campaigns এবং monetization-এর জন্য platform-ready space.</p><span class="feature-link">Explore →</span></a>
+            <a class="feature-card" href="{{ url_for('account') }}"><div class="feature-icon">👤</div><h3>Account</h3><p>Profile, password এবং account settings secure authenticated session-এর সাথে manage করো.</p><span class="feature-link">Account settings →</span></a>
         </section>
-
-        <section class="section section-divider" id="about">
-            <div class="section-heading">
-                <span class="section-label">ABOUT ME</span>
-                <h2>Turning Ideas Into <span class="gradient-text">Digital Reality</span></h2>
-                <p>I enjoy learning technology and turning ideas into useful digital products.</p>
-            </div>
-
-            <div class="about-layout">
-                <article class="glass-card about-text reveal">
-                    <span class="card-number">01 / ABOUT</span>
-                    <h3>Developer & Technology Enthusiast</h3>
-                    <p>I'm Nafiz Ahmed, a developer focused on Python, web development and modern digital experiences.</p>
-                    <p>My goal is to continuously improve my skills and build practical projects that solve real-world problems.</p>
-                    <p>I believe great websites should not only look beautiful, but also be fast, responsive and easy to use.</p>
-                </article>
-
-                <div class="about-features">
-                    <article class="glass-card feature-card reveal">
-                        <div class="feature-icon">⚡</div>
-                        <div><h3>Fast & Modern</h3><p>Clean and responsive interfaces.</p></div>
-                    </article>
-                    <article class="glass-card feature-card reveal">
-                        <div class="feature-icon">◈</div>
-                        <div><h3>Problem Solving</h3><p>Practical solutions through code.</p></div>
-                    </article>
-                    <article class="glass-card feature-card reveal">
-                        <div class="feature-icon">✓</div>
-                        <div><h3>Continuous Learning</h3><p>Always improving my skills.</p></div>
-                    </article>
-                </div>
-            </div>
-        </section>
-
-        <section class="section section-divider" id="skills">
-            <div class="section-heading">
-                <span class="section-label">MY SKILLS</span>
-                <h2>Tools I <span class="gradient-text">Work With</span></h2>
-                <p>Technologies and tools I use while learning and building projects.</p>
-            </div>
-
-            <div class="skills-grid">
-                <article class="glass-card skill-card reveal"><div class="skill-icon python">PY</div><div class="skill-info"><div class="skill-name"><h3>Python</h3><strong>85%</strong></div><span>Programming & Automation</span><div class="progress-track"><div class="progress-fill" style="--progress:85%"></div></div></div></article>
-                <article class="glass-card skill-card reveal"><div class="skill-icon flask">FL</div><div class="skill-info"><div class="skill-name"><h3>Flask</h3><strong>75%</strong></div><span>Python Web Framework</span><div class="progress-track"><div class="progress-fill" style="--progress:75%"></div></div></div></article>
-                <article class="glass-card skill-card reveal"><div class="skill-icon html">HTML</div><div class="skill-info"><div class="skill-name"><h3>HTML</h3><strong>90%</strong></div><span>Semantic Web Structure</span><div class="progress-track"><div class="progress-fill" style="--progress:90%"></div></div></div></article>
-                <article class="glass-card skill-card reveal"><div class="skill-icon css">CSS</div><div class="skill-info"><div class="skill-name"><h3>CSS</h3><strong>85%</strong></div><span>Responsive UI Design</span><div class="progress-track"><div class="progress-fill" style="--progress:85%"></div></div></div></article>
-                <article class="glass-card skill-card reveal"><div class="skill-icon git">GIT</div><div class="skill-info"><div class="skill-name"><h3>Git</h3><strong>70%</strong></div><span>Version Control</span><div class="progress-track"><div class="progress-fill" style="--progress:70%"></div></div></div></article>
-                <article class="glass-card skill-card reveal"><div class="skill-icon linux">LNX</div><div class="skill-info"><div class="skill-name"><h3>Linux</h3><strong>70%</strong></div><span>Linux Environment</span><div class="progress-track"><div class="progress-fill" style="--progress:70%"></div></div></div></article>
-                <article class="glass-card skill-card reveal"><div class="skill-icon sql">SQL</div><div class="skill-info"><div class="skill-name"><h3>SQL</h3><strong>65%</strong></div><span>Database Management</span><div class="progress-track"><div class="progress-fill" style="--progress:65%"></div></div></div></article>
-                <article class="glass-card skill-card reveal"><div class="skill-icon api">API</div><div class="skill-info"><div class="skill-name"><h3>REST API</h3><strong>70%</strong></div><span>Backend Integration</span><div class="progress-track"><div class="progress-fill" style="--progress:70%"></div></div></div></article>
-            </div>
-        </section>
-
-        <section class="section section-divider" id="services">
-            <div class="section-heading">
-                <span class="section-label">SERVICES</span>
-                <h2>What I <span class="gradient-text">Can Build</span></h2>
-                <p>Digital solutions designed with modern technologies and clean architecture.</p>
-            </div>
-            <div class="services-grid">
-                <article class="glass-card service-card reveal"><span class="service-index">01</span><div class="service-icon">&lt;/&gt;</div><h3>Web Development</h3><p>Responsive and modern websites using HTML, CSS, JavaScript and Python.</p><a href="#contact">Start a project <span>↗</span></a></article>
-                <article class="glass-card service-card reveal"><span class="service-index">02</span><div class="service-icon python-service">PY</div><h3>Python Development</h3><p>Python scripts, automation tools, backend systems and practical applications.</p><a href="#contact">Start a project <span>↗</span></a></article>
-                <article class="glass-card service-card reveal"><span class="service-index">03</span><div class="service-icon api-service">API</div><h3>API Development</h3><p>Simple and scalable REST APIs for websites and applications.</p><a href="#contact">Start a project <span>↗</span></a></article>
-            </div>
-        </section>
-
-        <section class="section section-divider" id="projects">
-            <div class="section-heading projects-heading">
-                <div><span class="section-label">SELECTED WORK</span><h2>Featured <span class="gradient-text">Projects</span></h2></div>
-                <p>A selection of practical projects and experiments built while learning.</p>
-            </div>
-            <div class="projects-grid">
-                <article class="glass-card project-card reveal"><div class="project-image project-image-one"><div class="code-window"><span></span><span></span><span></span><div class="code-lines"><i></i><i></i><i></i><i></i><i></i></div></div></div><div class="project-content"><div class="project-meta"><span>PYTHON</span><small>01</small></div><h3>Python Automation</h3><p>A practical automation project designed to simplify repetitive tasks using Python.</p><div class="project-tags"><span>Python</span><span>Automation</span><span>Scripts</span></div><div class="project-links"><a href="#contact">View Project ↗</a><a href="https://github.com/" target="_blank" rel="noopener">GitHub ↗</a></div></div></article>
-                <article class="glass-card project-card reveal"><div class="project-image project-image-two"><div class="factor-ui"><div class="factor-title">NUMBER ANALYZER</div><div class="factor-input">144</div><div class="factor-result">Result: 2 × 2 × 2 × 2 × 3 × 3</div></div></div><div class="project-content"><div class="project-meta"><span>PYTHON</span><small>02</small></div><h3>Number Analyzer</h3><p>A simple interactive application for analyzing numbers and displaying useful mathematical results.</p><div class="project-tags"><span>Python</span><span>Logic</span><span>Algorithms</span></div><div class="project-links"><a href="#contact">View Project ↗</a><a href="https://github.com/" target="_blank" rel="noopener">GitHub ↗</a></div></div></article>
-                <article class="glass-card project-card reveal"><div class="project-image project-image-three"><div class="even-ui"><strong>24</strong><span>EVEN NUMBER</span></div></div><div class="project-content"><div class="project-meta"><span>WEB APP</span><small>03</small></div><h3>Number Checker</h3><p>A clean web interface that checks numbers and instantly displays the result.</p><div class="project-tags"><span>HTML</span><span>CSS</span><span>JavaScript</span></div><div class="project-links"><a href="#contact">View Project ↗</a><a href="https://github.com/" target="_blank" rel="noopener">GitHub ↗</a></div></div></article>
-            </div>
-        </section>
-
-        <section class="section section-divider" id="journey">
-            <div class="section-heading">
-                <span class="section-label">MY JOURNEY</span>
-                <h2>Learning, <span class="gradient-text">Building,</span> Growing.</h2>
-                <p>My development journey is focused on continuous learning and practical work.</p>
-            </div>
-            <div class="journey">
-                <div class="journey-line"></div>
-                <div class="journey-item reveal"><div class="journey-icon">01</div><h3>Started Coding</h3><p>Programming fundamentals</p></div>
-                <div class="journey-item reveal"><div class="journey-icon">02</div><h3>Learned Python</h3><p>Logic & programming</p></div>
-                <div class="journey-item reveal"><div class="journey-icon">03</div><h3>Web Development</h3><p>Frontend & backend</p></div>
-                <div class="journey-item reveal"><div class="journey-icon">04</div><h3>Build Projects</h3><p>Practical experience</p></div>
-                <div class="journey-item reveal"><div class="journey-icon">05</div><h3>Keep Growing</h3><p>Professional development</p></div>
-            </div>
-        </section>
-
-        <section class="section section-divider">
-            <div class="glass-card newsletter-card reveal">
-                <div class="newsletter-content"><div class="newsletter-icon">✦</div><h3>Stay Connected</h3><p>Subscribe for updates, new projects and technology content.</p></div>
-                <form class="newsletter-form" id="newsletterForm"><div class="newsletter-input-group"><input type="email" name="email" placeholder="Enter your email address" required><button type="submit" class="btn btn-primary">Subscribe</button></div><span class="newsletter-note">No spam. Unsubscribe anytime.</span></form>
-            </div>
-        </section>
-
-        <section class="section contact-section section-divider" id="contact">
-            <div class="contact-glow"></div>
-            <div class="section-heading"><span class="section-label">CONTACT</span><h2>Let's Build <span class="gradient-text">Something Great</span></h2><p>Have an idea, project or opportunity? Let's talk.</p></div>
-            <div class="contact-grid">
-                <div class="glass-card contact-info reveal">
-                    <span class="contact-small">GET IN TOUCH</span>
-                    <h3>Let's start a conversation.</h3>
-                    <p>I'm always interested in learning, building new projects and discussing interesting ideas.</p>
-                    <div class="contact-details">
-                        <div class="contact-detail"><div class="detail-icon">@</div><div><small>EMAIL</small><a href="mailto:your@email.com">your@email.com</a></div></div>
-                        <div class="contact-detail"><div class="detail-icon">GH</div><div><small>GITHUB</small><a href="https://github.com/" target="_blank" rel="noopener">github.com</a></div></div>
-                        <div class="contact-detail"><div class="detail-icon">IN</div><div><small>LINKEDIN</small><a href="https://www.linkedin.com/" target="_blank" rel="noopener">LinkedIn</a></div></div>
-                    </div>
-                    <div class="social-links"><a href="https://github.com/" target="_blank" rel="noopener"><span>GH</span>GitHub</a><a href="https://www.linkedin.com/" target="_blank" rel="noopener"><span>IN</span>LinkedIn</a><a href="mailto:your@email.com"><span>@</span>Email</a></div>
-                </div>
-
-                <div class="glass-card contact-form-card reveal">
-                    <form id="contactForm" method="POST" action="/contact">
-                        <div class="form-row">
-                            <div class="form-group"><label for="name">YOUR NAME</label><input id="name" name="name" type="text" placeholder="Your name" required></div>
-                            <div class="form-group"><label for="email">EMAIL</label><input id="email" name="email" type="email" placeholder="your@email.com" required></div>
-                        </div>
-                        <div class="form-group"><label for="subject">SUBJECT</label><input id="subject" name="subject" type="text" placeholder="What is this about?" required></div>
-                        <div class="form-group"><label for="message">MESSAGE</label><textarea id="message" name="message" placeholder="Tell me about your project..." required></textarea></div>
-                        <button type="submit" class="submit-button">Send Message <span>→</span></button>
-                    </form>
-                </div>
-            </div>
-        </section>
+        <section class="platform-section" id="how"><span class="section-kicker">ONE PLATFORM</span><h2>তোমার পুরো online business-এর starting point</h2><p class="lead">Visitor প্রথমে আর শুধু portfolio দেখবে না। Homepage থেকেই core platform-এর প্রধান কাজগুলো চোখের সামনে থাকবে—তারপর যে feature দরকার সেটিতে সরাসরি যেতে পারবে।</p><div class="quick-grid"><div class="quick-card"><strong>1. Create</strong><span>Account খুলে dashboard থেকে website launch করো এবং নিজের digital presence তৈরি করো.</span><a href="{{ url_for('register') }}">Create account →</a></div><div class="quick-card"><strong>2. Sell</strong><span>Store-এ product, cart এবং checkout flow ব্যবহার করে customer-এর জন্য buying experience তৈরি করো.</span><a href="{{ url_for('shop') }}">Open store →</a></div><div class="quick-card"><strong>3. Earn & Grow</strong><span>Orders, seller tools, affiliate এবং future advertising features দিয়ে platform-কে scalable business system বানাও.</span><a href="{{ url_for('dashboard') }}">Open dashboard →</a></div></div></section>
+        <section class="platform-section" id="portfolio"><span class="section-kicker">ABOUT NAFIZ</span><h2>Portfolio-ও থাকবে — কিন্তু platform-এর নিচে</h2><div class="portfolio-strip"><article class="portfolio-card"><h3>Hi, I'm Nafiz Ahmed.</h3><p>Python, Flask, web development এবং modern digital experiences নিয়ে আমি শিখছি ও practical projects তৈরি করছি। এই portfolio অংশে আমার skills, projects এবং journey থাকবে—কিন্তু visitor প্রথমেই আমার platform-এর business features দেখতে পাবে.</p><a class="feature-link" href="#contact">Work with me →</a></article><article class="portfolio-card"><h3>Core Skills</h3><p>Projects ও services-এর জন্য আমার current technology stack:</p><div class="skill-pills"><span>Python</span><span>Flask</span><span>HTML</span><span>CSS</span><span>JavaScript</span><span>SQL</span><span>REST API</span><span>Linux</span><span>Git</span></div></article></div></section>
+        <section class="platform-section" id="contact"><span class="section-kicker">CONTACT</span><h2>Need a custom feature?</h2><p class="lead">Website, automation, API বা নতুন commerce feature নিয়ে কাজ করতে চাইলে নিচের contact form ব্যবহার করো.</p><div class="portfolio-card" style="margin-top:25px;max-width:760px"><form method="POST" action="/contact" style="display:grid;gap:13px"><input name="name" placeholder="Your name" required style="padding:13px;border-radius:10px;border:1px solid #1e293b;background:#020617;color:white"><input name="email" type="email" placeholder="your@email.com" required style="padding:13px;border-radius:10px;border:1px solid #1e293b;background:#020617;color:white"><input name="subject" placeholder="Subject" required style="padding:13px;border-radius:10px;border:1px solid #1e293b;background:#020617;color:white"><textarea name="message" placeholder="Tell me what you want to build..." required style="min-height:130px;padding:13px;border-radius:10px;border:1px solid #1e293b;background:#020617;color:white"></textarea><button class="big-btn primary" type="submit">Send message →</button></form></div></section>
     </main>
-
-    <footer class="site-footer">
-        <div class="footer-inner">
-            <a href="#home" class="brand footer-brand"><span class="brand-mark">N</span><span class="brand-text">Nafiz<span>.</span></span></a>
-            <p>© 2026 Nafiz Ahmed. All rights reserved.</p>
-            <div class="footer-links"><a href="#home">Home</a><a href="#about">About</a><a href="#projects">Projects</a><a href="#contact">Contact</a></div>
-            <a href="#home" class="back-top" aria-label="Back to top">↑</a>
-        </div>
-    </footer>
-
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <footer class="platform-footer"><div class="footer-nav"><a href="{{ url_for('shop') }}">Store</a><a href="{{ url_for('dashboard') }}">Dashboard</a><a href="{{ url_for('orders_page') }}">Orders</a><a href="{{ url_for('account') }}">Account</a><a href="#portfolio">Portfolio</a></div><div>© 2026 Nafiz Ahmed. Build • Sell • Earn • Grow.</div></footer>
+</div></div>
 </body>
 </html>
