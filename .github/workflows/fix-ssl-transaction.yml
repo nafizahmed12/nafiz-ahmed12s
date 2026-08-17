@@ -50,8 +50,7 @@ jobs:
                   raise SystemExit(f'Expected code block not found: {old[:100]}')
               text = text.replace(old, new)
 
-          marker = 'SSLCommerz transaction handling'
-          if marker not in text:
+          if '_ssl_callback(status)' not in text:
               raise SystemExit('Unexpected payment_routes.py content')
 
           path.write_text(text)
