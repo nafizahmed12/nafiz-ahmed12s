@@ -1,3 +1,4 @@
+import hmac
 import os
 from datetime import timedelta
 from urllib.parse import urlparse
@@ -15,6 +16,7 @@ from seller_routes import register_seller_routes
 from digital_affiliate_routes import register_digital_affiliate_routes
 from shop_routes import register_shop_routes
 from admin_product_routes import register_admin_product_routes
+from admin_security import register_admin_session_guard, mark_admin_authenticated, clear_admin_session
 from schema import (
     allow_contact, allow_login, allow_registration, allow_subscription,
     authenticate_user, change_password, create_message, create_subscriber,
@@ -40,6 +42,7 @@ register_seller_routes(app)
 register_digital_affiliate_routes(app)
 register_shop_routes(app)
 register_admin_product_routes(app)
+register_admin_session_guard(app)
 
 @app.after_request
 def add_security_headers(response):
@@ -245,8 +248,9 @@ def login():
     if request.method=="POST":
         username=request.form.get("username","").strip()
         if not allow_login(request.remote_addr,f"admin:{username}",limit=5,window_seconds=900): return "Too many admin login attempts. Please try again in a few minutes.",429
-        if username==os.getenv("ADMIN_USERNAME") and request.form.get("password","")==os.getenv("ADMIN_PASSWORD"):
-            session.clear(); session.permanent=True; session["admin_logged_in"]=True; return redirect(url_for("admin"))
+        configured_username=os.getenv("ADMIN_USERNAME",""); configured_password=os.getenv("ADMIN_PASSWORD",""); supplied_password=request.form.get("password","")
+        if configured_username and configured_password and hmac.compare_digest(username,configured_username) and hmac.compare_digest(supplied_password,configured_password):
+            session.clear(); session.permanent=True; mark_admin_authenticated(); return redirect(url_for("admin"))
         return "Invalid username or password.",401
     return render_template("login.html")
 
@@ -260,7 +264,7 @@ def admin():
 
 @app.route("/logout")
 def logout():
-    session.pop("admin_logged_in",None); session.pop("_permanent",None); return redirect(url_for("login"))
+    clear_admin_session(); return redirect(url_for("login"))
 
 if __name__=="__main__":
     from database import init_db
