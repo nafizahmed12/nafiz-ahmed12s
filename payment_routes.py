@@ -5,6 +5,7 @@ import hmac
 import json
 import logging
 import os
+from uuid import uuid4
 from decimal import Decimal, InvalidOperation
 from urllib.error import HTTPError
 from urllib.parse import urlencode
@@ -259,22 +260,25 @@ def sslcommerz_initiate(order_id):
             return jsonify({"error": "Order is already paid."}), 409
 
         payment = db.execute(text("""SELECT id,transaction_id,provider_reference,status,amount,currency FROM payments
-            WHERE order_id=:order_id AND provider='sslcommerz' ORDER BY id DESC LIMIT 1 FOR UPDATE"""),
+            WHERE order_id=:order_id AND provider='sslcommerz' AND status IN ('initiated','pending')
+            ORDER BY id DESC LIMIT 1 FOR UPDATE"""),
             {"order_id": order_id}).mappings().first()
         if payment is None:
+            tran_id = f"{order['order_number']}-{uuid4().hex[:6].upper()}"
             payment_id = db.execute(text("""INSERT INTO payments(order_id,provider,transaction_id,status,amount,currency,created_at,updated_at)
                 VALUES(:order_id,'sslcommerz',:transaction_id,'initiated',:amount,:currency,NOW(),NOW()) RETURNING id"""),
-                {"order_id": order_id, "transaction_id": order["order_number"], "amount": order["total_amount"],
+                {"order_id": order_id, "transaction_id": tran_id, "amount": order["total_amount"],
                  "currency": order["currency"]}).scalar_one()
             db.execute(text("UPDATE commerce_orders SET payment_status='initiated',updated_at=NOW() WHERE id=:order_id"),
                        {"order_id": order_id})
             db.commit()
-            payment = {"id": payment_id, "transaction_id": order["order_number"], "provider_reference": None,
+            payment = {"id": payment_id, "transaction_id": tran_id, "provider_reference": None,
                        "status": "initiated", "amount": order["total_amount"], "currency": order["currency"]}
         elif payment["status"] == "paid":
             return jsonify({"error": "Order is already paid."}), 409
+        else:
+            tran_id = str(payment["transaction_id"] or f"{order['order_number']}-{uuid4().hex[:6].upper()}")
 
-        tran_id = str(order["order_number"])
         body = {
             "store_id": store_id, "store_passwd": store_pass, "total_amount": _money(order["total_amount"]),
             "currency": order["currency"] or "BDT", "tran_id": tran_id,
@@ -337,7 +341,7 @@ def _ssl_callback(status):
             logger.error("SSLCommerz callback payment lookup failed tran_id=%s sessionkey_present=%s", tran_id, bool(sessionkey))
             return jsonify({"error": "Payment not found."}), 404
 
-        expected_tran_id = str(payment["order_number"] or "").strip()
+        expected_tran_id = str(payment["transaction_id"] or payment["order_number"] or "").strip()
         if expected_tran_id and expected_tran_id != tran_id:
             logger.error("SSLCommerz callback transaction mismatch callback_tran_id=%s expected_tran_id=%s payment_id=%s",
                          tran_id, expected_tran_id, payment["id"])
@@ -424,7 +428,7 @@ def sslcommerz_ipn():
         if payment is None:
             logger.error("SSLCommerz IPN payment lookup failed tran_id=%s sessionkey_present=%s", tran_id, bool(sessionkey))
             return jsonify({"error": "Payment not found."}), 404
-        expected_tran_id = str(payment["order_number"] or "").strip()
+        expected_tran_id = str(payment["transaction_id"] or payment["order_number"] or "").strip()
         if expected_tran_id and expected_tran_id != tran_id:
             logger.error("SSLCommerz IPN transaction mismatch callback_tran_id=%s expected_tran_id=%s payment_id=%s",
                          tran_id, expected_tran_id, payment["id"])
