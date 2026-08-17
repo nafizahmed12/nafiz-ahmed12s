@@ -3,8 +3,10 @@
 import hashlib
 import hmac
 import json
+import logging
 import os
 from decimal import Decimal, InvalidOperation
+from urllib.error import HTTPError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
@@ -14,6 +16,7 @@ from sqlalchemy import text
 from database import SessionLocal
 
 payment_bp = Blueprint("payment_api", __name__, url_prefix="/api")
+logger = logging.getLogger(__name__)
 
 ONLINE_PROVIDERS = {"bkash", "nagad", "sslcommerz", "stripe"}
 ALLOWED_PROVIDERS = ONLINE_PROVIDERS | {"cod", "manual"}
@@ -151,9 +154,18 @@ def _ssl_base_url():
 
 def _ssl_request(path, data):
     payload = urlencode(data).encode()
-    req = Request(f"{_ssl_base_url()}{path}", data=payload, headers={"Content-Type": "application/x-www-form-urlencoded"}, method="POST")
+    base_url = _ssl_base_url()
+    url = f"{base_url}{path}"
+    req = Request(url, data=payload, headers={"Content-Type": "application/x-www-form-urlencoded"}, method="POST")
+    logger.info("SSLCommerz request start endpoint=%s sandbox=%s", path, "1" if "sandbox.sslcommerz.com" in base_url else "0")
     with urlopen(req, timeout=20) as response:
-        return json.loads(response.read().decode("utf-8"))
+        raw = response.read().decode("utf-8", errors="replace")
+        logger.info("SSLCommerz response status=%s content_type=%s body_length=%s", response.status, response.headers.get("Content-Type"), len(raw))
+        try:
+            return json.loads(raw)
+        except json.JSONDecodeError:
+            logger.error("SSLCommerz returned non-JSON response body_preview=%r", raw[:500])
+            raise
 
 
 def _ssl_validate(tran_id):
@@ -163,7 +175,12 @@ def _ssl_validate(tran_id):
     query = urlencode({"tran_id": tran_id, "store_id": store_id, "store_passwd": store_pass, "v": 1, "format": "json"})
     req = Request(f"{_ssl_base_url()}/validator/api/merchantTransIDvalidationAPI.php?{query}", method="GET")
     with urlopen(req, timeout=20) as response:
-        return json.loads(response.read().decode("utf-8"))
+        raw = response.read().decode("utf-8", errors="replace")
+        try:
+            return json.loads(raw)
+        except json.JSONDecodeError:
+            logger.error("SSLCommerz validation returned non-JSON response status=%s body_preview=%r", response.status, raw[:500])
+            raise
 
 
 def _callback_url(name):
@@ -205,11 +222,31 @@ def sslcommerz_initiate(order_id):
             "cus_add1": "Bangladesh", "cus_city": "Dhaka", "cus_state": "Dhaka", "cus_postcode": "1000", "cus_country": "Bangladesh",
             "shipping_method": "NO", "product_name": "Nafiz Commerce Order", "product_category": "General", "product_profile": "general",
         }
-        try: result = _ssl_request("/gwprocess/v4/api.php", body)
+        try:
+            result = _ssl_request("/gwprocess/v4/api.php", body)
+        except HTTPError as exc:
+            error_body = exc.read().decode("utf-8", errors="replace")[:1000]
+            logger.error(
+                "SSLCommerz HTTP error order_id=%s payment_id=%s tran_id=%s status=%s reason=%s body_preview=%r",
+                order_id, payment["id"], tran_id, exc.code, exc.reason, error_body,
+            )
+            db.rollback()
+            return jsonify({"error": "SSLCommerz returned an HTTP error. Check Render logs for details."}), 502
         except Exception:
-            db.rollback(); return jsonify({"error": "Could not connect to SSLCommerz."}), 502
+            logger.exception(
+                "SSLCommerz initiate failed order_id=%s payment_id=%s tran_id=%s sandbox=%s",
+                order_id, payment["id"], tran_id,
+                "1" if os.getenv("SSLCOMMERZ_SANDBOX", "1") == "1" else "0",
+            )
+            db.rollback()
+            return jsonify({"error": "Could not connect to SSLCommerz. Check Render logs for details."}), 502
         if result.get("status") != "SUCCESS" or not result.get("GatewayPageURL"):
-            db.rollback(); return jsonify({"error": "SSLCommerz rejected the payment request.", "provider_response": result}), 502
+            logger.error(
+                "SSLCommerz rejected payment order_id=%s payment_id=%s tran_id=%s provider_status=%r failedreason=%r",
+                order_id, payment["id"], tran_id, result.get("status"), result.get("failedreason"),
+            )
+            db.rollback()
+            return jsonify({"error": "SSLCommerz rejected the payment request.", "provider_response": result}), 502
         db.execute(text("UPDATE payments SET provider_reference=:reference,transaction_id=:tran_id,status='initiated',updated_at=NOW() WHERE id=:payment_id"),
                    {"reference": result.get("sessionkey"), "tran_id": tran_id, "payment_id": payment["id"]})
         db.commit()
@@ -225,7 +262,13 @@ def _ssl_callback(status):
         if payment is None: return jsonify({"error": "Payment not found."}), 404
         if status == "success":
             try: validation = _ssl_validate(tran_id)
-            except Exception: return jsonify({"error": "Could not validate SSLCommerz transaction."}), 502
+            except HTTPError as exc:
+                error_body = exc.read().decode("utf-8", errors="replace")[:1000]
+                logger.error("SSLCommerz validation HTTP error tran_id=%s status=%s reason=%s body_preview=%r", tran_id, exc.code, exc.reason, error_body)
+                return jsonify({"error": "Could not validate SSLCommerz transaction. Check Render logs for details."}), 502
+            except Exception:
+                logger.exception("SSLCommerz validation failed tran_id=%s", tran_id)
+                return jsonify({"error": "Could not validate SSLCommerz transaction. Check Render logs for details."}), 502
             valid = validation and validation.get("status") in {"VALID", "VALIDATED"}
             amount_ok = valid and _money(validation.get("amount")) == _money(payment["amount"])
             currency_ok = valid and str(validation.get("currency", "")).upper() == str(payment["currency"] or "BDT").upper()
