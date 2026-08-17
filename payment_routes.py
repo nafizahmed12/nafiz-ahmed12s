@@ -318,14 +318,31 @@ def _ssl_callback(status):
     body = request.form.to_dict() or (request.get_json(silent=True) or {})
     tran_id = str(body.get("tran_id", "")).strip()
     val_id = str(body.get("val_id", "")).strip() or None
+    sessionkey = str(body.get("sessionkey", "")).strip()
     if not tran_id:
         return jsonify({"error": "tran_id is required."}), 400
 
     with SessionLocal() as db:
-        payment = db.execute(text("SELECT id,order_id,amount,currency,status FROM payments WHERE provider='sslcommerz' AND transaction_id=:tran_id FOR UPDATE"),
-                             {"tran_id": tran_id}).mappings().first()
+        payment = db.execute(text("""SELECT p.id,p.order_id,p.amount,p.currency,p.status,p.transaction_id,p.provider_reference,
+            o.order_number
+            FROM payments p JOIN commerce_orders o ON o.id=p.order_id
+            WHERE p.provider='sslcommerz'
+              AND (p.transaction_id=:tran_id OR o.order_number=:tran_id
+                   OR (:sessionkey <> '' AND p.provider_reference=:sessionkey))
+            ORDER BY CASE WHEN p.transaction_id=:tran_id THEN 0
+                          WHEN o.order_number=:tran_id THEN 1 ELSE 2 END, p.id DESC
+            LIMIT 1 FOR UPDATE"""),
+                             {"tran_id": tran_id, "sessionkey": sessionkey}).mappings().first()
         if payment is None:
+            logger.error("SSLCommerz callback payment lookup failed tran_id=%s sessionkey_present=%s", tran_id, bool(sessionkey))
             return jsonify({"error": "Payment not found."}), 404
+
+        expected_tran_id = str(payment["transaction_id"] or payment["order_number"] or "").strip()
+        if expected_tran_id and expected_tran_id != tran_id:
+            logger.error("SSLCommerz callback transaction mismatch callback_tran_id=%s expected_tran_id=%s payment_id=%s",
+                         tran_id, expected_tran_id, payment["id"])
+            db.rollback()
+            return jsonify({"error": "Payment transaction mismatch."}), 400
 
         if status == "success":
             try:
@@ -387,19 +404,32 @@ def sslcommerz_cancel():
 
 @payment_bp.post("/payments/sslcommerz/ipn")
 def sslcommerz_ipn():
-    # IPN is server-to-server. Reuse the same signed-by-gateway validation
-    # path, but return a simple JSON acknowledgement instead of redirecting.
     body = request.form.to_dict() or (request.get_json(silent=True) or {})
     tran_id = str(body.get("tran_id", "")).strip()
     val_id = str(body.get("val_id", "")).strip() or None
+    sessionkey = str(body.get("sessionkey", "")).strip()
     gateway_status = str(body.get("status", "")).strip().upper()
     if not tran_id:
         return jsonify({"error": "tran_id is required."}), 400
     with SessionLocal() as db:
-        payment = db.execute(text("SELECT id,order_id,amount,currency,status FROM payments WHERE provider='sslcommerz' AND transaction_id=:tran_id FOR UPDATE"),
-                             {"tran_id": tran_id}).mappings().first()
+        payment = db.execute(text("""SELECT p.id,p.order_id,p.amount,p.currency,p.status,p.transaction_id,p.provider_reference,o.order_number
+            FROM payments p JOIN commerce_orders o ON o.id=p.order_id
+            WHERE p.provider='sslcommerz'
+              AND (p.transaction_id=:tran_id OR o.order_number=:tran_id
+                   OR (:sessionkey <> '' AND p.provider_reference=:sessionkey))
+            ORDER BY CASE WHEN p.transaction_id=:tran_id THEN 0
+                          WHEN o.order_number=:tran_id THEN 1 ELSE 2 END, p.id DESC
+            LIMIT 1 FOR UPDATE"""),
+                             {"tran_id": tran_id, "sessionkey": sessionkey}).mappings().first()
         if payment is None:
+            logger.error("SSLCommerz IPN payment lookup failed tran_id=%s sessionkey_present=%s", tran_id, bool(sessionkey))
             return jsonify({"error": "Payment not found."}), 404
+        expected_tran_id = str(payment["transaction_id"] or payment["order_number"] or "").strip()
+        if expected_tran_id and expected_tran_id != tran_id:
+            logger.error("SSLCommerz IPN transaction mismatch callback_tran_id=%s expected_tran_id=%s payment_id=%s",
+                         tran_id, expected_tran_id, payment["id"])
+            db.rollback()
+            return jsonify({"error": "Payment transaction mismatch."}), 400
         if payment["status"] == "paid":
             db.commit()
             return jsonify({"ok": True, "status": "paid", "idempotent": True})
