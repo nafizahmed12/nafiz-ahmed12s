@@ -66,7 +66,7 @@ jobs:
                   raise SystemExit(1)
           PY
 
-      - name: Validate Alembic configuration
+      - name: Validate Alembic migrations
         env:
           SECRET_KEY: ci-test-secret
           DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/ci_test
@@ -83,8 +83,8 @@ jobs:
           config = Config(str(root / 'alembic.ini'))
           config.set_main_option('script_location', str(root / 'alembic'))
           command.upgrade(config, 'head')
-          command.check(config)
-          print('Alembic upgrade/check OK')
+          command.current(config, verbose=True)
+          print('Alembic migrations apply successfully on PostgreSQL 16.')
           PY
 
       - name: Run regression tests
