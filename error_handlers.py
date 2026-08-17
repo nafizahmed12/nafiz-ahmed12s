@@ -120,7 +120,8 @@ def _log_client_error(code, error):
 def _response(code, message):
     """Return JSON for API-style requests and plain text otherwise."""
     wants_json = (
-        request.path.startswith("/health/")
+        request.path.startswith("/api/")
+        or request.path.startswith("/health/")
         or request.path == "/health"
         or request.accept_mimetypes.best == "application/json"
     )
