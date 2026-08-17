@@ -178,7 +178,7 @@ def place_order(checkout_id):
         checkout=db.execute(text("SELECT id,status,currency,subtotal,shipping_amount,discount_amount,total_amount,shipping_address_id FROM checkouts WHERE id=:checkout_id AND user_id=:user_id FOR UPDATE"),{"checkout_id":checkout_id,"user_id":user_id}).mappings().first()
         if checkout is None:return jsonify({"error":"Checkout not found."}),404
         if checkout["status"]!="pending":return jsonify({"error":"Checkout is no longer available for ordering."}),409
-        items=db.execute(text("SELECT ci.product_id,ci.listing_id,ci.quantity,ci.unit_price,ci.line_total,p.name,p.product_type,p.stock_quantity,l.seller_id,l.supplier_product_id FROM checkout_items ci JOIN products p ON p.id=ci.product_id LEFT JOIN product_listings l ON l.id=ci.listing_id WHERE ci.checkout_id=:checkout_id ORDER BY ci.id ASC FOR UPDATE"),{"checkout_id":checkout_id}).mappings().all()
+        items=db.execute(text("SELECT ci.product_id,ci.listing_id,ci.quantity,ci.unit_price,ci.line_total,p.name,p.product_type,p.stock_quantity,l.seller_id,l.supplier_product_id FROM checkout_items ci JOIN products p ON p.id=ci.product_id LEFT JOIN product_listings l ON l.id=ci.listing_id WHERE ci.checkout_id=:checkout_id ORDER BY ci.id ASC FOR UPDATE OF ci, p"),{"checkout_id":checkout_id}).mappings().all()
         if not items:return jsonify({"error":"Checkout has no items."}),400
         for item in items:
             if item["product_type"]!="digital" and item["quantity"]>item["stock_quantity"]:return jsonify({"error":"Insufficient stock while placing order.","product_id":item["product_id"]}),409
