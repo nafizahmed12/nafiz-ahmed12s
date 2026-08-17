@@ -143,7 +143,7 @@ def create_checkout():
     with SessionLocal() as db:
         cart_id=db.execute(text("SELECT id FROM carts WHERE user_id=:user_id FOR UPDATE"),{"user_id":user_id}).scalar_one_or_none()
         if cart_id is None:return jsonify({"error":"Cart is empty."}),400
-        rows=db.execute(text("""SELECT ci.product_id,ci.quantity,p.name,p.product_type,p.stock_quantity,p.currency,l.id AS listing_id,COALESCE(l.price,p.price) AS unit_price FROM cart_items ci JOIN products p ON p.id=ci.product_id LEFT JOIN LATERAL (SELECT id,price FROM product_listings WHERE product_id=p.id AND status IN ('active','published') ORDER BY featured DESC,id ASC LIMIT 1) l ON TRUE WHERE ci.cart_id=:cart_id ORDER BY ci.id ASC FOR UPDATE"""),{"cart_id":cart_id}).mappings().all()
+        rows=db.execute(text("""SELECT ci.product_id,ci.quantity,p.name,p.product_type,p.stock_quantity,p.currency,l.id AS listing_id,COALESCE(l.price,p.price) AS unit_price FROM cart_items ci JOIN products p ON p.id=ci.product_id LEFT JOIN LATERAL (SELECT id,price FROM product_listings WHERE product_id=p.id AND status IN ('active','published') ORDER BY featured DESC,id ASC LIMIT 1) l ON TRUE WHERE ci.cart_id=:cart_id ORDER BY ci.id ASC FOR UPDATE OF ci, p"""),{"cart_id":cart_id}).mappings().all()
         if not rows:return jsonify({"error":"Cart is empty."}),400
         currency=rows[0]["currency"] or "BDT";subtotal=Decimal("0")
         for row in rows:
