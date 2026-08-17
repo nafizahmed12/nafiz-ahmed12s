@@ -94,4 +94,5 @@ jobs:
           ADMIN_USERNAME: ci-admin
           ADMIN_PASSWORD: ci-password
           RENDER: '0'
-        run: pytest -q
+          PYTHONPATH: .
+        run: python -m pytest -q
