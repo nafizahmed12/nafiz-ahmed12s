@@ -64,6 +64,11 @@ def prevent_sensitive_page_caching(response):
 @app.before_request
 def protect_state_changing_requests():
     if request.method != "POST": return None
+    # SSLCommerz server callbacks are cross-site POSTs by design. They must
+    # bypass the browser Origin/Referer check and rely on server-side gateway
+    # validation in payment_routes.py instead.
+    if request.path.startswith("/api/payments/sslcommerz/"):
+        return None
     origin = request.headers.get("Origin"); referer = request.headers.get("Referer"); expected = f"{request.scheme}://{request.host}"; source = origin or referer
     if source:
         parsed = urlparse(source); actual = f"{parsed.scheme}://{parsed.netloc}"
