@@ -1,0 +1,70 @@
+name: Fix SSLCommerz transaction handling
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-ssl-transaction.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Patch SSLCommerz callback transaction handling
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('payment_routes.py')
+          text = path.read_text()
+
+          replacements = [
+              (
+                  'tran_id = payment["transaction_id"] or order["order_number"]',
+                  'tran_id = str(order["order_number"])',
+              ),
+              (
+                  'expected_tran_id = str(payment["transaction_id"] or payment["order_number"] or "").strip()',
+                  'expected_tran_id = str(payment["order_number"] or "").strip()',
+              ),
+              (
+                  '_apply_payment_status(db, payment["order_id"], payment["id"], "paid",\n                                  validation.get("bank_tran_id"), validation.get("val_id") or val_id)',
+                  '_apply_payment_status(db, payment["order_id"], payment["id"], "paid",\n                                  tran_id, validation.get("val_id") or val_id)',
+              ),
+              (
+                  '_apply_payment_status(db, payment["order_id"], payment["id"], target,\n                              body.get("bank_tran_id"), body.get("sessionkey"))',
+                  '_apply_payment_status(db, payment["order_id"], payment["id"], target,\n                              tran_id, body.get("sessionkey"))',
+              ),
+              (
+                  '_apply_payment_status(db, payment["order_id"], payment["id"], "paid",\n                                       validation.get("bank_tran_id"), validation.get("val_id") or val_id)',
+                  '_apply_payment_status(db, payment["order_id"], payment["id"], "paid",\n                                       tran_id, validation.get("val_id") or val_id)',
+              ),
+          ]
+
+          for old, new in replacements:
+              if old not in text:
+                  raise SystemExit(f'Expected code block not found: {old[:100]}')
+              text = text.replace(old, new)
+
+          marker = 'SSLCommerz transaction handling'
+          if marker not in text:
+              raise SystemExit('Unexpected payment_routes.py content')
+
+          path.write_text(text)
+          PY
+
+      - name: Commit and push fix
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add payment_routes.py
+          if git diff --cached --quiet; then
+            echo 'No changes needed.'
+            exit 0
+          fi
+          git commit -m 'fix SSLCommerz callback transaction mismatch'
+          git push
