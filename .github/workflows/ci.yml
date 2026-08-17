@@ -6,9 +6,6 @@ on:
   pull_request:
     branches: [main]
 
-permissions:
-  contents: write
-
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -29,74 +26,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Repair SSLCommerz retry transaction IDs
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-
-          path = Path('payment_routes.py')
-          text = path.read_text()
-
-          old_import = 'import os\nfrom decimal import Decimal, InvalidOperation'
-          new_import = 'import os\nfrom uuid import uuid4\nfrom decimal import Decimal, InvalidOperation'
-          if old_import in text and 'from uuid import uuid4' not in text:
-              text = text.replace(old_import, new_import, 1)
-
-          old_query = '''payment = db.execute(text("""SELECT id,transaction_id,provider_reference,status,amount,currency FROM payments
-            WHERE order_id=:order_id AND provider='sslcommerz' ORDER BY id DESC LIMIT 1 FOR UPDATE"""),
-            {"order_id": order_id}).mappings().first()'''
-          new_query = '''payment = db.execute(text("""SELECT id,transaction_id,provider_reference,status,amount,currency FROM payments
-            WHERE order_id=:order_id AND provider='sslcommerz' AND status IN ('initiated','pending')
-            ORDER BY id DESC LIMIT 1 FOR UPDATE"""),
-            {"order_id": order_id}).mappings().first()'''
-          if old_query in text:
-              text = text.replace(old_query, new_query, 1)
-
-          old_insert = '''        if payment is None:
-            payment_id = db.execute(text("""INSERT INTO payments(order_id,provider,transaction_id,status,amount,currency,created_at,updated_at)
-                VALUES(:order_id,'sslcommerz',:transaction_id,'initiated',:amount,:currency,NOW(),NOW()) RETURNING id"""),
-                {"order_id": order_id, "transaction_id": order["order_number"], "amount": order["total_amount"],
-                 "currency": order["currency"]}).scalar_one()
-            db.execute(text("UPDATE commerce_orders SET payment_status='initiated',updated_at=NOW() WHERE id=:order_id"),
-                       {"order_id": order_id})
-            db.commit()
-            payment = {"id": payment_id, "transaction_id": order["order_number"], "provider_reference": None,
-                       "status": "initiated", "amount": order["total_amount"], "currency": order["currency"]}
-        elif payment["status"] == "paid":
-            return jsonify({"error": "Order is already paid."}), 409
-
-        tran_id = str(order["order_number"])'''
-          new_insert = '''        if payment is None:
-            tran_id = f"{order['order_number']}-{uuid4().hex[:6].upper()}"
-            payment_id = db.execute(text("""INSERT INTO payments(order_id,provider,transaction_id,status,amount,currency,created_at,updated_at)
-                VALUES(:order_id,'sslcommerz',:transaction_id,'initiated',:amount,:currency,NOW(),NOW()) RETURNING id"""),
-                {"order_id": order_id, "transaction_id": tran_id, "amount": order["total_amount"],
-                 "currency": order["currency"]}).scalar_one()
-            db.execute(text("UPDATE commerce_orders SET payment_status='initiated',updated_at=NOW() WHERE id=:order_id"),
-                       {"order_id": order_id})
-            db.commit()
-            payment = {"id": payment_id, "transaction_id": tran_id, "provider_reference": None,
-                       "status": "initiated", "amount": order["total_amount"], "currency": order["currency"]}
-        elif payment["status"] == "paid":
-            return jsonify({"error": "Order is already paid."}), 409
-        else:
-            tran_id = str(payment["transaction_id"] or f"{order['order_number']}-{uuid4().hex[:6].upper()}")'''
-          if old_insert in text:
-              text = text.replace(old_insert, new_insert, 1)
-
-          path.write_text(text)
-          PY
-
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add payment_routes.py
-          if git diff --cached --quiet; then
-            echo 'SSLCommerz retry patch already applied.'
-          else
-            git commit -m 'fix SSLCommerz retry transaction IDs'
-            git push
-          fi
 
       - name: Set up Python
         uses: actions/setup-python@v5
