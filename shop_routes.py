@@ -40,3 +40,8 @@ def payment_cancel():
         result="cancel",
         order_id=request.args.get("order_id"),
     )
+
+
+def register_shop_routes(app):
+    if shop_bp.name not in app.blueprints:
+        app.register_blueprint(shop_bp)
