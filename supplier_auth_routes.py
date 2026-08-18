@@ -15,7 +15,7 @@ def register_supplier_auth_routes(app):
 @supplier_auth_bp.route("/supplier/register", methods=["GET", "POST"])
 def supplier_register_page():
     if session.get("user_id"):
-        return redirect(url_for("supplier_dashboard_page"))
+        return redirect(url_for("supplier_auth.supplier_dashboard_page"))
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         email = request.form.get("email", "").strip().lower()
@@ -39,14 +39,14 @@ def supplier_register_page():
             db.commit()
         session.clear(); session.permanent = True; session["user_id"] = user.id; session["username"] = user.username
         flash("Supplier account created. Your account is pending approval.", "success")
-        return redirect(url_for("supplier_dashboard_page"))
+        return redirect(url_for("supplier_auth.supplier_dashboard_page"))
     return render_template("supplier_register.html")
 
 
 @supplier_auth_bp.route("/supplier/login", methods=["GET", "POST"])
 def supplier_login_page():
     if session.get("user_id"):
-        return redirect(url_for("supplier_dashboard_page"))
+        return redirect(url_for("supplier_auth.supplier_dashboard_page"))
     if request.method == "POST":
         identifier = request.form.get("username", "").strip()
         password = request.form.get("password", "")
@@ -58,7 +58,7 @@ def supplier_login_page():
         if profile is None:
             return render_template("supplier_login.html", error="This account is not registered as a supplier."), 403
         session.clear(); session.permanent = True; session["user_id"] = user.id; session["username"] = user.username
-        return redirect(url_for("supplier_dashboard_page"))
+        return redirect(url_for("supplier_auth.supplier_dashboard_page"))
     return render_template("supplier_login.html")
 
 
@@ -66,12 +66,12 @@ def supplier_login_page():
 def supplier_dashboard_page():
     user_id = session.get("user_id")
     if not user_id:
-        return redirect(url_for("supplier_login_page"))
+        return redirect(url_for("supplier_auth.supplier_login_page"))
     with SessionLocal() as db:
         profile = db.execute(text("SELECT * FROM supplier_profiles WHERE user_id=:uid"), {"uid": user_id}).mappings().first()
         if profile is None:
             session.pop("user_id", None); session.pop("username", None)
-            return redirect(url_for("supplier_login_page"))
+            return redirect(url_for("supplier_auth.supplier_login_page"))
         orders = db.execute(text("""SELECT so.id, so.order_id, co.order_number, so.status,
             so.tracking_number, so.cost_total, so.created_at FROM supplier_orders so
             JOIN commerce_orders co ON co.id=so.order_id
@@ -86,4 +86,4 @@ def supplier_dashboard_page():
 @supplier_auth_bp.route("/supplier/logout")
 def supplier_logout():
     session.pop("user_id", None); session.pop("username", None); session.pop("_permanent", None)
-    return redirect(url_for("supplier_login_page"))
+    return redirect(url_for("supplier_auth.supplier_login_page"))
