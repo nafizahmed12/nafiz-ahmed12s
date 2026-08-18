@@ -1,12 +1,12 @@
 """Automatically create supplier fulfillment orders when payment becomes paid.
 
-Revision ID: 0008_auto_supplier_fulfillment_on_payment
+Revision ID: 0008_supplier_payment_auto
 Revises: 0007_supplier_fulfillment
 """
 from typing import Sequence, Union
 from alembic import op
 
-revision: str = "0008_auto_supplier_fulfillment_on_payment"
+revision: str = "0008_supplier_payment_auto"
 down_revision: Union[str, Sequence[str], None] = "0007_supplier_fulfillment"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -46,8 +46,6 @@ def upgrade() -> None:
                 CONTINUE;
             END IF;
 
-            -- Reserve supplier stock atomically. If it is no longer available,
-            -- leave the supplier item uncreated for admin intervention.
             UPDATE supplier_products
                SET supplier_stock = supplier_stock - item.quantity,
                    updated_at = NOW()
@@ -78,7 +76,6 @@ def upgrade() -> None:
                 RETURNING id INTO supplier_order_id;
             END IF;
 
-            -- Idempotency guard for repeated payment callbacks.
             IF NOT EXISTS (
                 SELECT 1
                   FROM supplier_order_items soi
