@@ -1,6 +1,7 @@
 """Supplier registration, login and dashboard pages."""
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 from database import SessionLocal
 from schema import create_user, authenticate_user
 
@@ -23,20 +24,34 @@ def supplier_register_page():
         company = request.form.get("company_name", "").strip()
         phone = request.form.get("phone", "").strip()
         country = request.form.get("country", "Bangladesh").strip() or "Bangladesh"
-        if len(username) < 3 or len(username) > 80 or len(password) < 8 or not company:
-            return render_template("supplier_register.html", error="Username, company name and password (8+ chars) are required."), 400
-        user = create_user(username, email, password)
+        if len(username) < 3 or len(username) > 80 or len(password) < 8 or not company or not email:
+            return render_template("supplier_register.html", error="Username, email, company name and password (8+ chars) are required."), 400
+
+        # Check both identifiers explicitly so a valid new registration is not
+        # reported as a duplicate because of an unrelated supplier profile.
+        try:
+            user = create_user(username, email, password)
+        except IntegrityError:
+            user = None
         if user is None:
-            return render_template("supplier_register.html", error="Username or email is already in use."), 409
+            return render_template("supplier_register.html", error="Username or email is already in use. Please use a different one."), 409
+
         slug = "".join(c.lower() if c.isalnum() else "-" for c in company).strip("-")[:190] or f"supplier-{user.id}"
         with SessionLocal() as db:
             if db.execute(text("SELECT 1 FROM supplier_profiles WHERE slug=:slug"), {"slug": slug}).first():
                 slug = f"{slug}-{user.id}"
-            db.execute(text("""INSERT INTO supplier_profiles
-                (user_id, company_name, slug, description, status, contact_email, contact_phone, country, created_at, updated_at)
-                VALUES (:uid,:company,:slug,'','pending',:email,:phone,:country,NOW(),NOW())"""),
-                {"uid": user.id, "company": company, "slug": slug, "email": email, "phone": phone, "country": country})
-            db.commit()
+            try:
+                db.execute(text("""INSERT INTO supplier_profiles
+                    (user_id, company_name, slug, description, status, contact_email, contact_phone, country, created_at, updated_at)
+                    VALUES (:uid,:company,:slug,'','pending',:email,:phone,:country,NOW(),NOW())"""),
+                    {"uid": user.id, "company": company, "slug": slug, "email": email, "phone": phone, "country": country})
+                db.commit()
+            except IntegrityError:
+                db.rollback()
+                # Do not leave an orphan user if supplier profile creation fails.
+                db.execute(text("DELETE FROM users WHERE id=:uid"), {"uid": user.id})
+                db.commit()
+                return render_template("supplier_register.html", error="This supplier account could not be created. Please try a different username/email."), 409
         session.clear(); session.permanent = True; session["user_id"] = user.id; session["username"] = user.username
         flash("Supplier account created. Your account is pending approval.", "success")
         return redirect(url_for("supplier_auth.supplier_dashboard_page"))
