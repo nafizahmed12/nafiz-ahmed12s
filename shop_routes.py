@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, session
+from flask import Blueprint, render_template, session, request
 
 shop_bp = Blueprint("shop_ui", __name__)
 
@@ -19,10 +19,8 @@ def checkout_page():
 def payment_success():
     return render_template(
         "payment_result.html",
-        title="Payment Successful",
-        icon="✓",
-        icon_bg="linear-gradient(135deg,#10b981,#059669)",
-        message="Your payment has been verified successfully. Your order is now confirmed.",
+        result="success",
+        order_id=request.args.get("order_id"),
     )
 
 
@@ -30,10 +28,8 @@ def payment_success():
 def payment_fail():
     return render_template(
         "payment_result.html",
-        title="Payment Failed",
-        icon="!",
-        icon_bg="linear-gradient(135deg,#ef4444,#b91c1c)",
-        message="We could not complete the payment. You can return to the shop and try again.",
+        result="fail",
+        order_id=request.args.get("order_id"),
     )
 
 
@@ -41,13 +37,6 @@ def payment_fail():
 def payment_cancel():
     return render_template(
         "payment_result.html",
-        title="Payment Cancelled",
-        icon="×",
-        icon_bg="linear-gradient(135deg,#f59e0b,#d97706)",
-        message="The payment was cancelled. Your order was not marked as paid.",
+        result="cancel",
+        order_id=request.args.get("order_id"),
     )
-
-
-def register_shop_routes(app):
-    if shop_bp.name not in app.blueprints:
-        app.register_blueprint(shop_bp)
