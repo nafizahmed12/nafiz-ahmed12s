@@ -17,6 +17,7 @@ def register_supplier_auth_routes(app):
 def supplier_register_page():
     if session.get("user_id"):
         return redirect(url_for("supplier_auth.supplier_dashboard_page"))
+
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         email = request.form.get("email", "").strip().lower()
@@ -24,17 +25,73 @@ def supplier_register_page():
         company = request.form.get("company_name", "").strip()
         phone = request.form.get("phone", "").strip()
         country = request.form.get("country", "Bangladesh").strip() or "Bangladesh"
-        if len(username) < 3 or len(username) > 80 or len(password) < 8 or not company or not email:
-            return render_template("supplier_register.html", error="Username, email, company name and password (8+ chars) are required."), 400
 
-        # Check both identifiers explicitly so a valid new registration is not
-        # reported as a duplicate because of an unrelated supplier profile.
+        if len(username) < 3 or len(username) > 80 or len(password) < 8 or not company or not email:
+            return render_template(
+                "supplier_register.html",
+                error="Username, email, company name and password (8+ chars) are required.",
+            ), 400
+
+        # Check the actual users table before attempting INSERT. Previously any
+        # IntegrityError from create_user() was converted to the same generic
+        # message, which made a duplicate username look like a duplicate email
+        # and made debugging supplier registration unnecessarily difficult.
+        with SessionLocal() as db:
+            existing_username = db.execute(
+                text("SELECT 1 FROM users WHERE username=:username LIMIT 1"),
+                {"username": username},
+            ).first()
+            existing_email = db.execute(
+                text("SELECT 1 FROM users WHERE email=:email LIMIT 1"),
+                {"email": email},
+            ).first()
+
+        if existing_username and existing_email:
+            return render_template(
+                "supplier_register.html",
+                error="Both username and email are already in use. Please choose different ones.",
+            ), 409
+        if existing_username:
+            return render_template(
+                "supplier_register.html",
+                error="This username is already in use. Please choose a different username.",
+            ), 409
+        if existing_email:
+            return render_template(
+                "supplier_register.html",
+                error="This email is already registered. Please use a different email.",
+            ), 409
+
         try:
             user = create_user(username, email, password)
         except IntegrityError:
-            user = None
+            # A concurrent registration can still win the race between the
+            # pre-check above and INSERT. Re-check both identifiers so the user
+            # receives the real cause instead of a misleading generic error.
+            with SessionLocal() as db:
+                username_exists = db.execute(
+                    text("SELECT 1 FROM users WHERE username=:username LIMIT 1"),
+                    {"username": username},
+                ).first()
+                email_exists = db.execute(
+                    text("SELECT 1 FROM users WHERE email=:email LIMIT 1"),
+                    {"email": email},
+                ).first()
+            if username_exists and email_exists:
+                message = "Both username and email are already in use. Please choose different ones."
+            elif username_exists:
+                message = "This username is already in use. Please choose a different username."
+            elif email_exists:
+                message = "This email is already registered. Please use a different email."
+            else:
+                message = "Registration could not be completed. Please try again."
+            return render_template("supplier_register.html", error=message), 409
+
         if user is None:
-            return render_template("supplier_register.html", error="Username or email is already in use. Please use a different one."), 409
+            return render_template(
+                "supplier_register.html",
+                error="Registration could not be completed. Please try again.",
+            ), 409
 
         slug = "".join(c.lower() if c.isalnum() else "-" for c in company).strip("-")[:190] or f"supplier-{user.id}"
         with SessionLocal() as db:
@@ -44,17 +101,33 @@ def supplier_register_page():
                 db.execute(text("""INSERT INTO supplier_profiles
                     (user_id, company_name, slug, description, status, contact_email, contact_phone, country, created_at, updated_at)
                     VALUES (:uid,:company,:slug,'','pending',:email,:phone,:country,NOW(),NOW())"""),
-                    {"uid": user.id, "company": company, "slug": slug, "email": email, "phone": phone, "country": country})
+                    {
+                        "uid": user.id,
+                        "company": company,
+                        "slug": slug,
+                        "email": email,
+                        "phone": phone,
+                        "country": country,
+                    },
+                )
                 db.commit()
             except IntegrityError:
                 db.rollback()
                 # Do not leave an orphan user if supplier profile creation fails.
                 db.execute(text("DELETE FROM users WHERE id=:uid"), {"uid": user.id})
                 db.commit()
-                return render_template("supplier_register.html", error="This supplier account could not be created. Please try a different username/email."), 409
-        session.clear(); session.permanent = True; session["user_id"] = user.id; session["username"] = user.username
+                return render_template(
+                    "supplier_register.html",
+                    error="This supplier account could not be created. Please try again.",
+                ), 409
+
+        session.clear()
+        session.permanent = True
+        session["user_id"] = user.id
+        session["username"] = user.username
         flash("Supplier account created. Your account is pending approval.", "success")
         return redirect(url_for("supplier_auth.supplier_dashboard_page"))
+
     return render_template("supplier_register.html")
 
 
@@ -72,7 +145,10 @@ def supplier_login_page():
             profile = db.execute(text("SELECT id, status FROM supplier_profiles WHERE user_id=:uid"), {"uid": user.id}).mappings().first()
         if profile is None:
             return render_template("supplier_login.html", error="This account is not registered as a supplier."), 403
-        session.clear(); session.permanent = True; session["user_id"] = user.id; session["username"] = user.username
+        session.clear()
+        session.permanent = True
+        session["user_id"] = user.id
+        session["username"] = user.username
         return redirect(url_for("supplier_auth.supplier_dashboard_page"))
     return render_template("supplier_login.html")
 
@@ -85,7 +161,8 @@ def supplier_dashboard_page():
     with SessionLocal() as db:
         profile = db.execute(text("SELECT * FROM supplier_profiles WHERE user_id=:uid"), {"uid": user_id}).mappings().first()
         if profile is None:
-            session.pop("user_id", None); session.pop("username", None)
+            session.pop("user_id", None)
+            session.pop("username", None)
             return redirect(url_for("supplier_auth.supplier_login_page"))
         orders = db.execute(text("""SELECT so.id, so.order_id, co.order_number, so.status,
             so.tracking_number, so.cost_total, so.created_at FROM supplier_orders so
@@ -100,5 +177,7 @@ def supplier_dashboard_page():
 
 @supplier_auth_bp.route("/supplier/logout")
 def supplier_logout():
-    session.pop("user_id", None); session.pop("username", None); session.pop("_permanent", None)
+    session.pop("user_id", None)
+    session.pop("username", None)
+    session.pop("_permanent", None)
     return redirect(url_for("supplier_auth.supplier_login_page"))
