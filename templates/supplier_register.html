@@ -1,1 +1,33 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Become a Supplier</title><style>body{font-family:system-ui;max-width:560px;margin:40px auto;padding:20px}input,button{width:100%;padding:12px;margin:7px 0;box-sizing:border-box}button{cursor:pointer}.error{color:#b91c1c}</style></head><body><h1>Become a Supplier</h1><p>Create your supplier account. Approval can be handled by admin before fulfillment.</p>{% if error %}<p class="error">{{ error }}</p>{% endif %}<form method="post"><input name="company_name" placeholder="Company name" required><input name="username" placeholder="Username" minlength="3" required><input name="email" type="email" placeholder="Email" required><input name="phone" placeholder="Phone"><input name="country" value="Bangladesh" placeholder="Country"><input name="password" type="password" minlength="8" placeholder="Password (8+ characters)" required><button type="submit">Create Supplier Account</button></form><p>Already registered? <a href="{{ url_for('supplier_auth.supplier_login_page') }}">Supplier login</a></p></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Become a Supplier</title>
+  <style>
+    body{font-family:system-ui;max-width:560px;margin:40px auto;padding:20px}
+    input,button{width:100%;padding:12px;margin:7px 0;box-sizing:border-box}
+    button{cursor:pointer}
+    .error{color:#b91c1c;line-height:1.5}
+    .hint{color:#666;line-height:1.5}
+  </style>
+</head>
+<body>
+  <h1>Become a Supplier</h1>
+  <p class="hint">Create your supplier profile. If you already have a Nafiz account, you can use the same username, email and password to become a supplier.</p>
+
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+
+  <form method="post" autocomplete="on">
+    <input name="company_name" placeholder="Company name" value="{{ form_data.get('company_name', '') if form_data else '' }}" required>
+    <input name="username" placeholder="Username" minlength="3" value="{{ form_data.get('username', '') if form_data else '' }}" required autocomplete="username">
+    <input name="email" type="email" placeholder="Email" value="{{ form_data.get('email', '') if form_data else '' }}" required autocomplete="email">
+    <input name="phone" placeholder="Phone" value="{{ form_data.get('phone', '') if form_data else '' }}">
+    <input name="country" value="{{ form_data.get('country', 'Bangladesh') if form_data else 'Bangladesh' }}" placeholder="Country">
+    <input name="password" type="password" minlength="8" placeholder="Password (8+ characters)" required autocomplete="current-password">
+    <button type="submit">Create Supplier Account</button>
+  </form>
+
+  <p>Already registered? <a href="{{ url_for('supplier_auth.supplier_login_page') }}">Supplier login</a></p>
+</body>
+</html>
