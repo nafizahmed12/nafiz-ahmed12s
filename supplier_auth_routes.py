@@ -64,8 +64,7 @@ def _create_supplier_profile(user_id, company, email, phone, country):
 
 @supplier_auth_bp.route("/supplier/register", methods=["GET", "POST"])
 def supplier_register_page():
-    # Existing normal users can become suppliers instead of being redirected
-    # away from the registration page. Existing suppliers still go to dashboard.
+    # Existing suppliers go directly to their dashboard.
     logged_in_user_id = session.get("user_id")
     if logged_in_user_id and _supplier_profile_for_user(logged_in_user_id):
         return redirect(url_for("supplier_auth.supplier_dashboard_page"))
@@ -92,7 +91,9 @@ def supplier_register_page():
                 form_data=form_data,
             ), 400
 
-        # Logged-in users can create a supplier profile on their existing account.
+        # Logged-in users create a supplier profile on their existing account.
+        # The submitted email is used as the supplier contact email; it does not
+        # attempt to change the user's login email.
         if logged_in_user_id:
             with SessionLocal() as db:
                 existing_user = db.execute(
@@ -107,13 +108,6 @@ def supplier_register_page():
                     error="Your login session is no longer valid. Please log in again.",
                     form_data=form_data,
                 ), 401
-
-            if existing_user["username"] != username or existing_user["email"] != email:
-                return render_template(
-                    "supplier_register.html",
-                    error="For your existing account, username and email must match your account details.",
-                    form_data=form_data,
-                ), 409
 
             if not check_password_hash(existing_user["password_hash"], password):
                 return render_template(
@@ -135,8 +129,12 @@ def supplier_register_page():
             flash(message, "success")
             return redirect(url_for("supplier_auth.supplier_dashboard_page"))
 
-        # No active session: if username and email belong to the same existing
-        # account, allow that account to become a supplier after password check.
+        # No active session. If the submitted username already belongs to an
+        # account, the correct password proves ownership of that account. We do
+        # NOT reject registration merely because the supplier contact email is
+        # different from the user's login email. This fixes the previous 409
+        # loop where changing only the email could never work with an existing
+        # username.
         with SessionLocal() as db:
             existing_username = db.execute(
                 text("SELECT id, username, email, password_hash FROM users WHERE username=:username LIMIT 1"),
@@ -147,12 +145,12 @@ def supplier_register_page():
                 {"email": email},
             ).mappings().first()
 
-        if existing_username and existing_email and existing_username["id"] == existing_email["id"]:
+        if existing_username:
             existing_user = existing_username
             if not check_password_hash(existing_user["password_hash"], password):
                 return render_template(
                     "supplier_register.html",
-                    error="This username/email already belongs to an account. Enter that account's password to become a supplier.",
+                    error="This username already belongs to an account. Enter that account's correct password, or choose a new username.",
                     form_data=form_data,
                 ), 409
 
@@ -178,16 +176,12 @@ def supplier_register_page():
             flash(message, "success")
             return redirect(url_for("supplier_auth.supplier_dashboard_page"))
 
-        if existing_username:
-            return render_template(
-                "supplier_register.html",
-                error="This username is already in use. Keep your existing username and email together, or choose a different username.",
-                form_data=form_data,
-            ), 409
+        # Username is new. If the email belongs to an existing account, require
+        # that account's username instead of silently attaching to the wrong user.
         if existing_email:
             return render_template(
                 "supplier_register.html",
-                error="This email is already registered. Use that account's username too, or choose a different email.",
+                error="This email is already registered. Use that account's username and password, or choose a different email.",
                 form_data=form_data,
             ), 409
 
