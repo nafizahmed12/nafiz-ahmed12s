@@ -1,10 +1,11 @@
 import os
 from datetime import datetime, timezone
 
-from flask import redirect, session, url_for
+from flask import redirect, session, url_for, request
 
 from admin_product_routes import register_admin_product_routes
 from supplier_auth_routes import register_supplier_auth_routes
+from home_routes import register_home_routes
 
 
 ADMIN_IDLE_TIMEOUT_SECONDS = int(os.getenv("ADMIN_IDLE_TIMEOUT_SECONDS", "1800"))
@@ -15,6 +16,7 @@ def register_admin_session_guard(app):
     """Expire privileged admin sessions after idle/absolute time limits."""
     register_admin_product_routes(app)
     register_supplier_auth_routes(app)
+    register_home_routes(app)
 
     @app.before_request
     def guard_admin_session():
@@ -46,6 +48,17 @@ def register_admin_session_guard(app):
 
         session["admin_last_activity"] = now
         return None
+
+    @app.after_request
+    def attach_home_javascript(response):
+        """Load the commerce homepage enhancement without changing the existing template."""
+        if request.path == "/" and response.status_code == 200 and "text/html" in response.content_type:
+            body = response.get_data(as_text=True)
+            marker = '<script src="/static/home.js" defer></script>'
+            if marker not in body and "</body>" in body:
+                body = body.replace("</body>", marker + "</body>")
+                response.set_data(body)
+        return response
 
 
 def mark_admin_authenticated():
