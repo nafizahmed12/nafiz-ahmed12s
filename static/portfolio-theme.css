@@ -1,0 +1,50 @@
+:root{
+  --bg:#0B1020;
+  --bg-soft:#0F172A;
+  --bg-card:rgba(21,28,50,.82);
+  --text:#F8FAFC;
+  --text-soft:#CBD5E1;
+  --text-muted:#CBD5E1;
+  --primary:#6366F1;
+  --primary-light:#818CF8;
+  --purple:#22D3EE;
+  --purple-light:#67E8F9;
+  --blue:#4F46E5;
+  --border:rgba(43,54,86,.9);
+  --border-light:rgba(58,72,109,.95);
+  --shadow:0 25px 80px rgba(0,0,0,.35);
+  --shadow-blue:0 25px 80px rgba(99,102,241,.16);
+}
+html,body{background:#0B1020;color:#F8FAFC}
+body{background:radial-gradient(circle at 10% 5%,rgba(99,102,241,.12),transparent 28%),radial-gradient(circle at 90% 10%,rgba(34,211,238,.10),transparent 30%),#0B1020}
+.site-header .navbar{background:rgba(11,16,32,.88);border-color:#2B3656}
+.site-header.scrolled .navbar{background:rgba(11,16,32,.97);border-color:#2B3656}
+.brand-mark{background:linear-gradient(135deg,#6366F1,#22D3EE);color:#F8FAFC}
+.brand-text span,.nav-cta span,.hero-eyebrow,.card-number,.skill-name strong,.service-card a,.project-meta span,.project-links a:hover,.footer-links a:hover{color:#22D3EE}
+.nav-links a:hover,.nav-links a.active,.brand-text,.hero-title,.section-heading h2,.about-text h3,.feature-card h3,.skill-name h3,.service-card h3,.project-content h3,.journey-item h3,.newsletter-content h3,.contact-info h3,.footer-brand .brand-text{color:#F8FAFC}
+.nav-links a::after{background:linear-gradient(90deg,#6366F1,#22D3EE)}
+.glass-card{background:linear-gradient(145deg,rgba(21,28,50,.88),rgba(11,16,32,.88));border-color:#2B3656}
+.glass-card:hover{border-color:#6366F1;box-shadow:0 30px 75px rgba(0,0,0,.3),0 0 35px rgba(99,102,241,.08)}
+.btn-primary,.submit-button{color:#F8FAFC;background:linear-gradient(135deg,#6366F1,#4F46E5)}
+.btn-secondary{color:#E2E8F0;border-color:#3A486D;background:#11182C}
+.btn-secondary:hover{border-color:#22D3EE}
+.feature-icon,.skill-icon,.service-icon,.newsletter-icon,.detail-icon{color:#22D3EE;border-color:#33456F;background:#1C2540}
+.progress-fill{background:linear-gradient(90deg,#6366F1,#22D3EE)}
+.section-label,.contact-small{color:#67E8F9}
+.hero::before{background:radial-gradient(circle,rgba(99,102,241,.14),transparent 65%)}
+.profile{background:linear-gradient(#0B1020,#0B1020) padding-box,linear-gradient(135deg,#6366F1,#22D3EE,#818CF8) border-box;box-shadow:0 0 0 9px rgba(99,102,241,.03),0 0 70px rgba(99,102,241,.22),0 30px 70px rgba(0,0,0,.45)}
+.profile-glow{background:rgba(99,102,241,.14)}
+.profile-orbit{border-color:rgba(99,102,241,.22)}
+.orbit-two{border-color:rgba(34,211,238,.22)}
+.hero-description,.about-text p,.feature-card p,.skill-info>span,.service-card p,.project-content p,.journey-item p,.newsletter-content p,.contact-info>p{color:#CBD5E1}
+.hero-tech,.availability{border-color:#33456F;background:#111A30;color:#CBD5E1}
+.social-mini a,.social-links a{color:#CBD5E1;border-color:#2B3656;background:#11182C}
+.social-mini a:hover,.social-links a:hover{color:#F8FAFC;border-color:#6366F1}
+.form-group input,.form-group textarea,.newsletter-input-group input{background:#0D1428;border-color:#3A486D;color:#F8FAFC}
+.form-group input:focus,.form-group textarea:focus,.newsletter-input-group input:focus{border-color:#22D3EE;box-shadow:0 0 0 4px rgba(34,211,238,.06)}
+.project-tags span{color:#CBD5E1;border-color:#2B3656;background:#11182C}
+.journey-icon{color:#22D3EE;border-color:#3A486D;background:#0D1428}
+.journey-line{background:linear-gradient(90deg,#6366F1,#22D3EE)}
+.site-footer{background:#080D1A;border-color:#25324F}
+.footer-inner p,.footer-links a{color:#64748B}
+::selection{background:#6366F1;color:#F8FAFC}
