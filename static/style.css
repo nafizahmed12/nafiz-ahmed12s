@@ -1,60 +1,60 @@
-/* NAFIZ — PREMIUM DARK CYAN / BLUE COLOR SYSTEM */
+/* NAFIZ — PREMIUM INDIGO + CYAN COLOR SYSTEM */
 :root{
-  --bg:#050b14 !important;
-  --panel:#0b1220 !important;
-  --panel2:#101a2d !important;
-  --line:#20324d !important;
-  --text:#f8fafc !important;
-  --muted:#94a3b8 !important;
-  --accent:#00c2ff !important;
-  --accent2:#6366f1 !important;
-  --green:#22d3a0 !important;
+  --bg:#0B1020 !important;
+  --panel:#151C32 !important;
+  --panel2:#1C2540 !important;
+  --line:#2B3656 !important;
+  --text:#F8FAFC !important;
+  --muted:#CBD5E1 !important;
+  --accent:#6366F1 !important;
+  --accent2:#22D3EE !important;
+  --green:#22D3A0 !important;
 }
-html,body,.page{background:#050b14 !important;color:#f8fafc !important}
+html,body,.page{background:#0B1020 !important;color:#F8FAFC !important}
 body{font-family:'DM Sans',sans-serif !important}
-.announce{background:#07101d !important;border-color:#19304a !important;color:#a9b9cc !important}
-.announce strong{color:#00c2ff !important}
-.nav{background:rgba(5,11,20,.98) !important;border-color:#20324d !important}
-.brandmark{background:linear-gradient(135deg,#00c2ff,#6366f1) !important;color:#04101a !important}
-.brand em,.hero h1 span,.eyebrowText{color:#00c2ff !important}
-.links,.heroCopy,.head p,.deal p,.perk p,.footer p{color:#94a3b8 !important}
-.links a:hover,.footer a:hover{color:#f8fafc !important}
-.icon,.category,.card,.perk,.review,.productFrame{background:#0b1220 !important;border-color:#20324d !important}
-.icon:hover,.category:hover,.card:hover{border-color:#00c2ff !important}
-.primary,.count,.sale,.plus,.floatIcon,.avatar{background:linear-gradient(135deg,#00c2ff,#2563eb) !important;color:#04101a !important}
-.primary:hover{background:linear-gradient(135deg,#22d3ee,#6366f1) !important}
-.secondary{border-color:#304765 !important;color:#e6f2ff !important;background:#08111e !important}
-.secondary:hover{background:#101e32 !important}
-.hero{background:#050b14 !important;border-color:#20324d !important}
-.hero:before{background:rgba(0,194,255,.14) !important}
-.hero:after{background:rgba(99,102,241,.13) !important}
-.heroGrid{position:relative}
-.productVisual,.pic{background:#0e192b !important}
-.productVisual:before{background:rgba(0,194,255,.12) !important}
-.productObject,.shape{background:linear-gradient(145deg,#e0f2fe,#64748b) !important}
-.trust{background:#07101d !important;border-color:#20324d !important}
-.trustItem{color:#c8d6e5 !important;border-color:#20324d !important}
-.trustItem svg{color:#00c2ff !important}
-.section{background:#050b14 !important}
-.section.alt{background:#08111e !important}
-.eyebrow{background:#0b1728 !important;border-color:#244568 !important;color:#c9d8e8 !important}
-.category .catIcon,.perkIcon{background:#102039 !important;color:#22d3ee !important}
-.badge{background:#dff6ff !important;color:#04101a !important}
-.badge.hot{background:#6366f1 !important;color:#fff !important}
-.heart{background:#101c2e !important;border-color:#29415f !important;color:#e5efff !important}
-.rating,.stars{color:#fbbf24 !important}
-.deal{background:#0b1220 !important;border-color:#29405e !important}
-.deal:after{background:rgba(99,102,241,.14) !important}
-.time{background:#101b2d !important;border-color:#29405e !important}
-.news{background:#0b1220 !important;border-color:#20324d !important}
-.form input{background:#07101c !important;border-color:#29405e !important;color:#f8fafc !important}
-.form input:focus{border-color:#00c2ff !important}
-.footer{background:#040912 !important;border-color:#192b43 !important}
-.footerBrand{color:#f8fafc !important}
-.footerBrand em{color:#00c2ff !important}
-.footer h4{color:#dff6ff !important}
-.footer a{color:#8193a8 !important}
-.footerGrid{border-color:#192b43 !important}
-.bottom{color:#5f7188 !important}
-::selection{background:#00c2ff !important;color:#04101a !important}
-@media(max-width:560px){.nav{background:rgba(5,11,20,.99) !important}}
+:focus-visible{outline-color:#22D3EE !important}
+.announce{background:#0D1428 !important;border-color:#263352 !important;color:#CBD5E1 !important}
+.announce strong{color:#22D3EE !important}
+.nav{background:rgba(11,16,32,.97) !important;border-color:#2B3656 !important}
+.brandmark{background:linear-gradient(135deg,#6366F1,#22D3EE) !important;color:#F8FAFC !important}
+.brand em,.hero h1 span,.eyebrowText{color:#22D3EE !important}
+.links,.heroCopy,.head p,.deal p,.perk p,.footer p{color:#CBD5E1 !important}
+.links a:hover,.footer a:hover{color:#F8FAFC !important}
+.icon,.category,.card,.perk,.review,.productFrame{background:#151C32 !important;border-color:#2B3656 !important}
+.icon:hover,.category:hover,.card:hover{border-color:#6366F1 !important}
+.primary,.count,.sale,.plus,.floatIcon,.avatar{background:linear-gradient(135deg,#6366F1,#4F46E5) !important;color:#F8FAFC !important}
+.primary:hover{background:linear-gradient(135deg,#818CF8,#22D3EE) !important}
+.secondary{border-color:#3A486D !important;color:#E2E8F0 !important;background:#11182C !important}
+.secondary:hover{background:#1C2540 !important}
+.hero{background:#0B1020 !important;border-color:#2B3656 !important}
+.hero:before{background:rgba(99,102,241,.18) !important}
+.hero:after{background:rgba(34,211,238,.13) !important}
+.productVisual,.pic{background:#111A30 !important}
+.productVisual:before{background:rgba(34,211,238,.12) !important}
+.productObject,.shape{background:linear-gradient(145deg,#E2E8F0,#64748B) !important}
+.trust{background:#0D1428 !important;border-color:#2B3656 !important}
+.trustItem{color:#CBD5E1 !important;border-color:#2B3656 !important}
+.trustItem svg{color:#22D3EE !important}
+.section{background:#0B1020 !important}
+.section.alt{background:#0F172A !important}
+.eyebrow{background:#111A30 !important;border-color:#33456F !important;color:#CBD5E1 !important}
+.category .catIcon,.perkIcon{background:#1C2540 !important;color:#22D3EE !important}
+.badge{background:#E2E8F0 !important;color:#0B1020 !important}
+.badge.hot{background:#6366F1 !important;color:#F8FAFC !important}
+.heart{background:#1C2540 !important;border-color:#3A486D !important;color:#E2E8F0 !important}
+.rating,.stars{color:#FBBF24 !important}
+.deal{background:#151C32 !important;border-color:#33415F !important}
+.deal:after{background:rgba(99,102,241,.16) !important}
+.time{background:#1C2540 !important;border-color:#3A486D !important}
+.news{background:#151C32 !important;border-color:#2B3656 !important}
+.form input{background:#0D1428 !important;border-color:#3A486D !important;color:#F8FAFC !important}
+.form input:focus{border-color:#22D3EE !important}
+.footer{background:#080D1A !important;border-color:#25324F !important}
+.footerBrand{color:#F8FAFC !important}
+.footerBrand em{color:#22D3EE !important}
+.footer h4{color:#E2E8F0 !important}
+.footer a{color:#94A3B8 !important}
+.footerGrid{border-color:#25324F !important}
+.bottom{color:#64748B !important}
+::selection{background:#6366F1 !important;color:#F8FAFC !important}
+@media(max-width:560px){.nav{background:rgba(11,16,32,.99) !important}}
