@@ -6,7 +6,7 @@
     <title>Dashboard — Nafiz Ahmed</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-        body{min-height:100vh}.dash{max-width:1180px;margin:0 auto;padding:36px 22px 70px}.dash-nav{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:35px}.dash-brand{font-weight:800;font-size:22px}.dash-actions{display:flex;gap:10px;flex-wrap:wrap}.dash-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:24px 0 34px}.stat{padding:22px}.stat strong{display:block;font-size:30px;margin-top:6px}.panel{padding:26px;margin-bottom:22px}.panel form{display:grid;gap:13px}.panel input,.panel textarea{width:100%;box-sizing:border-box}.site-grid,.product-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.site-card,.product-card{padding:22px}.site-card .actions,.product-card .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.flash{padding:12px 14px;border-radius:12px;margin-bottom:16px;background:rgba(255,255,255,.06)}.muted{opacity:.7}.empty{padding:25px;text-align:center;border:1px dashed rgba(255,255,255,.15);border-radius:16px}.danger{border:1px solid rgba(255,80,80,.25)}.product-status{display:inline-flex;padding:5px 9px;border-radius:999px;background:rgba(56,189,248,.12);color:#7dd3fc;font-size:12px;font-weight:700}.product-price{font-size:24px;font-weight:800;margin-top:8px}.product-message{margin-top:12px;min-height:20px}.product-message.error{color:#fca5a5}.product-message.success{color:#86efac}@media(max-width:800px){.dash-grid,.site-grid,.product-grid{grid-template-columns:1fr}}
+        body{min-height:100vh}.dash{max-width:1180px;margin:0 auto;padding:36px 22px 70px}.dash-nav{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:35px}.dash-brand{font-weight:800;font-size:22px}.dash-actions{display:flex;gap:10px;flex-wrap:wrap}.dash-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:24px 0 34px}.stat{padding:22px}.stat strong{display:block;font-size:30px;margin-top:6px}.panel{padding:26px;margin-bottom:22px}.panel form{display:grid;gap:13px}.panel input,.panel textarea{width:100%;box-sizing:border-box}.product-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.product-card{padding:22px}.flash{padding:12px 14px;border-radius:12px;margin-bottom:16px;background:rgba(255,255,255,.06)}.muted{opacity:.7}.empty{padding:25px;text-align:center;border:1px dashed rgba(255,255,255,.15);border-radius:16px}.product-status{display:inline-flex;padding:5px 9px;border-radius:999px;background:rgba(56,189,248,.12);color:#7dd3fc;font-size:12px;font-weight:700}.product-price{font-size:24px;font-weight:800;margin-top:8px}.product-message{margin-top:12px;min-height:20px}.product-message.error{color:#fca5a5}.product-message.success{color:#86efac}@media(max-width:800px){.dash-grid,.product-grid{grid-template-columns:1fr}}
     </style>
 </head>
 <body>
@@ -20,36 +20,18 @@
             <a class="btn btn-primary" href="{{ url_for('user_logout') }}">Logout</a>
         </div>
     </header>
-
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% for category, message in messages %}<div class="flash">{{ message }}</div>{% endfor %}
     {% endwith %}
-
     <section class="section-heading">
         <span class="section-label">DASHBOARD</span>
         <h1>Welcome, <span class="gradient-text">{{ user.username }}</span></h1>
-        <p>Manage your account, websites and digital products from one place.</p>
+        <p>Manage your account and digital products from one place.</p>
     </section>
-
     <section class="dash-grid">
-        <div class="glass-card stat"><span class="section-label">WEBSITES</span><strong>{{ websites|length }}</strong><span class="muted">Your published sites</span></div>
         <div class="glass-card stat"><span class="section-label">ACCOUNT</span><strong>Active</strong><span class="muted">Secure authenticated session</span></div>
         <div class="glass-card stat"><span class="section-label">EMAIL</span><strong style="font-size:18px;word-break:break-word">{{ user.email }}</strong><span class="muted">Account email</span></div>
     </section>
-
-    <section class="glass-card panel">
-        <span class="section-label">CREATE WEBSITE</span>
-        <h2>Launch a new site</h2>
-        <p class="muted">Choose a unique slug. Your site will be available at <code>/site/your-slug</code>.</p>
-        <form method="post" action="{{ url_for('create_website_route') }}">
-            <input name="name" placeholder="Website name" maxlength="120" required>
-            <input name="slug" placeholder="unique-slug" pattern="[a-z0-9-]+" maxlength="120" required>
-            <input name="title" placeholder="Website title" maxlength="200" required>
-            <textarea name="content" placeholder="Website content" rows="6"></textarea>
-            <button class="btn btn-primary" type="submit">Create Website <span>→</span></button>
-        </form>
-    </section>
-
     <section class="glass-card panel">
         <span class="section-label">DIGITAL PRODUCTS</span>
         <h2>Sell a digital product</h2>
@@ -65,62 +47,17 @@
         </form>
         <div id="product-message" class="product-message"></div>
     </section>
-
     <section>
         <div class="section-heading" style="text-align:left;margin-bottom:18px"><span class="section-label">YOUR PRODUCTS</span><h2>Published digital products</h2></div>
-        <div id="product-grid" class="product-grid">
-            <div class="glass-card empty"><p class="muted">Loading products…</p></div>
-        </div>
-    </section>
-
-    <section style="margin-top:34px">
-        <div class="section-heading" style="text-align:left;margin-bottom:18px"><span class="section-label">YOUR WEBSITES</span><h2>Published projects</h2></div>
-        <div class="site-grid">
-            {% for site in websites %}
-            <article class="glass-card site-card">
-                <span class="section-label">/site/{{ site.slug }}</span>
-                <h3>{{ site.name }}</h3>
-                <p>{{ site.title }}</p>
-                <p class="muted">{{ site.content|truncate(130) }}</p>
-                <div class="actions">
-                    <a class="btn btn-secondary" href="{{ url_for('published_site', slug=site.slug) }}" target="_blank" rel="noopener">View</a>
-                    <form method="post" action="{{ url_for('delete_website_route', website_id=site.id) }}" onsubmit="return confirm('Delete this website permanently?');">
-                        <button class="btn btn-secondary" type="submit">Delete</button>
-                    </form>
-                </div>
-            </article>
-            {% else %}
-            <div class="glass-card empty"><h3>No websites yet.</h3><p class="muted">Create your first website above.</p></div>
-            {% endfor %}
-        </div>
+        <div id="product-grid" class="product-grid"><div class="glass-card empty"><p class="muted">Loading products…</p></div></div>
     </section>
 </main>
 <script>
-const form=document.getElementById('digital-product-form');
-const grid=document.getElementById('product-grid');
-const message=document.getElementById('product-message');
+const form=document.getElementById('digital-product-form');const grid=document.getElementById('product-grid');const message=document.getElementById('product-message');
 function showMessage(text,type){message.textContent=text;message.className='product-message '+(type||'');}
 function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
-async function loadProducts(){
-    try{
-        const response=await fetch('/api/digital-products/mine',{headers:{'Accept':'application/json'}});
-        const data=await response.json();
-        if(!response.ok) throw new Error(data.error||'Could not load products.');
-        if(!data.items||!data.items.length){grid.innerHTML='<div class="glass-card empty"><h3>No products yet.</h3><p class="muted">Publish your first digital product above.</p></div>';return;}
-        grid.innerHTML=data.items.map(p=>`<article class="glass-card product-card"><span class="product-status">${p.is_active?'PUBLISHED':'INACTIVE'}</span><h3>${escapeHtml(p.name)}</h3><p class="muted">/${escapeHtml(p.slug)}</p><div class="product-price">${escapeHtml(p.price)} ${escapeHtml(p.currency)}</div>${p.file_name?`<p class="muted">File: ${escapeHtml(p.file_name)}</p>`:''}${p.delivery_url?`<p class="muted" style="overflow-wrap:anywhere">Delivery: ${escapeHtml(p.delivery_url)}</p>`:''}</article>`).join('');
-    }catch(error){grid.innerHTML='<div class="glass-card empty"><p class="muted">'+escapeHtml(error.message)+'</p></div>';}
-}
-form.addEventListener('submit',async(event)=>{
-    event.preventDefault();showMessage('Publishing product…');
-    const body=Object.fromEntries(new FormData(form).entries());
-    try{
-        const response=await fetch('/api/digital-products',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(body)});
-        const data=await response.json();
-        if(!response.ok) throw new Error(data.error||'Product could not be published.');
-        form.reset();showMessage('Product published successfully. Open Shop to see it.','success');await loadProducts();
-    }catch(error){showMessage(error.message,'error');}
-});
-loadProducts();
+async function loadProducts(){try{const response=await fetch('/api/digital-products/mine',{headers:{'Accept':'application/json'}});const data=await response.json();if(!response.ok)throw new Error(data.error||'Could not load products.');if(!data.items||!data.items.length){grid.innerHTML='<div class="glass-card empty"><h3>No products yet.</h3><p class="muted">Publish your first digital product above.</p></div>';return;}grid.innerHTML=data.items.map(p=>`<article class="glass-card product-card"><span class="product-status">${p.is_active?'PUBLISHED':'INACTIVE'}</span><h3>${escapeHtml(p.name)}</h3><p class="muted">/${escapeHtml(p.slug)}</p><div class="product-price">${escapeHtml(p.price)} ${escapeHtml(p.currency)}</div>${p.file_name?`<p class="muted">File: ${escapeHtml(p.file_name)}</p>`:''}${p.delivery_url?`<p class="muted" style="overflow-wrap:anywhere">Delivery: ${escapeHtml(p.delivery_url)}</p>`:''}</article>`).join('');}catch(error){grid.innerHTML='<div class="glass-card empty"><p class="muted">'+escapeHtml(error.message)+'</p></div>';}}
+form.addEventListener('submit',async(event)=>{event.preventDefault();showMessage('Publishing product…');const body=Object.fromEntries(new FormData(form).entries());try{const response=await fetch('/api/digital-products',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(body)});const data=await response.json();if(!response.ok)throw new Error(data.error||'Product could not be published.');form.reset();showMessage('Product published successfully. Open Shop to see it.','success');await loadProducts();}catch(error){showMessage(error.message,'error');}});loadProducts();
 </script>
 </body>
 </html>
