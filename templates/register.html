@@ -24,6 +24,7 @@
         {% if error %}<div class="flash">{{ error }}</div>{% endif %}
 
         <form method="post" autocomplete="on">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input name="username" placeholder="Username" minlength="3" maxlength="80" autocomplete="username" required>
             <input type="email" name="email" placeholder="Email address" maxlength="255" autocomplete="email" required>
             <input type="password" name="password" placeholder="Password (8+ characters)" minlength="8" autocomplete="new-password" required>

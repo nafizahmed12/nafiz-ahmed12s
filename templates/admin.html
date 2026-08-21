@@ -103,6 +103,7 @@
             <span class="section-count">Published products appear automatically in the Shop.</span>
         </div>
         <form class="product-form" method="post" action="{{ url_for('admin_product.create_admin_product') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="field">
                 <label for="name">Product name *</label>
                 <input id="name" name="name" required maxlength="200" placeholder="e.g. Premium Mango Box">

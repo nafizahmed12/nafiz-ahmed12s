@@ -17,6 +17,7 @@ from digital_affiliate_routes import register_digital_affiliate_routes
 from shop_routes import register_shop_routes
 from admin_product_routes import register_admin_product_routes
 from admin_security import register_admin_session_guard, mark_admin_authenticated, clear_admin_session
+from csrf import register_csrf_protection
 from schema import (
     allow_contact, allow_login, allow_registration, allow_subscription,
     authenticate_user, change_password, create_message, create_subscriber,
@@ -43,6 +44,7 @@ register_digital_affiliate_routes(app)
 register_shop_routes(app)
 register_admin_product_routes(app)
 register_admin_session_guard(app)
+register_csrf_protection(app)
 
 @app.after_request
 def add_security_headers(response):

@@ -26,6 +26,7 @@
         <span class="section-label">PROFILE</span>
         <h2>Personal information</h2>
         <form method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="action" value="profile">
             <input name="username" value="{{ user.username }}" minlength="3" maxlength="80" autocomplete="username" required>
             <input type="email" name="email" value="{{ user.email }}" maxlength="255" autocomplete="email" required>
@@ -38,6 +39,7 @@
         <h2>Change password</h2>
         <p class="muted">Use a strong password with at least 8 characters.</p>
         <form method="post" autocomplete="off">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="action" value="password">
             <input type="password" name="current_password" placeholder="Current password" autocomplete="current-password" required>
             <input type="password" name="new_password" placeholder="New password" minlength="8" autocomplete="new-password" required>

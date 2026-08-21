@@ -19,6 +19,7 @@
   {% if error %}<p class="error">{{ error }}</p>{% endif %}
 
   <form method="post" autocomplete="on">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input name="company_name" placeholder="Company name" value="{{ form_data.get('company_name', '') if form_data else '' }}" required>
     <input name="username" placeholder="Username" minlength="3" value="{{ form_data.get('username', '') if form_data else '' }}" required autocomplete="username">
     <input name="email" type="email" placeholder="Email" value="{{ form_data.get('email', '') if form_data else '' }}" required autocomplete="email">

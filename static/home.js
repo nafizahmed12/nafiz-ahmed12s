@@ -122,7 +122,8 @@
       if (!email) return;
       button.disabled = true;
       try {
-        const body = new URLSearchParams({ subscriber_email: email });
+        const csrfToken = form.querySelector('input[name=csrf_token]')?.value || '';
+        const body = new URLSearchParams({ subscriber_email: email, csrf_token: csrfToken });
         const r = await fetch('/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body });
         const text = await r.text();
         if (!r.ok) throw new Error(text);

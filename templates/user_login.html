@@ -24,6 +24,7 @@
         {% if error %}<div class="flash">{{ error }}</div>{% endif %}
 
         <form method="post" autocomplete="on">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input name="username" placeholder="Username or email" autocomplete="username" required>
             <input type="password" name="password" placeholder="Password" autocomplete="current-password" required>
             <button class="btn btn-primary" type="submit">Login <span>→</span></button>
