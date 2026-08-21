@@ -108,6 +108,10 @@ def readiness():
     except Exception:
         app.logger.exception("Readiness check failed"); return {"status": "not_ready", "database": "unavailable"}, 503
 
+@app.route("/favicon.ico")
+def favicon_ico():
+    return redirect(url_for("static", filename="favicon.svg"), code=301)
+
 @app.route("/robots.txt")
 def robots_txt():
     content = """User-agent: *
