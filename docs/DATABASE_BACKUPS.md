@@ -4,7 +4,7 @@ The repository includes a GitHub Actions workflow at `.github/workflows/database
 
 ## Required setup
 
-Create a GitHub Actions repository secret named `DATABASE_URL` containing the same PostgreSQL connection URL used by the Render service.
+Create a GitHub Actions repository secret named `BACKUP_DATABASE_URL` containing the same PostgreSQL connection URL used by the Render service.
 
 The workflow:
 
