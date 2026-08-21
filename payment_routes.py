@@ -15,6 +15,7 @@ from flask import Blueprint, jsonify, request, session, redirect, render_templat
 from sqlalchemy import text
 
 from database import SessionLocal
+from schema import allow_payment_attempt
 
 payment_bp = Blueprint("payment_api", __name__, url_prefix="/api")
 logger = logging.getLogger(__name__)
@@ -53,6 +54,8 @@ def create_payment(order_id):
     user_id = _user_id()
     if user_id is None:
         return jsonify({"error": "Authentication required."}), 401
+    if not allow_payment_attempt(request.remote_addr, user_id):
+        return jsonify({"error": "Too many payment attempts. Please wait a few minutes and try again."}), 429
     body = request.get_json(silent=True) or {}
     provider = str(body.get("provider", "")).strip().lower()
     transaction_id = str(body.get("transaction_id", "")).strip() or None
@@ -244,6 +247,8 @@ def sslcommerz_initiate(order_id):
     user_id = _user_id()
     if user_id is None:
         return jsonify({"error": "Authentication required."}), 401
+    if not allow_payment_attempt(request.remote_addr, user_id):
+        return jsonify({"error": "Too many payment attempts. Please wait a few minutes and try again."}), 429
     store_id = os.getenv("SSLCOMMERZ_STORE_ID", "").strip()
     store_pass = os.getenv("SSLCOMMERZ_STORE_PASSWORD", "").strip()
     if not store_id or not store_pass:

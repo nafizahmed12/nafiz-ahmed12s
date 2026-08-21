@@ -6,6 +6,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
 from database import SessionLocal
+from schema import allow_cart_action, allow_checkout
 
 commerce_bp = Blueprint("commerce_api", __name__, url_prefix="/api")
 
@@ -153,6 +154,8 @@ def add_cart_item():
     user_id = _user_id()
     if user_id is None:
         return jsonify({"error": "Authentication required."}), 401
+    if not allow_cart_action(request.remote_addr, user_id):
+        return jsonify({"error": "Too many cart requests. Please slow down and try again shortly."}), 429
     body = request.get_json(silent=True) or {}
     try:
         product_id = int(body.get("product_id"))
@@ -227,6 +230,8 @@ def create_checkout():
     user_id = _user_id()
     if user_id is None:
         return jsonify({"error": "Authentication required."}), 401
+    if not allow_checkout(request.remote_addr, user_id):
+        return jsonify({"error": "Too many checkout attempts. Please wait a few minutes and try again."}), 429
     with SessionLocal() as db:
         cart_id = db.execute(text("SELECT id FROM carts WHERE user_id=:user_id FOR UPDATE"), {"user_id": user_id}).scalar_one_or_none()
         if cart_id is None:
@@ -270,6 +275,8 @@ def place_order(checkout_id):
     user_id = _user_id()
     if user_id is None:
         return jsonify({"error": "Authentication required."}), 401
+    if not allow_checkout(request.remote_addr, user_id):
+        return jsonify({"error": "Too many checkout attempts. Please wait a few minutes and try again."}), 429
     with SessionLocal() as db:
         checkout = db.execute(text("SELECT id,status,currency,subtotal,shipping_amount,discount_amount,total_amount,shipping_address_id FROM checkouts WHERE id=:checkout_id AND user_id=:user_id FOR UPDATE"), {"checkout_id": checkout_id, "user_id": user_id}).mappings().first()
         if checkout is None:

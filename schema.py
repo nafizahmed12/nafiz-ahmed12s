@@ -127,6 +127,38 @@ def allow_subscription(ip_address, limit=10, window_seconds=3600):
     )
 
 
+def allow_cart_action(ip_address, user_id, limit=60, window_seconds=60):
+    # Keyed by user, not just IP: several users behind the same NAT/proxy
+    # should not share one cart quota. Anonymous/no-session requests fall
+    # back to the IP alone via _safe_rate_key's "unknown" default.
+    ip_key = _safe_rate_key(ip_address, 200)
+    user_key = _safe_rate_key(str(user_id) if user_id else None, 50)
+    key = f"{ip_key}:{user_key}"
+    return _allow_rate_limited_request(
+        "cart_rate_limits", key, limit, window_seconds
+    )
+
+
+def allow_checkout(ip_address, user_id, limit=10, window_seconds=300):
+    ip_key = _safe_rate_key(ip_address, 200)
+    user_key = _safe_rate_key(str(user_id) if user_id else None, 50)
+    key = f"{ip_key}:{user_key}"
+    return _allow_rate_limited_request(
+        "checkout_rate_limits", key, limit, window_seconds
+    )
+
+
+def allow_payment_attempt(ip_address, user_id, limit=10, window_seconds=600):
+    # Tighter window than checkout: creating a payment attempt talks to the
+    # SSLCommerz gateway, so repeated abuse here has an external cost too.
+    ip_key = _safe_rate_key(ip_address, 200)
+    user_key = _safe_rate_key(str(user_id) if user_id else None, 50)
+    key = f"{ip_key}:{user_key}"
+    return _allow_rate_limited_request(
+        "payment_rate_limits", key, limit, window_seconds
+    )
+
+
 def authenticate_user(identifier, password):
     identifier = identifier.strip()
     with SessionLocal() as db:
