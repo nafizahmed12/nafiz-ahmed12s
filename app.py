@@ -178,6 +178,12 @@ def dashboard():
     if user is None: return redirect(url_for("user_login"))
     return render_template("dashboard.html",user=user,username=user.username,websites=get_user_websites(user.id))
 
+@app.route("/seller/dashboard")
+def seller_dashboard_page():
+    user = require_user()
+    if user is None: return redirect(url_for("user_login"))
+    return render_template("seller_dashboard.html", user=user)
+
 @app.route("/dashboard/websites",methods=["POST"])
 def create_website_route():
     user=require_user()

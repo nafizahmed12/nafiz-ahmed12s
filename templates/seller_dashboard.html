@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Seller Dashboard — Nafiz</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='portfolio.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='portfolio-theme.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body{min-height:100vh}.dash{max-width:1180px;margin:0 auto;padding:36px 22px 70px}.dash-nav{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:35px}.dash-brand{font-weight:800;font-size:22px}.dash-actions{display:flex;gap:10px;flex-wrap:wrap}.dash-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:24px 0 34px}.stat{padding:22px}.stat strong{display:block;font-size:26px;margin-top:6px}.panel{padding:26px;margin-bottom:22px}.panel form{display:grid;gap:13px}.panel input,.panel textarea{width:100%;box-sizing:border-box}.muted{opacity:.7}.empty{padding:25px;text-align:center;border:1px dashed rgba(255,255,255,.15);border-radius:16px}.table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px 12px;white-space:nowrap}th{font-size:12px;text-transform:uppercase;opacity:.6;font-weight:700;border-bottom:1px solid rgba(255,255,255,.1)}tr+tr td{border-top:1px solid rgba(255,255,255,.06)}.badge{padding:5px 10px;border-radius:999px;background:#18233e;font-size:12px;font-weight:800;display:inline-block}.badge.pending{background:#49331b;color:#ffd18a}.badge.approved,.badge.active{background:#123d2b;color:#8ff0bd}.badge.rejected,.badge.inactive{background:#4b2027;color:#ffadb7}.form-message{margin-top:12px;min-height:20px}.form-message.error{color:#fca5a5}.form-message.success{color:#86efac}.toggle-btn{cursor:pointer}@media(max-width:800px){.dash-grid{grid-template-columns:1fr 1fr}}
+    </style>
+</head>
+<body>
+<main class="dash">
+    <header class="dash-nav">
+        <div><div class="dash-brand">Nafiz<span class="gradient-text">.</span></div><span class="muted">Seller Dashboard</span></div>
+        <div class="dash-actions">
+            <a class="btn btn-secondary" href="{{ url_for('home') }}">View Home</a>
+            <a class="btn btn-secondary" href="{{ url_for('dashboard') }}">My Account</a>
+            <a class="btn btn-primary" href="{{ url_for('user_logout') }}">Logout</a>
+        </div>
+    </header>
+
+    <div id="register-view">
+        <section class="section-heading">
+            <span class="section-label">SELLER</span>
+            <h1>Start selling on <span class="gradient-text">Nafiz</span></h1>
+            <p>Create your store to list products and start earning.</p>
+        </section>
+        <section class="glass-card panel">
+            <form id="register-form">
+                <input name="store_name" placeholder="Store name" maxlength="160" required>
+                <input name="store_slug" placeholder="store-url-slug (letters, numbers, - and _ only)" pattern="[a-zA-Z0-9_-]+" maxlength="180" required>
+                <textarea name="description" placeholder="Tell buyers about your store (optional)" rows="4"></textarea>
+                <button class="btn btn-primary" type="submit">Create Store <span>→</span></button>
+            </form>
+            <div id="register-message" class="form-message"></div>
+        </section>
+    </div>
+
+    <div id="dashboard-view" hidden>
+        <section class="section-heading">
+            <span class="section-label">SELLER</span>
+            <h1>Welcome, <span class="gradient-text" id="store-name-heading"></span></h1>
+            <p>Manage your listings and track your sales.</p>
+        </section>
+        <section class="dash-grid">
+            <div class="glass-card stat"><span class="section-label">STATUS</span><strong id="stat-status">—</strong><span class="muted">Store status</span></div>
+            <div class="glass-card stat"><span class="section-label">LISTINGS</span><strong id="stat-listings">—</strong><span class="muted">Active products</span></div>
+            <div class="glass-card stat"><span class="section-label">ORDERS</span><strong id="stat-orders">—</strong><span class="muted">Orders containing your items</span></div>
+            <div class="glass-card stat"><span class="section-label">EARNINGS (EST.)</span><strong id="stat-earnings">—</strong><span class="muted" id="stat-earnings-sub">After commission</span></div>
+        </section>
+
+        <section id="pending-notice" class="glass-card panel" hidden>
+            <span class="section-label">PENDING APPROVAL</span>
+            <p class="muted">Your store is awaiting approval. You'll be able to list products once it's approved.</p>
+        </section>
+
+        <section class="glass-card panel">
+            <span class="section-label">LIST A PRODUCT</span>
+            <h2>Add an existing product to your store</h2>
+            <p class="muted">Enter the product ID, your price, and your stock. (Product IDs can be found on <a href="/shop">the shop page</a>.)</p>
+            <form id="listing-form">
+                <input name="product_id" type="number" min="1" placeholder="Product ID" required>
+                <input name="seller_price" type="number" min="0" step="0.01" placeholder="Your price (BDT)" required>
+                <input name="seller_stock" type="number" min="0" step="1" placeholder="Your stock" required>
+                <button class="btn btn-primary" type="submit">Add Listing <span>→</span></button>
+            </form>
+            <div id="listing-message" class="form-message"></div>
+        </section>
+
+        <section class="glass-card panel">
+            <div class="section-heading" style="text-align:left;margin-bottom:18px"><span class="section-label">CATALOG</span><h2>Your listings</h2></div>
+            <div id="listings-table"><div class="empty"><p class="muted">Loading…</p></div></div>
+        </section>
+    </div>
+</main>
+<script>
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function showMsg(el,text,type){el.textContent=text;el.className='form-message '+(type||'');}
+
+const registerView=document.getElementById('register-view');
+const dashboardView=document.getElementById('dashboard-view');
+const registerForm=document.getElementById('register-form');
+const registerMsg=document.getElementById('register-message');
+const listingForm=document.getElementById('listing-form');
+const listingMsg=document.getElementById('listing-message');
+const listingsBox=document.getElementById('listings-table');
+
+async function renderListings(){
+    listingsBox.innerHTML='<div class="empty"><p class="muted">Loading…</p></div>';
+    try{
+        const r=await fetch('/api/seller/products',{headers:{'Accept':'application/json'}});
+        const d=await r.json();
+        if(!r.ok) throw new Error(d.error||'Could not load listings.');
+        if(!d.items.length){listingsBox.innerHTML='<div class="empty"><p class="muted">No listings yet. Add your first product above.</p></div>';return;}
+        listingsBox.innerHTML='<div class="table-wrap"><table><thead><tr><th>Product</th><th>Price</th><th>Stock</th><th>Status</th><th></th></tr></thead><tbody>'+
+            d.items.map(item=>`<tr data-id="${item.id}"><td>${esc(item.name)}</td><td>${esc(item.seller_price)}</td><td>${esc(item.seller_stock)}</td><td><span class="badge ${item.is_active?'active':'inactive'}">${item.is_active?'Active':'Inactive'}</span></td><td><button class="btn btn-secondary toggle-btn" data-id="${item.id}" data-active="${item.is_active}">${item.is_active?'Deactivate':'Activate'}</button></td></tr>`).join('')+
+            '</tbody></table></div>';
+        listingsBox.querySelectorAll('.toggle-btn').forEach(btn=>btn.addEventListener('click',async()=>{
+            btn.disabled=true;
+            try{
+                const r=await fetch('/api/seller/products/'+btn.dataset.id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({is_active: btn.dataset.active!=='true'})});
+                const d=await r.json();
+                if(!r.ok) throw new Error(d.error||'Could not update listing.');
+                await renderListings();
+            }catch(e){ alert(e.message); btn.disabled=false; }
+        }));
+    }catch(e){
+        listingsBox.innerHTML='<div class="empty"><p class="muted">'+esc(e.message)+'</p></div>';
+    }
+}
+
+async function loadDashboard(){
+    try{
+        const r=await fetch('/api/seller/dashboard',{headers:{'Accept':'application/json'}});
+        if(r.status===404){ registerView.hidden=false; dashboardView.hidden=true; return; }
+        const d=await r.json();
+        if(!r.ok) throw new Error(d.error||'Could not load dashboard.');
+        registerView.hidden=true; dashboardView.hidden=false;
+        document.getElementById('store-name-heading').textContent=d.seller.store_name;
+        document.getElementById('stat-status').textContent=d.seller.status;
+        document.getElementById('stat-status').className='';
+        document.getElementById('stat-listings').textContent=d.listing_count;
+        document.getElementById('stat-orders').textContent=d.orders;
+        document.getElementById('stat-earnings').textContent=d.estimated_earnings;
+        document.getElementById('stat-earnings-sub').textContent='After '+d.seller.commission_rate+'% commission';
+        document.getElementById('pending-notice').hidden = d.seller.status==='approved';
+        if(d.seller.status==='approved'){ await renderListings(); }
+        else { listingsBox.innerHTML='<div class="empty"><p class="muted">Listings unlock once your store is approved.</p></div>'; }
+    }catch(e){
+        registerView.hidden=false; dashboardView.hidden=true;
+    }
+}
+
+registerForm.addEventListener('submit',async(event)=>{
+    event.preventDefault();
+    showMsg(registerMsg,'Creating store…');
+    const body=Object.fromEntries(new FormData(registerForm).entries());
+    try{
+        const r=await fetch('/api/seller/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+        const d=await r.json();
+        if(!r.ok) throw new Error(d.error||'Could not create store.');
+        showMsg(registerMsg,'Store created! Awaiting approval.','success');
+        await loadDashboard();
+    }catch(e){ showMsg(registerMsg,e.message,'error'); }
+});
+
+listingForm.addEventListener('submit',async(event)=>{
+    event.preventDefault();
+    showMsg(listingMsg,'Adding listing…');
+    const body=Object.fromEntries(new FormData(listingForm).entries());
+    try{
+        const r=await fetch('/api/seller/products',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+        const d=await r.json();
+        if(!r.ok) throw new Error(d.error||'Could not add listing.');
+        listingForm.reset();
+        showMsg(listingMsg,'Listing added.','success');
+        await renderListings();
+        await loadDashboard();
+    }catch(e){ showMsg(listingMsg,e.message,'error'); }
+});
+
+loadDashboard();
+</script>
+</body>
+</html>

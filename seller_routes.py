@@ -162,9 +162,9 @@ def seller_dashboard():
         listing_count = db.execute(text("SELECT COUNT(*) FROM product_sellers WHERE seller_id=:seller_id AND is_active=TRUE"), {"seller_id": seller_id}).scalar_one()
         order_stats = db.execute(text("""SELECT COUNT(DISTINCT oi.order_id) AS orders, COALESCE(SUM(oi.line_total),0) AS gross_sales,
             COALESCE(SUM(oi.line_total * (1 - :commission_rate / 100)),0) AS seller_earnings
-            FROM order_items oi JOIN commerce_orders o ON o.id=oi.order_id
+            FROM commerce_order_items oi JOIN commerce_orders o ON o.id=oi.order_id
             WHERE oi.seller_id=:seller_id AND o.status NOT IN ('cancelled','refunded')"""), {"seller_id": seller_id, "commission_rate": Decimal(str(seller["commission_rate"] or 0))}).mappings().one()
-        status_rows = db.execute(text("""SELECT o.status,COUNT(DISTINCT o.id) AS count FROM commerce_orders o JOIN order_items oi ON oi.order_id=o.id WHERE oi.seller_id=:seller_id GROUP BY o.status ORDER BY o.status"""), {"seller_id": seller_id}).mappings().all()
+        status_rows = db.execute(text("""SELECT o.status,COUNT(DISTINCT o.id) AS count FROM commerce_orders o JOIN commerce_order_items oi ON oi.order_id=o.id WHERE oi.seller_id=:seller_id GROUP BY o.status ORDER BY o.status"""), {"seller_id": seller_id}).mappings().all()
     return jsonify({"seller": dict(seller), "listing_count": listing_count, "orders": int(order_stats["orders"] or 0), "gross_sales": _money(order_stats["gross_sales"]), "estimated_earnings": _money(order_stats["seller_earnings"]), "order_status": [dict(row) for row in status_rows]})
 
 
