@@ -5,7 +5,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
 from database import SessionLocal
-from admin_security import admin_required
+from admin_auth import admin_required
 
 admin_product_bp = Blueprint("admin_product", __name__)
 
