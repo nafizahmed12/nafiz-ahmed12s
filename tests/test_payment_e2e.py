@@ -2,6 +2,7 @@ import hashlib
 import hmac
 import json
 import os
+import time
 from uuid import uuid4
 
 import pytest
@@ -54,6 +55,7 @@ def payment_fixture():
             session.permanent = True
             session["user_id"] = user_id
             session["username"] = username
+            session["user_session_created_at"] = time.time()
         yield client, user_id, product_id
     finally:
         with SessionLocal() as db:
