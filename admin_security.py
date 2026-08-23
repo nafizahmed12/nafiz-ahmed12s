@@ -54,18 +54,21 @@ def register_admin_session_guard(app):
 
     @app.before_request
     def guard_user_session():
-        """Bind each user session to its creation time and revoke it after a password change."""
+        """Revoke every user session created before the latest password change."""
         user_id = session.get("user_id")
         if not user_id or session.get("admin_logged_in"):
             return None
 
-        now = datetime.now(timezone.utc)
         created_at = session.get(USER_SESSION_CREATED_KEY)
-
         try:
             created_ts = float(created_at) if created_at is not None else None
         except (TypeError, ValueError):
             created_ts = None
+
+        # Old sessions created before this marker existed are not trusted.
+        if created_ts is None:
+            session.clear()
+            return redirect(url_for("user_login"))
 
         with SessionLocal() as db:
             changed_at = db.execute(
@@ -76,12 +79,9 @@ def register_admin_session_guard(app):
         if changed_at is not None:
             if changed_at.tzinfo is None:
                 changed_at = changed_at.replace(tzinfo=timezone.utc)
-            if created_ts is not None and created_ts < changed_at.timestamp():
+            if created_ts < changed_at.timestamp():
                 session.clear()
                 return redirect(url_for("user_login"))
-
-        if created_ts is None:
-            session[USER_SESSION_CREATED_KEY] = now.timestamp()
 
         return None
 
