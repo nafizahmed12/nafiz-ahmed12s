@@ -1,12 +1,12 @@
 import hmac
 import secrets
+from urllib.parse import urlparse
 
 from flask import abort, request, session
 
 
 def _get_or_create_csrf_secret():
-    """Per-session random value the token is bound to (separate from app.secret_key
-    so a leaked token can't be replayed against a different session)."""
+    """Per-session random value the token is bound to."""
     value = session.get("_csrf_secret")
     if not value:
         value = secrets.token_hex(32)
@@ -27,17 +27,36 @@ def _valid_csrf_token(submitted):
     return hmac.compare_digest(str(submitted), str(expected))
 
 
-# Endpoints intentionally excluded from the form-CSRF check:
-#  - Everything under /api/ (commerce, payment, seller, SSLCommerz
-#    success/fail/cancel/ipn, digital-products, etc.) is a JSON fetch()
-#    endpoint, not the classic CSRF target: the browser blocks cross-site
-#    requests carrying an application/json body before they reach the
-#    server, and those routes rely on SESSION_COOKIE_SAMESITE=Lax instead
-#    (see app.py). The SSLCommerz IPN/callback routes specifically are also
-#    posted to by SSLCommerz's own servers rather than the user's browser,
-#    and are separately protected by server-to-server amount/signature
-#    validation (see payment_routes.py::_ssl_callback).
-#  - /health is a liveness probe with no session/user context.
+def _valid_same_origin_request():
+    """Validate browser origin metadata for state-changing JSON API calls.
+
+    API endpoints use JSON fetch() rather than traditional HTML forms, so a
+    form token is not always available. Origin/Referer validation prevents a
+    cross-site browser from using the victim's session cookie to perform a
+    state-changing API request. Requests without these headers remain
+    compatible with server-to-server integrations and CLI clients.
+    """
+    expected_origin = request.host_url.rstrip("/")
+
+    origin = request.headers.get("Origin")
+    if origin:
+        parsed = urlparse(origin)
+        actual_origin = f"{parsed.scheme}://{parsed.netloc}".rstrip("/")
+        return hmac.compare_digest(actual_origin, expected_origin)
+
+    referer = request.headers.get("Referer")
+    if referer:
+        parsed = urlparse(referer)
+        actual_origin = f"{parsed.scheme}://{parsed.netloc}".rstrip("/")
+        return hmac.compare_digest(actual_origin, expected_origin)
+
+    return True
+
+
+# JSON API endpoints use same-origin browser validation instead of requiring
+# an HTML form token. External payment callbacks are also under /api/ and may
+# not send Origin/Referer; they have their own server-side signature/amount
+# validation in payment_routes.py.
 EXEMPT_PREFIXES = ("/api/", "/health")
 
 
@@ -46,10 +65,15 @@ def register_csrf_protection(app):
     def _check_csrf():
         if request.method not in ("POST", "PUT", "PATCH", "DELETE"):
             return
-        if request.path.startswith(EXEMPT_PREFIXES):
+
+        if request.path.startswith("/api/"):
+            if not _valid_same_origin_request():
+                abort(400, description="Cross-origin API request blocked.")
             return
-        # Only the traditional form body is checked here — JSON bodies go
-        # through the exempt API prefixes above.
+
+        if request.path.startswith("/health"):
+            return
+
         submitted = request.form.get("csrf_token")
         if not _valid_csrf_token(submitted):
             abort(400, description="Invalid or missing CSRF token. Please refresh the page and try again.")
