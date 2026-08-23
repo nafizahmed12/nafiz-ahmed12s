@@ -1,32 +1,19 @@
 import os
 from datetime import datetime, timezone
-from functools import wraps
 
-from flask import redirect, session, url_for, request, jsonify
+from flask import redirect, session, url_for, request
 from sqlalchemy import text
 
 from database import SessionLocal
 from admin_product_routes import register_admin_product_routes
 from supplier_auth_routes import register_supplier_auth_routes
 from home_routes import register_home_routes
+from admin_auth import ADMIN_ROLE
 
 
 ADMIN_IDLE_TIMEOUT_SECONDS = int(os.getenv("ADMIN_IDLE_TIMEOUT_SECONDS", "1800"))
 ADMIN_ABSOLUTE_TIMEOUT_SECONDS = int(os.getenv("ADMIN_ABSOLUTE_TIMEOUT_SECONDS", "43200"))
 USER_SESSION_CREATED_KEY = "user_session_created_at"
-ADMIN_ROLE = "admin"
-
-
-def admin_required(view):
-    """Require an authenticated session with the explicit admin role."""
-    @wraps(view)
-    def wrapped(*args, **kwargs):
-        if not session.get("admin_logged_in") or session.get("admin_role") != ADMIN_ROLE:
-            if request.path.startswith("/api/"):
-                return jsonify({"error": "Admin authentication required."}), 401
-            return redirect(url_for("login"))
-        return view(*args, **kwargs)
-    return wrapped
 
 
 def register_admin_session_guard(app):
