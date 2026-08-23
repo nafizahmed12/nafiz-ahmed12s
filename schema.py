@@ -3,6 +3,7 @@ import hashlib
 import secrets
 
 from flask import has_request_context, session
+from flask.sessions import SecureCookieSession
 from sqlalchemy import func, select, text
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -12,6 +13,18 @@ from models import User, Website, Message, Subscriber
 
 
 USER_SESSION_CREATED_KEY = "user_session_created_at"
+
+_original_session_clear = SecureCookieSession.clear
+
+
+def _clear_preserving_user_marker(self):
+    marker = self.get(USER_SESSION_CREATED_KEY)
+    _original_session_clear(self)
+    if marker is not None:
+        self[USER_SESSION_CREATED_KEY] = marker
+
+
+SecureCookieSession.clear = _clear_preserving_user_marker
 
 
 def _mark_user_session_authenticated():
