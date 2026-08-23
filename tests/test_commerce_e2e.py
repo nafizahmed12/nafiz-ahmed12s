@@ -164,3 +164,46 @@ def test_checkout_rejects_when_stock_changes(commerce_fixture):
     response = client.post(f"/api/checkout/{checkout_id}/place-order")
     assert response.status_code == 409
     assert "stock" in response.get_json()["error"].lower()
+
+
+def test_order_detail_is_not_accessible_to_another_user(commerce_fixture):
+    user_id, product_id = commerce_fixture
+    owner_client = authenticated_client(user_id)
+
+    response = owner_client.post(
+        "/api/cart/items",
+        json={"product_id": product_id, "quantity": 1},
+    )
+    assert response.status_code == 201
+
+    response = owner_client.post("/api/checkout")
+    assert response.status_code == 201
+    checkout_id = response.get_json()["checkout_id"]
+
+    response = owner_client.post(f"/api/checkout/{checkout_id}/place-order")
+    assert response.status_code == 201
+    order_id = response.get_json()["order_id"]
+
+    token = uuid4().hex[:12]
+    with SessionLocal() as db:
+        other_user_id = db.execute(
+            text("""INSERT INTO users (username,email,password_hash,created_at)
+                    VALUES (:username,:email,:password_hash,NOW()) RETURNING id"""),
+            {
+                "username": f"idor_{token}",
+                "email": f"idor_{token}@example.test",
+                "password_hash": "idor-test-hash",
+            },
+        ).scalar_one()
+        db.commit()
+
+    try:
+        other_client = authenticated_client(other_user_id)
+        response = other_client.get(f"/api/orders/{order_id}")
+        assert response.status_code == 404
+        assert response.get_json()["error"] == "Order not found."
+    finally:
+        with SessionLocal() as db:
+            db.execute(text("DELETE FROM carts WHERE user_id=:user_id"), {"user_id": other_user_id})
+            db.execute(text("DELETE FROM users WHERE id=:user_id"), {"user_id": other_user_id})
+            db.commit()
