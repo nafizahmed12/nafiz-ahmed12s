@@ -1,4 +1,5 @@
 import os
+import time
 from uuid import uuid4
 
 import pytest
@@ -66,6 +67,7 @@ def authenticated_client(user_id):
         session.permanent = True
         session["user_id"] = user_id
         session["username"] = "e2e-user"
+        session["user_session_created_at"] = time.time()
     return client
 
 
