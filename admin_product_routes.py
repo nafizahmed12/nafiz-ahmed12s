@@ -5,12 +5,9 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
 from database import SessionLocal
+from admin_security import admin_required
 
 admin_product_bp = Blueprint("admin_product", __name__)
-
-
-def _admin_required():
-    return bool(session.get("admin_logged_in"))
 
 
 def _money(value):
@@ -38,10 +35,8 @@ def _product_payload(row):
 
 
 @admin_product_bp.post("/admin/products")
+@admin_required
 def create_admin_product():
-    if not _admin_required():
-        return redirect(url_for("login"))
-
     name = request.form.get("name", "").strip()
     slug = request.form.get("slug", "").strip().lower()
     description = request.form.get("description", "").strip()
@@ -140,10 +135,8 @@ def create_admin_product():
 
 
 @admin_product_bp.get("/api/admin/products")
+@admin_required
 def admin_products():
-    if not _admin_required():
-        return jsonify({"error": "Admin authentication required."}), 401
-
     with SessionLocal() as db:
         rows = db.execute(
             text("""SELECT p.id,p.name,p.slug,p.description,p.product_type,p.status,p.price,
@@ -169,10 +162,8 @@ def admin_products():
 
 
 @admin_product_bp.post("/api/admin/products/<int:product_id>/archive")
+@admin_required
 def archive_admin_product(product_id):
-    if not _admin_required():
-        return jsonify({"error": "Admin authentication required."}), 401
-
     with SessionLocal() as db:
         result = db.execute(
             text("UPDATE products SET status='archived', updated_at=NOW() WHERE id=:product_id AND status <> 'archived'"),
