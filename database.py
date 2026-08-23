@@ -162,6 +162,32 @@ def init_db():
                 "ON websites (owner_id, id DESC)"
             )
         )
+        connection.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                    id INTEGER PRIMARY KEY,
+                    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    token_hash VARCHAR(64) NOT NULL UNIQUE,
+                    expires_at TIMESTAMPTZ NOT NULL,
+                    used_at TIMESTAMPTZ,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+                """
+            )
+        )
+        connection.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_password_reset_tokens_user_id "
+                "ON password_reset_tokens (user_id)"
+            )
+        )
+        connection.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_password_reset_tokens_expires_at "
+                "ON password_reset_tokens (expires_at)"
+            )
+        )
         _cleanup_rate_limit_records(connection)
         connection.execute(text("SELECT 1"))
 

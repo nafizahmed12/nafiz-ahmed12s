@@ -15,6 +15,51 @@ from models import User
 client = app.app.test_client()
 
 
+def test_init_db_creates_password_reset_tokens_table():
+    """A fresh environment that bootstraps via init_db() (not `alembic upgrade
+    head`) must still get a working password-reset flow. This reproduces a
+    real fresh-clone/fresh-deploy scenario: brand-new SQLite file, only
+    init_db() run, no migrations. password_reset_tokens must exist afterward,
+    or create_password_reset_token()/reset_password_with_token() will raise
+    OperationalError the first time anyone requests a reset.
+
+    init_db() reads the module-level `database.engine` global (frozen at
+    import time from whatever DATABASE_URL was set then) rather than
+    re-reading DATABASE_URL on each call, so this test swaps that engine
+    directly for a fresh, isolated SQLite file and restores the original
+    engine afterward -- exercising the real init_db() body with no
+    reimplementation, and without disturbing the shared engine every other
+    test in this suite depends on."""
+    import tempfile
+
+    from sqlalchemy import create_engine, inspect
+
+    import database
+    from database import init_db
+
+    fd, db_path = tempfile.mkstemp(suffix=".db")
+    os.close(fd)
+    os.remove(db_path)  # init_db() must create the file itself
+
+    fresh_engine = create_engine(f"sqlite:///{db_path}", connect_args={"check_same_thread": False})
+    original_engine = database.engine
+    try:
+        database.engine = fresh_engine
+        init_db()
+
+        tables = set(inspect(fresh_engine).get_table_names())
+        assert "password_reset_tokens" in tables, (
+            "init_db() did not create password_reset_tokens. A fresh deploy "
+            "that bootstraps via init_db() instead of `alembic upgrade head` "
+            "will 500 on the first password-reset request."
+        )
+    finally:
+        database.engine = original_engine
+        fresh_engine.dispose()
+        if os.path.exists(db_path):
+            os.remove(db_path)
+
+
 def _post_with_csrf(path, data):
     token = "ci-reset-csrf"
     with client.session_transaction() as session:
