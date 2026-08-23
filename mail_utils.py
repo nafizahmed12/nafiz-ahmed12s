@@ -1,53 +1,64 @@
+import json
 import os
-import smtplib
-from email.message import EmailMessage
+from urllib.error import HTTPError, URLError
 from urllib.parse import quote
+from urllib.request import Request, urlopen
 
 
 def send_password_reset_email(recipient, token):
-    host = os.getenv("SMTP_HOST", "").strip()
-    username = os.getenv("SMTP_USERNAME", "").strip()
-    password = os.getenv("SMTP_PASSWORD", "")
-    sender = os.getenv("MAIL_FROM", username).strip()
-    port = int(os.getenv("SMTP_PORT", "587"))
-    security = os.getenv("SMTP_SECURITY", "auto").strip().lower()
+    """Send a password-reset email through Resend's HTTPS API.
+
+    HTTPS API delivery is used instead of SMTP because Render Free web services
+    can block outbound SMTP ports such as 587.
+    """
+    api_key = os.getenv("RESEND_API_KEY", "").strip()
+    sender = os.getenv("MAIL_FROM", "").strip()
     base_url = os.getenv("APP_BASE_URL", "").strip().rstrip("/")
 
-    if not host or not sender or not base_url:
+    if not api_key or not sender or not base_url:
         raise RuntimeError(
-            "Password reset email is not configured: SMTP_HOST, MAIL_FROM and APP_BASE_URL are required."
+            "Password reset email is not configured: RESEND_API_KEY, "
+            "MAIL_FROM and APP_BASE_URL are required."
         )
 
     reset_url = f"{base_url}/reset-password?token={quote(token, safe='')}"
-    message = EmailMessage()
-    message["Subject"] = "Reset your Nafiz Ahmed password"
-    message["From"] = sender
-    message["To"] = recipient
-    message.set_content(
+    subject = "Reset your Nafiz Ahmed password"
+    text = (
         "We received a request to reset your password.\n\n"
         f"Reset your password: {reset_url}\n\n"
         "This link expires in 30 minutes and can be used only once. "
         "If you did not request this, you can safely ignore this email.\n"
     )
 
-    # Port 465 normally uses implicit TLS; port 587 normally uses STARTTLS.
-    # SMTP_SECURITY can be set explicitly to: ssl, starttls, or plain.
-    if security == "auto":
-        security = "ssl" if port == 465 else "starttls"
+    payload = json.dumps({
+        "from": sender,
+        "to": [recipient],
+        "subject": subject,
+        "text": text,
+    }).encode("utf-8")
 
-    if security == "ssl":
-        smtp = smtplib.SMTP_SSL(host, port, timeout=15)
-    else:
-        smtp = smtplib.SMTP(host, port, timeout=15)
+    request = Request(
+        "https://api.resend.com/emails",
+        data=payload,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "User-Agent": "nafiz-ahmed12s-password-reset/1.0",
+        },
+        method="POST",
+    )
 
-    with smtp:
-        smtp.ehlo()
-        if security == "starttls":
-            smtp.starttls()
-            smtp.ehlo()
-        elif security not in {"plain", "ssl"}:
-            raise RuntimeError("SMTP_SECURITY must be auto, ssl, starttls, or plain.")
-
-        if username:
-            smtp.login(username, password)
-        smtp.send_message(message)
+    try:
+        with urlopen(request, timeout=20) as response:
+            response_body = response.read().decode("utf-8")
+            if response.status < 200 or response.status >= 300:
+                raise RuntimeError(
+                    f"Resend returned HTTP {response.status}: {response_body[:500]}"
+                )
+    except HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(
+            f"Resend returned HTTP {exc.code}: {body[:500]}"
+        ) from exc
+    except URLError as exc:
+        raise RuntimeError(f"Could not reach Resend API: {exc.reason}") from exc
