@@ -1,7 +1,8 @@
 import os
 from datetime import datetime, timezone
+from functools import wraps
 
-from flask import redirect, session, url_for, request
+from flask import redirect, session, url_for, request, jsonify
 from sqlalchemy import text
 
 from database import SessionLocal
@@ -13,6 +14,19 @@ from home_routes import register_home_routes
 ADMIN_IDLE_TIMEOUT_SECONDS = int(os.getenv("ADMIN_IDLE_TIMEOUT_SECONDS", "1800"))
 ADMIN_ABSOLUTE_TIMEOUT_SECONDS = int(os.getenv("ADMIN_ABSOLUTE_TIMEOUT_SECONDS", "43200"))
 USER_SESSION_CREATED_KEY = "user_session_created_at"
+ADMIN_ROLE = "admin"
+
+
+def admin_required(view):
+    """Require an authenticated session with the explicit admin role."""
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if not session.get("admin_logged_in") or session.get("admin_role") != ADMIN_ROLE:
+            if request.path.startswith("/api/"):
+                return jsonify({"error": "Admin authentication required."}), 401
+            return redirect(url_for("login"))
+        return view(*args, **kwargs)
+    return wrapped
 
 
 def register_admin_session_guard(app):
@@ -26,14 +40,18 @@ def register_admin_session_guard(app):
         if not session.get("admin_logged_in"):
             return None
 
+        # Sessions created before the explicit role marker are not trusted.
+        if session.get("admin_role") != ADMIN_ROLE:
+            _clear_admin_session()
+            return redirect(url_for("login"))
+
         now = datetime.now(timezone.utc).timestamp()
         authenticated_at = session.get("admin_authenticated_at")
         last_activity = session.get("admin_last_activity")
 
         if authenticated_at is None or last_activity is None:
-            session["admin_authenticated_at"] = now
-            session["admin_last_activity"] = now
-            return None
+            _clear_admin_session()
+            return redirect(url_for("login"))
 
         try:
             authenticated_at = float(authenticated_at)
@@ -65,7 +83,6 @@ def register_admin_session_guard(app):
         except (TypeError, ValueError):
             created_ts = None
 
-        # Old sessions created before this marker existed are not trusted.
         if created_ts is None:
             session.clear()
             return redirect(url_for("user_login"))
@@ -98,9 +115,10 @@ def register_admin_session_guard(app):
 
 
 def mark_admin_authenticated():
-    """Initialize timestamps for a newly authenticated admin session."""
+    """Initialize timestamps and role for a newly authenticated admin session."""
     now = datetime.now(timezone.utc).timestamp()
     session["admin_logged_in"] = True
+    session["admin_role"] = ADMIN_ROLE
     session["admin_authenticated_at"] = now
     session["admin_last_activity"] = now
 
@@ -112,6 +130,7 @@ def clear_admin_session():
 
 def _clear_admin_session():
     session.pop("admin_logged_in", None)
+    session.pop("admin_role", None)
     session.pop("admin_authenticated_at", None)
     session.pop("admin_last_activity", None)
     session.pop("_permanent", None)
