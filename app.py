@@ -1,4 +1,5 @@
 import hmac
+import logging
 import os
 from datetime import timedelta
 from urllib.parse import urlparse
@@ -18,12 +19,14 @@ from shop_routes import register_shop_routes
 from admin_product_routes import register_admin_product_routes
 from admin_security import register_admin_session_guard, mark_admin_authenticated, clear_admin_session
 from csrf import register_csrf_protection
+from mail_utils import send_password_reset_email
 from schema import (
     allow_contact, allow_login, allow_registration, allow_subscription,
-    authenticate_user, change_password, create_message, create_subscriber,
-    create_user, create_website, delete_website, get_admin_stats,
-    get_messages, get_subscribers, get_user, get_user_websites,
-    get_website_by_slug, update_user_profile,
+    allow_password_reset, authenticate_user, change_password, create_message,
+    create_password_reset_token, create_subscriber, create_user, create_website,
+    delete_website, get_admin_stats, get_messages, get_subscribers, get_user,
+    get_user_websites, get_website_by_slug, reset_password_with_token,
+    update_user_profile,
 )
 
 load_dotenv()
@@ -35,7 +38,13 @@ if not secret_key:
         raise RuntimeError("SECRET_KEY environment variable is required in production.")
     secret_key = "dev-only-change-this-secret"
 app.secret_key = secret_key
-app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Lax", SESSION_COOKIE_SECURE=os.getenv("SESSION_COOKIE_SECURE", "1" if os.getenv("RENDER") else "0") == "1", PERMANENT_SESSION_LIFETIME=timedelta(days=7), MAX_CONTENT_LENGTH=int(os.getenv("MAX_CONTENT_LENGTH", str(1 * 1024 * 1024))))
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=os.getenv("SESSION_COOKIE_SECURE", "1" if os.getenv("RENDER") else "0") == "1",
+    PERMANENT_SESSION_LIFETIME=timedelta(days=7),
+    MAX_CONTENT_LENGTH=int(os.getenv("MAX_CONTENT_LENGTH", str(1 * 1024 * 1024))),
+)
 register_error_handlers(app)
 register_commerce_routes(app)
 register_payment_routes(app)
@@ -53,62 +62,80 @@ def add_security_headers(response):
     response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
     response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()")
     response.headers.setdefault("Content-Security-Policy", "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data: https:; font-src 'self' data: https:; style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline' https:; connect-src 'self' https:; media-src 'self' https:;")
-    if request.is_secure: response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+    if request.is_secure:
+        response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
     return response
 
 @app.after_request
 def prevent_sensitive_page_caching(response):
-    sensitive_paths = ("/dashboard", "/account", "/admin", "/login", "/user-login")
+    sensitive_paths = ("/dashboard", "/account", "/admin", "/login", "/user-login", "/forgot-password", "/reset-password")
     if any(request.path == path or request.path.startswith(f"{path}/") for path in sensitive_paths):
-        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"; response.headers["Pragma"] = "no-cache"; response.headers["Expires"] = "0"
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
     return response
 
 @app.before_request
 def protect_state_changing_requests():
-    if request.method != "POST": return None
-    # SSLCommerz server callbacks are cross-site POSTs by design. They must
-    # bypass the browser Origin/Referer check and rely on server-side gateway
-    # validation in payment_routes.py instead.
+    if request.method != "POST":
+        return None
     if request.path.startswith("/api/payments/sslcommerz/"):
         return None
-    origin = request.headers.get("Origin"); referer = request.headers.get("Referer"); expected = f"{request.scheme}://{request.host}"; source = origin or referer
+    origin = request.headers.get("Origin")
+    referer = request.headers.get("Referer")
+    expected = f"{request.scheme}://{request.host}"
+    source = origin or referer
     if source:
-        parsed = urlparse(source); actual = f"{parsed.scheme}://{parsed.netloc}"
-        if actual != expected: abort(403, description="Cross-site request blocked.")
+        parsed = urlparse(source)
+        actual = f"{parsed.scheme}://{parsed.netloc}"
+        if actual != expected:
+            abort(403, description="Cross-site request blocked.")
     return None
 
 def get_host_site_slug():
-    base_domain = os.getenv("BASE_DOMAIN", "").strip().lower().rstrip("."); host = request.host.split(":", 1)[0].lower().rstrip(".")
-    if not base_domain or host in {base_domain, f"www.{base_domain}"}: return None
+    base_domain = os.getenv("BASE_DOMAIN", "").strip().lower().rstrip(".")
+    host = request.host.split(":", 1)[0].lower().rstrip(".")
+    if not base_domain or host in {base_domain, f"www.{base_domain}"}:
+        return None
     suffix = f".{base_domain}"
     if host.endswith(suffix):
         slug = host[:-len(suffix)]
-        if slug and "." not in slug: return slug
+        if slug and "." not in slug:
+            return slug
     return None
 
 def current_user():
-    user_id = session.get("user_id"); return get_user(user_id) if user_id else None
+    user_id = session.get("user_id")
+    return get_user(user_id) if user_id else None
 
 def require_user():
     user = current_user()
-    if user is None: session.pop("user_id", None); session.pop("username", None); return None
+    if user is None:
+        session.pop("user_id", None)
+        session.pop("username", None)
+        return None
     return user
 
 def valid_email(email):
     email = (email or "").strip()
-    if len(email) > 255 or email.count("@") != 1: return False
-    local, domain = email.rsplit("@", 1); return bool(local and domain and "." in domain and not any(c.isspace() for c in email))
+    if len(email) > 255 or email.count("@") != 1:
+        return False
+    local, domain = email.rsplit("@", 1)
+    return bool(local and domain and "." in domain and not any(c.isspace() for c in email))
 
 @app.route("/health")
-def health(): return {"status": "ok"}, 200
+def health():
+    return {"status": "ok"}, 200
 
 @app.route("/health/ready")
 def readiness():
     try:
-        with SessionLocal() as db: db.execute(text("SELECT 1"))
+        with SessionLocal() as db:
+            db.execute(text("SELECT 1"))
         return {"status": "ready", "database": "ok"}, 200
     except Exception:
-        app.logger.exception("Readiness check failed"); return {"status": "not_ready", "database": "unavailable"}, 503
+        app.logger.exception("Readiness check failed")
+        return {"status": "not_ready", "database": "unavailable"}, 503
 
 @app.route("/favicon.ico")
 def favicon_ico():
@@ -126,6 +153,8 @@ Disallow: /account
 Disallow: /register
 Disallow: /user-login
 Disallow: /user-logout
+Disallow: /forgot-password
+Disallow: /reset-password
 
 Sitemap: https://nafiz-ahmed12s.onrender.com/sitemap.xml
 """
@@ -142,147 +171,262 @@ def home():
     host_slug = get_host_site_slug()
     if host_slug:
         website = get_website_by_slug(host_slug)
-        if website: return render_template("published_site.html", website=website)
+        if website:
+            return render_template("published_site.html", website=website)
         abort(404)
     return render_template("index.html")
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
-    if session.get("user_id"): return redirect(url_for("dashboard"))
+    if session.get("user_id"):
+        return redirect(url_for("dashboard"))
     if request.method == "POST":
-        if not allow_registration(request.remote_addr, limit=10, window_seconds=3600): return render_template("register.html", error="Too many registration attempts from this network. Please try again later."), 429
-        username=request.form.get("username","").strip(); email=request.form.get("email","").strip().lower(); password=request.form.get("password",""); confirm=request.form.get("confirm_password","")
-        if len(username)<3 or len(username)>80: return render_template("register.html", error="Username must be 3-80 characters."),400
-        if not valid_email(email): return render_template("register.html", error="Enter a valid email address."),400
-        if len(password)<8: return render_template("register.html", error="Password must be at least 8 characters."),400
-        if password!=confirm: return render_template("register.html", error="Passwords do not match."),400
-        user=create_user(username,email,password)
-        if user is None: return render_template("register.html", error="Username or email is already in use."),409
-        session.clear(); session.permanent=True; session["user_id"]=user.id; session["username"]=user.username; flash("Account created successfully. Welcome!","success"); return redirect(url_for("dashboard"))
+        if not allow_registration(request.remote_addr, limit=10, window_seconds=3600):
+            return render_template("register.html", error="Too many registration attempts from this network. Please try again later."), 429
+        username = request.form.get("username", "").strip()
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+        confirm = request.form.get("confirm_password", "")
+        if len(username) < 3 or len(username) > 80:
+            return render_template("register.html", error="Username must be 3-80 characters."), 400
+        if not valid_email(email):
+            return render_template("register.html", error="Enter a valid email address."), 400
+        if len(password) < 8:
+            return render_template("register.html", error="Password must be at least 8 characters."), 400
+        if password != confirm:
+            return render_template("register.html", error="Passwords do not match."), 400
+        user = create_user(username, email, password)
+        if user is None:
+            return render_template("register.html", error="Username or email is already in use."), 409
+        session.clear()
+        session.permanent = True
+        session["user_id"] = user.id
+        session["username"] = user.username
+        flash("Account created successfully. Welcome!", "success")
+        return redirect(url_for("dashboard"))
     return render_template("register.html")
 
 @app.route("/user-login", methods=["GET", "POST"])
 def user_login():
-    if session.get("user_id"): return redirect(url_for("dashboard"))
+    if session.get("user_id"):
+        return redirect(url_for("dashboard"))
     if request.method == "POST":
-        identifier=request.form.get("username","").strip(); password=request.form.get("password","")
-        if not allow_login(request.remote_addr,identifier,limit=10,window_seconds=900): return render_template("user_login.html",error="Too many login attempts. Please try again in a few minutes."),429
-        user=authenticate_user(identifier,password)
-        if user is None: return render_template("user_login.html",error="Invalid username/email or password."),401
-        session.clear(); session.permanent=True; session["user_id"]=user.id; session["username"]=user.username; flash("Welcome back!","success"); return redirect(url_for("dashboard"))
+        identifier = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        if not allow_login(request.remote_addr, identifier, limit=10, window_seconds=900):
+            return render_template("user_login.html", error="Too many login attempts. Please try again in a few minutes."), 429
+        user = authenticate_user(identifier, password)
+        if user is None:
+            return render_template("user_login.html", error="Invalid username/email or password."), 401
+        session.clear()
+        session.permanent = True
+        session["user_id"] = user.id
+        session["username"] = user.username
+        flash("Welcome back!", "success")
+        return redirect(url_for("dashboard"))
     return render_template("user_login.html")
+
+@app.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    if request.method == "POST":
+        identifier = request.form.get("identifier", "").strip()
+        if not allow_password_reset(request.remote_addr, identifier):
+            return render_template("forgot_password.html", error="Too many reset requests. Please try again later."), 429
+        token, email = create_password_reset_token(identifier)
+        if token and email:
+            try:
+                send_password_reset_email(email, token)
+            except Exception:
+                app.logger.exception("Password reset email delivery failed")
+        # Always return the same response to avoid account enumeration.
+        return render_template("forgot_password.html", sent=True)
+    return render_template("forgot_password.html")
+
+@app.route("/reset-password", methods=["GET", "POST"])
+def reset_password():
+    token = request.args.get("token", "").strip() if request.method == "GET" else request.form.get("token", "").strip()
+    if request.method == "POST":
+        password = request.form.get("password", "")
+        confirm = request.form.get("confirm_password", "")
+        if len(password) < 8:
+            return render_template("reset_password.html", token=token, error="Password must be at least 8 characters."), 400
+        if password != confirm:
+            return render_template("reset_password.html", token=token, error="Passwords do not match."), 400
+        if not reset_password_with_token(token, password):
+            return render_template("reset_password.html", token=token, error="This reset link is invalid or has expired."), 400
+        flash("Password reset successfully. You can now log in.", "success")
+        return redirect(url_for("user_login"))
+    return render_template("reset_password.html", token=token)
 
 @app.route("/dashboard")
 def dashboard():
-    user=require_user()
-    if user is None: return redirect(url_for("user_login"))
-    return render_template("dashboard.html",user=user,username=user.username,websites=get_user_websites(user.id))
+    user = require_user()
+    if user is None:
+        return redirect(url_for("user_login"))
+    return render_template("dashboard.html", user=user, username=user.username, websites=get_user_websites(user.id))
 
 @app.route("/seller/dashboard")
 def seller_dashboard_page():
     user = require_user()
-    if user is None: return redirect(url_for("user_login"))
+    if user is None:
+        return redirect(url_for("user_login"))
     return render_template("seller_dashboard.html", user=user)
 
-@app.route("/dashboard/websites",methods=["POST"])
+@app.route("/dashboard/websites", methods=["POST"])
 def create_website_route():
-    user=require_user()
-    if user is None: return redirect(url_for("user_login"))
-    name=request.form.get("name","").strip(); slug=request.form.get("slug","").strip().lower(); title=request.form.get("title","My Website").strip(); content=request.form.get("content","").strip()
-    if not name or not slug or not title: flash("Name, slug and title are required.","error"); return redirect(url_for("dashboard"))
-    if not all(c.isalnum() or c=="-" for c in slug) or slug.startswith("-") or slug.endswith("-"): flash("Slug may contain only letters, numbers and hyphens.","error"); return redirect(url_for("dashboard"))
-    if create_website(user.id,name,slug,title,content) is None: flash("That slug is already taken. Choose another one.","error")
-    else: flash("Website created successfully.","success")
+    user = require_user()
+    if user is None:
+        return redirect(url_for("user_login"))
+    name = request.form.get("name", "").strip()
+    slug = request.form.get("slug", "").strip().lower()
+    title = request.form.get("title", "My Website").strip()
+    content = request.form.get("content", "").strip()
+    if not name or not slug or not title:
+        flash("Name, slug and title are required.", "error")
+        return redirect(url_for("dashboard"))
+    if not all(c.isalnum() or c == "-" for c in slug) or slug.startswith("-") or slug.endswith("-"):
+        flash("Slug may contain only letters, numbers and hyphens.", "error")
+        return redirect(url_for("dashboard"))
+    if create_website(user.id, name, slug, title, content) is None:
+        flash("That slug is already taken. Choose another one.", "error")
+    else:
+        flash("Website created successfully.", "success")
     return redirect(url_for("dashboard"))
 
-@app.route("/dashboard/websites/<int:website_id>/delete",methods=["POST"])
+@app.route("/dashboard/websites/<int:website_id>/delete", methods=["POST"])
 def delete_website_route(website_id):
-    user=require_user()
-    if user is None: return redirect(url_for("user_login"))
-    deleted=delete_website(user.id,website_id)
-    flash("Website deleted successfully." if deleted else "Website not found or you do not have permission to delete it.","success" if deleted else "error")
+    user = require_user()
+    if user is None:
+        return redirect(url_for("user_login"))
+    deleted = delete_website(user.id, website_id)
+    flash("Website deleted successfully." if deleted else "Website not found or you do not have permission to delete it.", "success" if deleted else "error")
     return redirect(url_for("dashboard"))
 
-@app.route("/account",methods=["GET","POST"])
+@app.route("/account", methods=["GET", "POST"])
 def account():
-    user=require_user()
-    if user is None: return redirect(url_for("user_login"))
-    if request.method=="POST":
-        action=request.form.get("action","")
-        if action=="profile":
-            username=request.form.get("username","").strip(); email=request.form.get("email","").strip().lower()
-            if len(username)<3 or len(username)>80: flash("Username must be 3-80 characters.","error"); return redirect(url_for("account"))
-            if not valid_email(email): flash("Enter a valid email address.","error"); return redirect(url_for("account"))
-            ok,msg=update_user_profile(user.id,username,email)
-            if ok: session["username"]=username
-            flash(msg,"success" if ok else "error"); return redirect(url_for("account"))
-        if action=="password":
-            cur=request.form.get("current_password",""); new=request.form.get("new_password",""); confirm=request.form.get("confirm_password","")
-            if new!=confirm: flash("New passwords do not match.","error"); return redirect(url_for("account"))
-            ok,msg=change_password(user.id,cur,new); flash(msg,"success" if ok else "error"); return redirect(url_for("account"))
-    return render_template("account.html",user=get_user(user.id))
+    user = require_user()
+    if user is None:
+        return redirect(url_for("user_login"))
+    if request.method == "POST":
+        action = request.form.get("action", "")
+        if action == "profile":
+            username = request.form.get("username", "").strip()
+            email = request.form.get("email", "").strip().lower()
+            if len(username) < 3 or len(username) > 80:
+                flash("Username must be 3-80 characters.", "error")
+                return redirect(url_for("account"))
+            if not valid_email(email):
+                flash("Enter a valid email address.", "error")
+                return redirect(url_for("account"))
+            ok, msg = update_user_profile(user.id, username, email)
+            if ok:
+                session["username"] = username
+            flash(msg, "success" if ok else "error")
+            return redirect(url_for("account"))
+        if action == "password":
+            cur = request.form.get("current_password", "")
+            new = request.form.get("new_password", "")
+            confirm = request.form.get("confirm_password", "")
+            if new != confirm:
+                flash("New passwords do not match.", "error")
+                return redirect(url_for("account"))
+            ok, msg = change_password(user.id, cur, new)
+            flash(msg, "success" if ok else "error")
+            return redirect(url_for("account"))
+    return render_template("account.html", user=get_user(user.id))
 
 @app.route("/orders")
 def orders_page():
-    user=require_user()
-    if user is None: return redirect(url_for("user_login"))
+    user = require_user()
+    if user is None:
+        return redirect(url_for("user_login"))
     return render_template("orders.html", user=user)
 
 @app.route("/payment/<result>")
 def payment_result_page(result):
-    if result not in {"success", "fail", "cancel"}: abort(404)
+    if result not in {"success", "fail", "cancel"}:
+        abort(404)
     return render_template("payment_result.html", result=result, order_id=request.args.get("order_id"))
 
 @app.route("/site/<slug>")
 def published_site(slug):
-    website=get_website_by_slug(slug)
-    if website is None: abort(404)
-    return render_template("published_site.html",website=website)
+    website = get_website_by_slug(slug)
+    if website is None:
+        abort(404)
+    return render_template("published_site.html", website=website)
 
 @app.route("/user-logout")
 def user_logout():
-    session.pop("user_id",None); session.pop("username",None); session.pop("_permanent",None); flash("You have been logged out.","success"); return redirect(url_for("user_login"))
+    session.pop("user_id", None)
+    session.pop("username", None)
+    session.pop("_permanent", None)
+    flash("You have been logged out.", "success")
+    return redirect(url_for("user_login"))
 
-@app.route("/contact",methods=["POST"])
+@app.route("/contact", methods=["POST"])
 def contact():
-    if not allow_contact(request.remote_addr,limit=5,window_seconds=900): return "Too many messages from this network. Please try again later.",429
-    name=request.form.get("name","").strip(); email=request.form.get("email","").strip().lower(); message=request.form.get("message","").strip()
-    if len(name)<2 or len(name)>120: return "Name must be between 2 and 120 characters.",400
-    if not valid_email(email): return "Enter a valid email address.",400
-    if len(message)<5 or len(message)>5000: return "Message must be between 5 and 5000 characters.",400
-    create_message(name,email,message); return "Message saved successfully!"
+    if not allow_contact(request.remote_addr, limit=5, window_seconds=900):
+        return "Too many messages from this network. Please try again later.", 429
+    name = request.form.get("name", "").strip()
+    email = request.form.get("email", "").strip().lower()
+    message = request.form.get("message", "").strip()
+    if len(name) < 2 or len(name) > 120:
+        return "Name must be between 2 and 120 characters.", 400
+    if not valid_email(email):
+        return "Enter a valid email address.", 400
+    if len(message) < 5 or len(message) > 5000:
+        return "Message must be between 5 and 5000 characters.", 400
+    create_message(name, email, message)
+    return "Message saved successfully!"
 
-@app.route("/subscribe",methods=["POST"])
+@app.route("/subscribe", methods=["POST"])
 def subscribe():
-    if not allow_subscription(request.remote_addr,limit=10,window_seconds=3600): return "Too many subscription attempts. Please try again later.",429
-    email=request.form.get("subscriber_email","").strip().lower()
-    if not valid_email(email): return "Enter a valid email address.",400
-    if create_subscriber(email): return "Subscribed successfully!"
-    return "This email is already subscribed!",409
+    if not allow_subscription(request.remote_addr, limit=10, window_seconds=3600):
+        return "Too many subscription attempts. Please try again later.", 429
+    email = request.form.get("subscriber_email", "").strip().lower()
+    if not valid_email(email):
+        return "Enter a valid email address.", 400
+    if create_subscriber(email):
+        return "Subscribed successfully!"
+    return "This email is already subscribed!", 409
 
-@app.route("/login",methods=["GET","POST"])
+@app.route("/login", methods=["GET", "POST"])
 def login():
-    if request.method=="POST":
-        username=request.form.get("username","").strip()
-        if not allow_login(request.remote_addr,f"admin:{username}",limit=5,window_seconds=900): return "Too many admin login attempts. Please try again in a few minutes.",429
-        configured_username=os.getenv("ADMIN_USERNAME",""); configured_password=os.getenv("ADMIN_PASSWORD",""); supplied_password=request.form.get("password","")
-        if configured_username and configured_password and hmac.compare_digest(username,configured_username) and hmac.compare_digest(supplied_password,configured_password):
-            session.clear(); session.permanent=True; mark_admin_authenticated(); return redirect(url_for("admin"))
-        return "Invalid username or password.",401
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        if not allow_login(request.remote_addr, f"admin:{username}", limit=5, window_seconds=900):
+            return "Too many admin login attempts. Please try again in a few minutes.", 429
+        configured_username = os.getenv("ADMIN_USERNAME", "")
+        configured_password = os.getenv("ADMIN_PASSWORD", "")
+        supplied_password = request.form.get("password", "")
+        if configured_username and configured_password and hmac.compare_digest(username, configured_username) and hmac.compare_digest(supplied_password, configured_password):
+            session.clear()
+            session.permanent = True
+            mark_admin_authenticated()
+            return redirect(url_for("admin"))
+        return "Invalid username or password.", 401
     return render_template("login.html")
 
 @app.route("/admin")
 def admin():
-    if not session.get("admin_logged_in"): return redirect(url_for("login"))
-    try: page=max(1,int(request.args.get("page","1")))
-    except ValueError: page=1
-    per_page=50; stats=get_admin_stats(); messages,total=get_messages(page=page,per_page=per_page); subscribers,total_subscribers=get_subscribers(page=page,per_page=per_page)
-    return render_template("admin.html",stats=stats,messages=messages,subscribers=subscribers,page=page,total_pages=max(1,(total+per_page-1)//per_page),subscriber_pages=max(1,(total_subscribers+per_page-1)//per_page))
+    if not session.get("admin_logged_in"):
+        return redirect(url_for("login"))
+    try:
+        page = max(1, int(request.args.get("page", "1")))
+    except ValueError:
+        page = 1
+    per_page = 50
+    stats = get_admin_stats()
+    messages, total = get_messages(page=page, per_page=per_page)
+    subscribers, total_subscribers = get_subscribers(page=page, per_page=per_page)
+    return render_template("admin.html", stats=stats, messages=messages, subscribers=subscribers, page=page, total_pages=max(1, (total + per_page - 1) // per_page), subscriber_pages=max(1, (total_subscribers + per_page - 1) // per_page))
 
 @app.route("/logout")
 def logout():
-    clear_admin_session(); return redirect(url_for("login"))
+    clear_admin_session()
+    return redirect(url_for("login"))
 
-if __name__=="__main__":
+if __name__ == "__main__":
     from database import init_db
-    init_db(); app.run(host="0.0.0.0",port=int(os.getenv("PORT","5000")))
+    init_db()
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT", "5000")))
