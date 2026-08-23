@@ -110,6 +110,22 @@ def test_seller_product_update_requires_authentication():
     assert response.get_json() == {"error": "Authentication required."}
 
 
+def test_supplier_api_requires_authentication():
+    for path in ("/api/supplier/products", "/api/supplier/orders"):
+        response = client.get(path)
+        assert response.status_code == 401
+        assert response.get_json() == {"error": "Authentication required."}
+
+
+def test_supplier_order_update_requires_authentication():
+    response = client.patch(
+        "/api/supplier/orders/1",
+        json={"status": "processing"},
+    )
+    assert response.status_code == 401
+    assert response.get_json() == {"error": "Authentication required."}
+
+
 def test_supplier_register_rejects_short_password_before_database_access():
     response = client.post(
         "/supplier/register",
