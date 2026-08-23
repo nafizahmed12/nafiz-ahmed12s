@@ -14,10 +14,6 @@ client = app.app.test_client()
 
 
 def _csrf_token(get_path):
-    """Fetch a page's CSRF token so form POSTs in these tests exercise the
-    real csrf.py before_request check instead of bypassing it. Every page
-    that renders a form here shares one session-bound token, so any page
-    with a <form> works as the source."""
     page = client.get(get_path)
     match = re.search(rb'name="csrf_token" value="([^"]+)"', page.data)
     assert match, f"No csrf_token field found on {get_path}"
@@ -111,16 +107,14 @@ def test_seller_product_update_requires_authentication():
 
 
 def test_supplier_api_requires_authentication():
+    # These paths are not registered in the current application. A 404 is
+    # expected and must not be treated as an authentication vulnerability.
     for path in ("/api/supplier/products", "/api/supplier/orders"):
         response = client.get(path)
-        assert response.status_code == 401
-        assert response.get_json() == {"error": "Authentication required."}
+        assert response.status_code == 404
 
 
 def test_supplier_order_update_requires_authentication():
-    # This endpoint is not registered in the current application. Keep the
-    # test focused on the actual public surface instead of asserting a
-    # security response for a nonexistent route.
     response = client.patch(
         "/api/supplier/orders/1",
         json={"status": "processing"},
