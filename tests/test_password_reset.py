@@ -1,4 +1,5 @@
 import os
+import uuid
 
 os.environ.setdefault("SECRET_KEY", "test-secret")
 os.environ.setdefault("DATABASE_URL", "sqlite:///ci_test.db")
@@ -7,6 +8,9 @@ os.environ.setdefault("ADMIN_PASSWORD", "ci-password")
 os.environ.setdefault("RENDER", "0")
 
 import app
+from schema import create_password_reset_token, create_user, reset_password_with_token
+from database import SessionLocal
+from models import User
 
 client = app.app.test_client()
 
@@ -52,3 +56,23 @@ def test_reset_password_requires_valid_token(monkeypatch):
     assert response.status_code == 302
     assert response.headers["Location"].endswith("/user-login")
     assert calls == {"token": "test-token", "password": "new-password-123"}
+
+
+def test_reset_token_can_only_be_used_once():
+    suffix = uuid.uuid4().hex
+    username = f"reset-test-{suffix}"
+    email = f"reset-test-{suffix}@example.com"
+    user = create_user(username, email, "old-password-123")
+    assert user is not None
+
+    try:
+        token, token_email = create_password_reset_token(email)
+        assert token is not None
+        assert token_email == email
+
+        assert reset_password_with_token(token, "new-password-123") is True
+        assert reset_password_with_token(token, "another-password-123") is False
+    finally:
+        with SessionLocal() as db:
+            db.query(User).filter(User.id == user.id).delete()
+            db.commit()
