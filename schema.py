@@ -210,9 +210,6 @@ def reset_password_with_token(token, new_password):
     token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
     now = datetime.now(timezone.utc)
     with SessionLocal() as db:
-        # Claim the token in the same transaction that changes the password.
-        # This closes the race where two concurrent requests could both validate
-        # the same unused token before either request marked it as used.
         claimed = db.execute(
             text("""UPDATE password_reset_tokens
                    SET used_at=:now
@@ -239,6 +236,7 @@ def reset_password_with_token(token, new_password):
             return False
 
         user.password_hash = generate_password_hash(new_password)
+        user.password_changed_at = now
         db.commit()
         return True
 
@@ -268,6 +266,7 @@ def change_password(user_id, current_password, new_password):
         if current_password == new_password:
             return False, "New password must be different from the current password."
         user.password_hash = generate_password_hash(new_password)
+        user.password_changed_at = datetime.now(timezone.utc)
         db.commit()
         return True, "Password changed successfully."
 
