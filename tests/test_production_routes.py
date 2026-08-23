@@ -11,6 +11,16 @@ import app
 client = app.app.test_client()
 
 
+def _admin_post(path, data):
+    """Submit an admin form with a session-bound CSRF token, matching production forms."""
+    token = "ci-csrf-token"
+    with client.session_transaction() as session:
+        session["_csrf_secret"] = token
+    payload = dict(data)
+    payload["csrf_token"] = token
+    return client.post(path, data=payload, follow_redirects=False)
+
+
 def test_production_public_routes():
     for path in ("/", "/robots.txt", "/sitemap.xml", "/health", "/login", "/user-login", "/register", "/shop"):
         response = client.get(path)
@@ -29,10 +39,9 @@ def test_sensitive_routes_require_authentication():
 
 
 def test_admin_login_initializes_privileged_session():
-    response = client.post(
+    response = _admin_post(
         "/login",
-        data={"username": "ci-admin", "password": "ci-password"},
-        follow_redirects=False,
+        {"username": "ci-admin", "password": "ci-password"},
     )
     assert response.status_code == 302
     assert response.headers["Location"].endswith("/admin")
@@ -46,10 +55,9 @@ def test_admin_login_initializes_privileged_session():
 
 
 def test_admin_login_rejects_invalid_credentials():
-    response = client.post(
+    response = _admin_post(
         "/login",
-        data={"username": "ci-admin", "password": "wrong-password"},
-        follow_redirects=False,
+        {"username": "ci-admin", "password": "wrong-password"},
     )
     assert response.status_code == 401
 
@@ -58,10 +66,9 @@ def test_admin_login_rejects_invalid_credentials():
 
 
 def test_admin_logout_clears_privileged_session():
-    response = client.post(
+    response = _admin_post(
         "/login",
-        data={"username": "ci-admin", "password": "ci-password"},
-        follow_redirects=False,
+        {"username": "ci-admin", "password": "ci-password"},
     )
     assert response.status_code == 302
 
@@ -77,16 +84,14 @@ def test_admin_logout_clears_privileged_session():
 
 def test_admin_login_rate_limit_is_enforced():
     for _ in range(5):
-        response = client.post(
+        response = _admin_post(
             "/login",
-            data={"username": "rate-limit-test", "password": "wrong-password"},
-            follow_redirects=False,
+            {"username": "rate-limit-test", "password": "wrong-password"},
         )
         assert response.status_code == 401
 
-    response = client.post(
+    response = _admin_post(
         "/login",
-        data={"username": "rate-limit-test", "password": "wrong-password"},
-        follow_redirects=False,
+        {"username": "rate-limit-test", "password": "wrong-password"},
     )
     assert response.status_code == 429
