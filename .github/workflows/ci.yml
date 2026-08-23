@@ -3,9 +3,11 @@ name: CI
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
+
+concurrency:
+  group: ci-main
+  cancel-in-progress: true
 
 jobs:
   validate:
