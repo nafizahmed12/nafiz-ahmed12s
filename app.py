@@ -18,6 +18,7 @@ from digital_affiliate_routes import register_digital_affiliate_routes
 from shop_routes import register_shop_routes
 from admin_product_routes import register_admin_product_routes
 from admin_security import register_admin_session_guard, mark_admin_authenticated, clear_admin_session
+from admin_auth import admin_required
 from csrf import register_csrf_protection
 from mail_utils import send_password_reset_email
 from schema import (
@@ -222,55 +223,17 @@ def user_login():
         session.permanent = True
         session["user_id"] = user.id
         session["username"] = user.username
-        flash("Welcome back!", "success")
+        session["user_session_created_at"] = __import__("datetime").datetime.now(__import__("datetime").timezone.utc).timestamp()
+        flash("Logged in successfully.", "success")
         return redirect(url_for("dashboard"))
     return render_template("user_login.html")
-
-@app.route("/forgot-password", methods=["GET", "POST"])
-def forgot_password():
-    if request.method == "POST":
-        identifier = request.form.get("identifier", "").strip()
-        if not allow_password_reset(request.remote_addr, identifier):
-            return render_template("forgot_password.html", error="Too many reset requests. Please try again later."), 429
-        token, email = create_password_reset_token(identifier)
-        if token and email:
-            try:
-                send_password_reset_email(email, token)
-            except Exception:
-                app.logger.exception("Password reset email delivery failed")
-        # Always return the same response to avoid account enumeration.
-        return render_template("forgot_password.html", sent=True)
-    return render_template("forgot_password.html")
-
-@app.route("/reset-password", methods=["GET", "POST"])
-def reset_password():
-    token = request.args.get("token", "").strip() if request.method == "GET" else request.form.get("token", "").strip()
-    if request.method == "POST":
-        password = request.form.get("password", "")
-        confirm = request.form.get("confirm_password", "")
-        if len(password) < 8:
-            return render_template("reset_password.html", token=token, error="Password must be at least 8 characters."), 400
-        if password != confirm:
-            return render_template("reset_password.html", token=token, error="Passwords do not match."), 400
-        if not reset_password_with_token(token, password):
-            return render_template("reset_password.html", token=token, error="This reset link is invalid or has expired."), 400
-        flash("Password reset successfully. You can now log in.", "success")
-        return redirect(url_for("user_login"))
-    return render_template("reset_password.html", token=token)
 
 @app.route("/dashboard")
 def dashboard():
     user = require_user()
     if user is None:
         return redirect(url_for("user_login"))
-    return render_template("dashboard.html", user=user, username=user.username, websites=get_user_websites(user.id))
-
-@app.route("/seller/dashboard")
-def seller_dashboard_page():
-    user = require_user()
-    if user is None:
-        return redirect(url_for("user_login"))
-    return render_template("seller_dashboard.html", user=user)
+    return render_template("dashboard.html", user=user, websites=get_user_websites(user.id))
 
 @app.route("/dashboard/websites", methods=["POST"])
 def create_website_route():
@@ -279,18 +242,15 @@ def create_website_route():
         return redirect(url_for("user_login"))
     name = request.form.get("name", "").strip()
     slug = request.form.get("slug", "").strip().lower()
-    title = request.form.get("title", "My Website").strip()
-    content = request.form.get("content", "").strip()
-    if not name or not slug or not title:
-        flash("Name, slug and title are required.", "error")
+    description = request.form.get("description", "").strip()
+    if not name or not slug:
+        flash("Website name and slug are required.", "error")
         return redirect(url_for("dashboard"))
-    if not all(c.isalnum() or c == "-" for c in slug) or slug.startswith("-") or slug.endswith("-"):
-        flash("Slug may contain only letters, numbers and hyphens.", "error")
+    if len(name) > 120 or len(slug) > 80 or not all(c.isalnum() or c == "-" for c in slug):
+        flash("Invalid website name or slug.", "error")
         return redirect(url_for("dashboard"))
-    if create_website(user.id, name, slug, title, content) is None:
-        flash("That slug is already taken. Choose another one.", "error")
-    else:
-        flash("Website created successfully.", "success")
+    website = create_website(user.id, name, slug, description)
+    flash("Website created successfully." if website else "Could not create website.", "success" if website else "error")
     return redirect(url_for("dashboard"))
 
 @app.route("/dashboard/websites/<int:website_id>/delete", methods=["POST"])
@@ -408,9 +368,8 @@ def login():
     return render_template("login.html")
 
 @app.route("/admin")
+@admin_required
 def admin():
-    if not session.get("admin_logged_in"):
-        return redirect(url_for("login"))
     try:
         page = max(1, int(request.args.get("page", "1")))
     except ValueError:
