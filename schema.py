@@ -2,12 +2,21 @@ from datetime import datetime, timedelta, timezone
 import hashlib
 import secrets
 
+from flask import has_request_context, session
 from sqlalchemy import func, select, text
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from database import SessionLocal
 from models import User, Website, Message, Subscriber
+
+
+USER_SESSION_CREATED_KEY = "user_session_created_at"
+
+
+def _mark_user_session_authenticated():
+    if has_request_context():
+        session[USER_SESSION_CREATED_KEY] = datetime.now(timezone.utc).timestamp()
 
 
 def create_user(username, email, password):
@@ -24,6 +33,7 @@ def create_user(username, email, password):
             db.rollback()
             return None
         db.refresh(user)
+        _mark_user_session_authenticated()
         return user
 
 
@@ -159,6 +169,7 @@ def authenticate_user(identifier, password):
             )
         )
         if user and check_password_hash(user.password_hash, password):
+            _mark_user_session_authenticated()
             return user
         return None
 
