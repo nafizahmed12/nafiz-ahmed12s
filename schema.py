@@ -204,27 +204,41 @@ def create_password_reset_token(identifier, expires_minutes=30):
 
 
 def reset_password_with_token(token, new_password):
+    """Consume a reset token atomically so it cannot be reused concurrently."""
     if not token or len(new_password or "") < 8:
         return False
     token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
     now = datetime.now(timezone.utc)
     with SessionLocal() as db:
-        row = db.execute(
-            text("""SELECT id, user_id FROM password_reset_tokens
-                   WHERE token_hash=:hash AND used_at IS NULL AND expires_at > :now
-                   LIMIT 1"""),
+        # Claim the token in the same transaction that changes the password.
+        # This closes the race where two concurrent requests could both validate
+        # the same unused token before either request marked it as used.
+        claimed = db.execute(
+            text("""UPDATE password_reset_tokens
+                   SET used_at=:now
+                   WHERE token_hash=:hash
+                     AND used_at IS NULL
+                     AND expires_at > :now"""),
             {"hash": token_hash, "now": now},
+        ).rowcount
+        if claimed != 1:
+            db.rollback()
+            return False
+
+        row = db.execute(
+            text("SELECT user_id FROM password_reset_tokens WHERE token_hash=:hash LIMIT 1"),
+            {"hash": token_hash},
         ).mappings().first()
         if row is None:
+            db.rollback()
             return False
+
         user = db.get(User, row["user_id"])
         if user is None:
+            db.rollback()
             return False
+
         user.password_hash = generate_password_hash(new_password)
-        db.execute(
-            text("UPDATE password_reset_tokens SET used_at=:now WHERE id=:id"),
-            {"now": now, "id": row["id"]},
-        )
         db.commit()
         return True
 
