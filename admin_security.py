@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timezone
 
-from flask import redirect, session, url_for, request
+from flask import redirect, session, url_for, request, render_template
 from sqlalchemy import text
 
 from database import SessionLocal
@@ -17,17 +17,17 @@ USER_SESSION_CREATED_KEY = "user_session_created_at"
 
 
 def register_admin_session_guard(app):
-    """Expire privileged admin sessions and revoke user sessions after password changes."""
+    """Register privileged-session guards and public password-reset routes."""
     register_admin_product_routes(app)
     register_supplier_auth_routes(app)
     register_home_routes(app)
+    register_password_reset_routes(app)
 
     @app.before_request
     def guard_admin_session():
         if not session.get("admin_logged_in"):
             return None
 
-        # Sessions created before the explicit role marker are not trusted.
         if session.get("admin_role") != ADMIN_ROLE:
             _clear_admin_session()
             return redirect(url_for("login"))
@@ -99,6 +99,65 @@ def register_admin_session_guard(app):
                 body = body.replace("</body>", marker + "</body>")
                 response.set_data(body)
         return response
+
+
+def register_password_reset_routes(app):
+    """Register public, rate-limited password recovery endpoints."""
+    if "forgot_password" in app.view_functions or "reset_password" in app.view_functions:
+        return
+
+    @app.route("/forgot-password", methods=["GET", "POST"])
+    def forgot_password():
+        if request.method == "GET":
+            return render_template("forgot_password.html", sent=False)
+
+        identifier = request.form.get("identifier", "").strip()
+        # Import the application module at request time so tests and the app's
+        # existing dependency injection/monkeypatching continue to work.
+        import app as app_module
+
+        if not app_module.allow_password_reset(request.remote_addr, identifier, limit=5, window_seconds=900):
+            return render_template(
+                "forgot_password.html",
+                sent=False,
+                error="Too many reset attempts. Please try again later.",
+            ), 429
+
+        token, email = app_module.create_password_reset_token(identifier)
+        if token and email:
+            try:
+                app_module.send_password_reset_email(email, token)
+            except Exception:
+                app.logger.exception("Password reset email delivery failed")
+
+        # Always return the same success message so account existence is not disclosed.
+        return render_template("forgot_password.html", sent=True), 200
+
+    @app.route("/reset-password", methods=["GET", "POST"])
+    def reset_password():
+        token = request.args.get("token", "").strip() if request.method == "GET" else request.form.get("token", "").strip()
+        if request.method == "GET":
+            return render_template("reset_password.html", token=token, error=None)
+
+        password = request.form.get("password", "")
+        confirm_password = request.form.get("confirm_password", "")
+        if password != confirm_password:
+            return render_template(
+                "reset_password.html", token=token, error="Passwords do not match."
+            ), 400
+        if len(password) < 8:
+            return render_template(
+                "reset_password.html", token=token, error="Password must be at least 8 characters."
+            ), 400
+
+        import app as app_module
+        if app_module.reset_password_with_token(token, password):
+            session.clear()
+            return redirect(url_for("user_login"))
+
+        return render_template(
+            "reset_password.html", token=token, error="This reset link is invalid or expired."
+        ), 400
 
 
 def mark_admin_authenticated():
