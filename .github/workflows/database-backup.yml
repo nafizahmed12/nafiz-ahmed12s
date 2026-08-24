@@ -1,16 +1,12 @@
 name: PostgreSQL Database Backup
-
 on:
   workflow_dispatch:
   schedule:
     - cron: "17 2 * * *"
-
 permissions:
   contents: read
-
 env:
   PGSSLMODE: require
-
 jobs:
   backup:
     runs-on: ubuntu-latest
@@ -18,7 +14,6 @@ jobs:
     steps:
       - name: Verify PostgreSQL 18 client
         run: docker run --rm postgres:18 pg_dump --version
-
       - name: Create compressed database backup
         env:
           BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
@@ -30,7 +25,6 @@ jobs:
           dump="backup/database-${timestamp}.dump"
           checksum="backup/database-${timestamp}.sha256"
           dump_name="$(basename "$dump")"
-
           docker run --rm \
             --env BACKUP_DATABASE_URL \
             --env PGSSLMODE \
@@ -42,10 +36,8 @@ jobs:
               --no-owner \
               --no-privileges \
               --file="/backup/$DUMP_FILE"'
-
           test -s "$dump"
           sha256sum "$dump" > "$checksum"
-
       - name: Validate backup integrity
         run: |
           set -euo pipefail
@@ -55,44 +47,36 @@ jobs:
           test -n "$checksum"
           sha256sum --check "$checksum"
           dump_name="$(basename "$dump")"
-
           docker run --rm \
             --env DUMP_FILE="$dump_name" \
             --volume "$PWD/backup:/backup" \
             postgres:18 \
             sh -ec 'pg_restore --list "/backup/$DUMP_FILE"' > backup/restore-manifest.txt
-
           test -s backup/restore-manifest.txt
           echo "Backup integrity validation passed."
-
       - name: Test full restore in PostgreSQL 18
         run: |
           set -euo pipefail
           dump="$(find backup -name '*.dump' -type f -print -quit)"
           dump_name="$(basename "$dump")"
           container="postgres-restore-${GITHUB_RUN_ID}"
-
           cleanup() {
             docker rm -f "$container" >/dev/null 2>&1 || true
           }
           trap cleanup EXIT
-
           docker run -d \
             --name "$container" \
             --env POSTGRES_PASSWORD=restore_test_password \
             --env POSTGRES_DB=restore_test \
             postgres:18 >/dev/null
-
           for attempt in $(seq 1 30); do
             if docker exec "$container" pg_isready -U postgres -d restore_test >/dev/null 2>&1; then
               break
             fi
             sleep 2
           done
-
           docker exec "$container" pg_isready -U postgres -d restore_test
           docker cp "$dump" "$container:/tmp/$dump_name"
-
           docker exec "$container" \
             pg_restore \
               --username=postgres \
@@ -101,15 +85,12 @@ jobs:
               --no-privileges \
               --exit-on-error \
               "/tmp/$dump_name"
-
           docker exec "$container" \
             psql \
               --username=postgres \
               --dbname=restore_test \
               --command='SELECT 1;' >/dev/null
-
           echo "Full restore verification passed."
-
       - name: Upload backup artifact
         uses: actions/upload-artifact@v5
         with:
@@ -117,3 +98,39 @@ jobs:
           path: backup/
           retention-days: 14
           if-no-files-found: error
+      - name: Upload verified backup to Cloudflare R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+        run: |
+          set -euo pipefail
+          dump="$(find backup -name '*.dump' -type f -print -quit)"
+          checksum="$(find backup -name '*.sha256' -type f -print -quit)"
+          test -n "$dump"
+          test -n "$checksum"
+          dump_name="$(basename "$dump")"
+          checksum_name="$(basename "$checksum")"
+          endpoint="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          aws s3 cp "$dump" "s3://${R2_BUCKET_NAME}/db-backups/${dump_name}" --endpoint-url "$endpoint"
+          aws s3 cp "$checksum" "s3://${R2_BUCKET_NAME}/db-backups/${checksum_name}" --endpoint-url "$endpoint"
+          echo "Uploaded verified backup to R2: db-backups/${dump_name}"
+      - name: Remove R2 backups older than 30 days
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+        run: |
+          set -euo pipefail
+          endpoint="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          cutoff="$(date -u -d '30 days ago' +%Y-%m-%d)"
+          aws s3 ls "s3://${R2_BUCKET_NAME}/db-backups/" --endpoint-url "$endpoint" | while read -r file_date file_time file_size file_name; do
+            if [ -n "$file_name" ] && [ "$file_date" \< "$cutoff" ]; then
+              echo "Deleting old R2 backup: $file_name"
+              aws s3 rm "s3://${R2_BUCKET_NAME}/db-backups/${file_name}" --endpoint-url "$endpoint"
+            fi
+          done
