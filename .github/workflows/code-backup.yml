@@ -1,0 +1,109 @@
+name: Code Backup
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "37 2 * * *"
+permissions:
+  contents: read
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repo (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create compressed code archive
+        run: |
+          set -euo pipefail
+          mkdir -p backup
+          timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
+          archive="backup/code-${timestamp}.tar.gz"
+          checksum="backup/code-${timestamp}.sha256"
+
+          # Full repo including .git (so history is preserved), excluding
+          # ignored/derived directories that don't need backing up.
+          tar \
+            --exclude='./backup' \
+            --exclude='./node_modules' \
+            --exclude='./venv' \
+            --exclude='./.venv' \
+            --exclude='./__pycache__' \
+            --exclude='*.pyc' \
+            -czf "$archive" .
+
+          test -s "$archive"
+          sha256sum "$archive" > "$checksum"
+
+      - name: Validate archive integrity
+        run: |
+          set -euo pipefail
+          archive="$(find backup -name '*.tar.gz' -type f -print -quit)"
+          checksum="$(find backup -name '*.sha256' -type f -print -quit)"
+          test -n "$archive"
+          test -n "$checksum"
+          sha256sum --check "$checksum"
+          # A corrupt tar.gz fails to list its contents.
+          tar -tzf "$archive" > backup/archive-manifest.txt
+          test -s backup/archive-manifest.txt
+          echo "Archive integrity validation passed."
+
+      - name: Test full extraction
+        run: |
+          set -euo pipefail
+          archive="$(find backup -name '*.tar.gz' -type f -print -quit)"
+          extract_dir="$(mktemp -d)"
+          tar -xzf "$archive" -C "$extract_dir"
+          # Sanity check: repo marker files must exist post-extraction.
+          test -f "$extract_dir/app.py"
+          test -d "$extract_dir/.git"
+          rm -rf "$extract_dir"
+          echo "Full extraction verification passed."
+
+      - name: Upload backup artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: code-backup-${{ github.run_id }}
+          path: backup/
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Upload verified backup to Cloudflare R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+        run: |
+          set -euo pipefail
+          archive="$(find backup -name '*.tar.gz' -type f -print -quit)"
+          checksum="$(find backup -name '*.sha256' -type f -print -quit)"
+          test -n "$archive"
+          test -n "$checksum"
+          archive_name="$(basename "$archive")"
+          checksum_name="$(basename "$checksum")"
+          endpoint="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          aws s3 cp "$archive" "s3://${R2_BUCKET_NAME}/code-backups/${archive_name}" --endpoint-url "$endpoint"
+          aws s3 cp "$checksum" "s3://${R2_BUCKET_NAME}/code-backups/${checksum_name}" --endpoint-url "$endpoint"
+          echo "Uploaded verified code backup to R2: code-backups/${archive_name}"
+
+      - name: Remove R2 code backups older than 30 days
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+        run: |
+          set -euo pipefail
+          endpoint="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          cutoff="$(date -u -d '30 days ago' +%Y-%m-%d)"
+          aws s3 ls "s3://${R2_BUCKET_NAME}/code-backups/" --endpoint-url "$endpoint" | while read -r file_date file_time file_size file_name; do
+            if [ -n "$file_name" ] && [ "$file_date" \< "$cutoff" ]; then
+              echo "Deleting old R2 code backup: $file_name"
+              aws s3 rm "s3://${R2_BUCKET_NAME}/code-backups/${file_name}" --endpoint-url "$endpoint"
+            fi
+          done
