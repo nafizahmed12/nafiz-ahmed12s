@@ -16,20 +16,13 @@ def _money(value):
 
 def _product_payload(row):
     return {
-        "id": row["id"],
-        "name": row["name"],
-        "slug": row["slug"],
-        "description": row["description"] or "",
-        "product_type": row["product_type"],
-        "status": row["status"],
-        "price": _money(row["price"]),
+        "id": row["id"], "name": row["name"], "slug": row["slug"],
+        "description": row["description"] or "", "product_type": row["product_type"],
+        "status": row["status"], "price": _money(row["price"]),
         "compare_at_price": _money(row["compare_at_price"]) if row["compare_at_price"] is not None else None,
-        "currency": row["currency"],
-        "sku": row["sku"],
-        "stock_quantity": row["stock_quantity"],
-        "image_url": row["image_url"],
-        "listing_status": row["listing_status"],
-        "featured": bool(row["featured"]),
+        "currency": row["currency"], "sku": row["sku"], "stock_quantity": row["stock_quantity"],
+        "image_url": row["image_url"], "listing_status": row["listing_status"],
+        "featured": bool(row["featured"]), "category": row["category_slug"] or "",
         "created_at": str(row["created_at"]) if row["created_at"] else None,
     }
 
@@ -38,23 +31,22 @@ def _parse_product_form():
     name = request.form.get("name", "").strip()
     slug = request.form.get("slug", "").strip().lower()
     description = request.form.get("description", "").strip()
+    category = request.form.get("category", "").strip().lower()
     product_type = request.form.get("product_type", "physical").strip().lower()
     status = request.form.get("status", "published").strip().lower()
     currency = request.form.get("currency", "BDT").strip().upper()[:3] or "BDT"
     sku = request.form.get("sku", "").strip() or None
     image_url = request.form.get("image_url", "").strip()
     featured = request.form.get("featured") == "1"
-
     try:
         price = Decimal(request.form.get("price", "0").strip())
-        compare_at_raw = request.form.get("compare_at_price", "").strip()
-        compare_at_price = Decimal(compare_at_raw) if compare_at_raw else None
+        compare_raw = request.form.get("compare_at_price", "").strip()
+        compare_at_price = Decimal(compare_raw) if compare_raw else None
         stock_quantity = int(request.form.get("stock_quantity", "0").strip())
     except (InvalidOperation, ValueError):
-        raise ValueError("Price, compare-at price and stock must contain valid values.")
-
-    if not name or not slug:
-        raise ValueError("Product name and slug are required.")
+        raise ValueError("Price, original price and stock must contain valid values.")
+    if not name or not slug or not category:
+        raise ValueError("Product name, slug and category are required.")
     if not all(c.isalnum() or c == "-" for c in slug) or slug.startswith("-") or slug.endswith("-"):
         raise ValueError("Slug may contain only letters, numbers and hyphens.")
     if product_type not in {"physical", "digital"}:
@@ -64,17 +56,14 @@ def _parse_product_form():
     if price < 0 or stock_quantity < 0 or (compare_at_price is not None and compare_at_price < 0):
         raise ValueError("Price and stock cannot be negative.")
     if compare_at_price is not None and compare_at_price <= price:
-        raise ValueError("Original/compare-at price must be higher than the sale price.")
+        raise ValueError("Original price must be higher than the sale price.")
     if product_type == "digital":
         stock_quantity = 0
+    return locals()
 
-    return {
-        "name": name, "slug": slug, "description": description,
-        "product_type": product_type, "status": status, "currency": currency,
-        "sku": sku, "image_url": image_url, "featured": featured,
-        "price": price, "compare_at_price": compare_at_price,
-        "stock_quantity": stock_quantity,
-    }
+
+def _category_id(db, slug):
+    return db.execute(text("SELECT id FROM product_categories WHERE LOWER(slug)=:slug LIMIT 1"), {"slug": slug}).scalar_one_or_none()
 
 
 @admin_product_bp.post("/admin/products")
@@ -85,43 +74,29 @@ def create_admin_product():
     except ValueError as exc:
         flash(str(exc), "error")
         return redirect(url_for("admin"))
-
     with SessionLocal() as db:
+        category_id = _category_id(db, data["category"])
+        if category_id is None:
+            flash("Selected category does not exist.", "error")
+            return redirect(url_for("admin"))
         try:
-            product_id = db.execute(
-                text("""INSERT INTO products
-                    (category_id, owner_id, name, slug, description, product_type, status,
-                     price, currency, sku, stock_quantity, created_at, updated_at)
-                    VALUES (NULL, NULL, :name, :slug, :description, :product_type, :status,
-                            :price, :currency, :sku, :stock_quantity, NOW(), NOW())
-                    RETURNING id"""), data,
-            ).scalar_one()
-
+            product_id = db.execute(text("""INSERT INTO products
+                (category_id,owner_id,name,slug,description,product_type,status,price,currency,sku,stock_quantity,created_at,updated_at)
+                VALUES (:category_id,NULL,:name,:slug,:description,:product_type,:status,:price,:currency,:sku,:stock_quantity,NOW(),NOW())
+                RETURNING id"""), {**data, "category_id": category_id}).scalar_one()
             listing_status = "published" if data["status"] == "published" else "draft"
-            db.execute(
-                text("""INSERT INTO product_listings
-                    (product_id, seller_id, supplier_product_id, listing_type, title,
-                     price, compare_at_price, currency, stock_quantity, status, featured,
-                     created_at, updated_at)
-                    VALUES (:product_id, NULL, NULL, 'owned', :title,
-                            :price, :compare_at_price, :currency, :stock_quantity,
-                            :status, :featured, NOW(), NOW())"""),
-                {**data, "product_id": product_id, "title": data["name"]},
-            )
-
+            db.execute(text("""INSERT INTO product_listings
+                (product_id,seller_id,supplier_product_id,listing_type,title,price,compare_at_price,currency,stock_quantity,status,featured,created_at,updated_at)
+                VALUES (:product_id,NULL,NULL,'owned',:name,:price,:compare_at_price,:currency,:stock_quantity,:listing_status,:featured,NOW(),NOW())"""),
+                {**data, "product_id": product_id, "listing_status": listing_status})
             if data["image_url"]:
-                db.execute(
-                    text("""INSERT INTO product_images
-                        (product_id, image_url, alt_text, sort_order, created_at)
-                        VALUES (:product_id, :image_url, :alt_text, 0, NOW())"""),
-                    {"product_id": product_id, "image_url": data["image_url"], "alt_text": data["name"]},
-                )
+                db.execute(text("""INSERT INTO product_images(product_id,image_url,alt_text,sort_order,created_at)
+                    VALUES(:product_id,:image_url,:name,0,NOW())"""), {"product_id": product_id, "image_url": data["image_url"], "name": data["name"]})
             db.commit()
         except IntegrityError:
             db.rollback()
             flash("A product with this slug or SKU already exists.", "error")
             return redirect(url_for("admin"))
-
     flash(f"Product '{data['name']}' created successfully.", "success")
     return redirect(url_for("admin"))
 
@@ -133,60 +108,36 @@ def edit_admin_product(product_id):
         data = _parse_product_form()
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
-
     with SessionLocal() as db:
+        category_id = _category_id(db, data["category"])
+        if category_id is None:
+            return jsonify({"error": "Selected category does not exist."}), 400
         try:
-            exists = db.execute(text("SELECT id FROM products WHERE id=:product_id"), {"product_id": product_id}).scalar_one_or_none()
+            exists = db.execute(text("SELECT id FROM products WHERE id=:id"), {"id": product_id}).scalar_one_or_none()
             if exists is None:
                 return jsonify({"error": "Product not found."}), 404
-
-            db.execute(
-                text("""UPDATE products SET name=:name,slug=:slug,description=:description,
-                       product_type=:product_type,status=:status,price=:price,currency=:currency,
-                       sku=:sku,stock_quantity=:stock_quantity,updated_at=NOW()
-                       WHERE id=:product_id"""),
-                {**data, "product_id": product_id},
-            )
-
+            db.execute(text("""UPDATE products SET category_id=:category_id,name=:name,slug=:slug,description=:description,
+                product_type=:product_type,status=:status,price=:price,currency=:currency,sku=:sku,stock_quantity=:stock_quantity,updated_at=NOW()
+                WHERE id=:id"""), {**data, "category_id": category_id, "id": product_id})
             listing_status = "published" if data["status"] == "published" else "draft"
-            listing_id = db.execute(
-                text("SELECT id FROM product_listings WHERE product_id=:product_id ORDER BY id ASC LIMIT 1"),
-                {"product_id": product_id},
-            ).scalar_one_or_none()
-            listing_data = {**data, "product_id": product_id, "title": data["name"], "status": listing_status}
+            listing_id = db.execute(text("SELECT id FROM product_listings WHERE product_id=:id ORDER BY id LIMIT 1"), {"id": product_id}).scalar_one_or_none()
+            listing_data = {**data, "id": product_id, "listing_status": listing_status}
             if listing_id is None:
-                db.execute(
-                    text("""INSERT INTO product_listings
-                    (product_id,seller_id,supplier_product_id,listing_type,title,price,compare_at_price,
-                     currency,stock_quantity,status,featured,created_at,updated_at)
-                    VALUES (:product_id,NULL,NULL,'owned',:title,:price,:compare_at_price,:currency,
-                            :stock_quantity,:status,:featured,NOW(),NOW())"""), listing_data,
-                )
+                db.execute(text("""INSERT INTO product_listings(product_id,seller_id,supplier_product_id,listing_type,title,price,compare_at_price,currency,stock_quantity,status,featured,created_at,updated_at)
+                    VALUES(:id,NULL,NULL,'owned',:name,:price,:compare_at_price,:currency,:stock_quantity,:listing_status,:featured,NOW(),NOW())"""), listing_data)
             else:
-                db.execute(
-                    text("""UPDATE product_listings SET title=:title,price=:price,
-                    compare_at_price=:compare_at_price,currency=:currency,stock_quantity=:stock_quantity,
-                    status=:status,featured=:featured,updated_at=NOW() WHERE id=:listing_id"""),
-                    {**listing_data, "listing_id": listing_id},
-                )
-
+                db.execute(text("""UPDATE product_listings SET title=:name,price=:price,compare_at_price=:compare_at_price,currency=:currency,
+                    stock_quantity=:stock_quantity,status=:listing_status,featured=:featured,updated_at=NOW() WHERE id=:listing_id"""), {**listing_data, "listing_id": listing_id})
             if data["image_url"]:
-                image_id = db.execute(
-                    text("SELECT id FROM product_images WHERE product_id=:product_id ORDER BY sort_order ASC,id ASC LIMIT 1"),
-                    {"product_id": product_id},
-                ).scalar_one_or_none()
+                image_id = db.execute(text("SELECT id FROM product_images WHERE product_id=:id ORDER BY sort_order,id LIMIT 1"), {"id": product_id}).scalar_one_or_none()
                 if image_id:
-                    db.execute(text("UPDATE product_images SET image_url=:image_url,alt_text=:alt_text WHERE id=:image_id"),
-                               {"image_url": data["image_url"], "alt_text": data["name"], "image_id": image_id})
+                    db.execute(text("UPDATE product_images SET image_url=:image_url,alt_text=:name WHERE id=:image_id"), {**data, "image_id": image_id})
                 else:
-                    db.execute(text("""INSERT INTO product_images(product_id,image_url,alt_text,sort_order,created_at)
-                                      VALUES(:product_id,:image_url,:alt_text,0,NOW())"""),
-                               {"product_id": product_id, "image_url": data["image_url"], "alt_text": data["name"]})
+                    db.execute(text("INSERT INTO product_images(product_id,image_url,alt_text,sort_order,created_at) VALUES(:id,:image_url,:name,0,NOW())"), {**data, "id": product_id})
             db.commit()
         except IntegrityError:
             db.rollback()
             return jsonify({"error": "A product with this slug or SKU already exists."}), 409
-
     return jsonify({"success": True, "product_id": product_id})
 
 
@@ -194,17 +145,13 @@ def edit_admin_product(product_id):
 @admin_required
 def admin_products():
     with SessionLocal() as db:
-        rows = db.execute(
-            text("""SELECT p.id,p.name,p.slug,p.description,p.product_type,p.status,p.price,
-                          p.currency,p.sku,p.stock_quantity,p.created_at,pi.image_url,
-                          l.status AS listing_status,l.compare_at_price,l.featured
-                   FROM products p
-                   LEFT JOIN LATERAL (SELECT image_url FROM product_images WHERE product_id=p.id
-                                      ORDER BY sort_order ASC,id ASC LIMIT 1) pi ON TRUE
-                   LEFT JOIN LATERAL (SELECT status,compare_at_price,featured FROM product_listings
-                                      WHERE product_id=p.id ORDER BY id ASC LIMIT 1) l ON TRUE
-                   ORDER BY p.id DESC""")
-        ).mappings().all()
+        rows = db.execute(text("""SELECT p.id,p.name,p.slug,p.description,p.product_type,p.status,p.price,p.currency,p.sku,p.stock_quantity,p.created_at,
+            pi.image_url,pc.slug AS category_slug,l.status AS listing_status,l.compare_at_price,l.featured
+            FROM products p
+            LEFT JOIN product_categories pc ON pc.id=p.category_id
+            LEFT JOIN LATERAL(SELECT image_url FROM product_images WHERE product_id=p.id ORDER BY sort_order,id LIMIT 1) pi ON TRUE
+            LEFT JOIN LATERAL(SELECT status,compare_at_price,featured FROM product_listings WHERE product_id=p.id ORDER BY id LIMIT 1) l ON TRUE
+            ORDER BY p.id DESC""")).mappings().all()
     return jsonify({"items": [_product_payload(row) for row in rows]})
 
 
@@ -212,8 +159,8 @@ def admin_products():
 @admin_required
 def archive_admin_product(product_id):
     with SessionLocal() as db:
-        result = db.execute(text("UPDATE products SET status='archived', updated_at=NOW() WHERE id=:product_id AND status <> 'archived'"), {"product_id": product_id})
-        db.execute(text("UPDATE product_listings SET status='archived', updated_at=NOW() WHERE product_id=:product_id"), {"product_id": product_id})
+        result = db.execute(text("UPDATE products SET status='archived',updated_at=NOW() WHERE id=:id AND status<>'archived'"), {"id": product_id})
+        db.execute(text("UPDATE product_listings SET status='archived',updated_at=NOW() WHERE product_id=:id"), {"id": product_id})
         if result.rowcount == 0:
             db.rollback()
             return jsonify({"error": "Product not found."}), 404
