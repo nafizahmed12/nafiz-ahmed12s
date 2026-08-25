@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from flask import Blueprint, jsonify, session
+from flask import Blueprint, jsonify, request, session
 from sqlalchemy import text
 
 from database import SessionLocal
@@ -64,27 +64,73 @@ def home_data():
     products = []
     for row in rows:
         products.append({
-            "id": row["id"],
-            "name": row["name"],
-            "slug": row["slug"],
-            "description": row["description"] or "",
-            "product_type": row["product_type"],
+            "id": row["id"], "name": row["name"], "slug": row["slug"],
+            "description": row["description"] or "", "product_type": row["product_type"],
             "price": _money(row["price"]),
             "compare_at_price": _money(row["compare_at_price"]) if row["compare_at_price"] is not None else None,
-            "currency": row["currency"],
-            "stock_quantity": row["stock_quantity"],
-            "featured": bool(row["featured"]),
-            "category": row["category_name"] or "New in",
-            "category_slug": row["category_slug"] or "new-in",
-            "image_url": row["image_url"],
+            "currency": row["currency"], "stock_quantity": row["stock_quantity"],
+            "featured": bool(row["featured"]), "category": row["category_name"] or "New in",
+            "category_slug": row["category_slug"] or "new-in", "image_url": row["image_url"],
         })
 
-    return jsonify({
-        "products": products,
-        "categories": [dict(row) for row in categories],
-        "cart_count": int(cart_count or 0),
-        "authenticated": bool(user_id),
-    })
+    return jsonify({"products": products, "categories": [dict(row) for row in categories], "cart_count": int(cart_count or 0), "authenticated": bool(user_id)})
+
+
+@home_bp.get("/api/category-products")
+def category_products():
+    category = request.args.get("category", "").strip().lower()
+    search = request.args.get("q", "").strip()
+    product_type = request.args.get("type", "").strip().lower()
+    try:
+        page = max(1, int(request.args.get("page", "1")))
+        per_page = min(50, max(1, int(request.args.get("per_page", "20"))))
+    except ValueError:
+        return jsonify({"error": "Invalid pagination."}), 400
+    if not category:
+        return jsonify({"error": "Category is required."}), 400
+
+    filters = ["p.status NOT IN ('draft','archived')", "LOWER(c.slug) = :category"]
+    params = {"category": category, "limit": per_page, "offset": (page - 1) * per_page}
+    if search:
+        filters.append("(p.name ILIKE :search OR p.description ILIKE :search)")
+        params["search"] = f"%{search}%"
+    if product_type:
+        filters.append("p.product_type = :product_type")
+        params["product_type"] = product_type
+    where_sql = " AND ".join(filters)
+
+    with SessionLocal() as db:
+        rows = db.execute(text(f"""
+            SELECT p.id,p.name,p.slug,p.description,p.product_type,
+                   COALESCE(l.price,p.price) AS price,p.currency,p.sku,
+                   p.stock_quantity,pi.image_url,l.id AS listing_id,l.price AS listing_price
+            FROM products p
+            JOIN product_categories c ON c.id = p.category_id
+            LEFT JOIN LATERAL (
+                SELECT id,price FROM product_listings
+                WHERE product_id=p.id AND status IN ('active','published')
+                ORDER BY featured DESC,id ASC LIMIT 1
+            ) l ON TRUE
+            LEFT JOIN LATERAL (
+                SELECT image_url FROM product_images
+                WHERE product_id=p.id ORDER BY sort_order ASC,id ASC LIMIT 1
+            ) pi ON TRUE
+            WHERE {where_sql}
+            ORDER BY p.id DESC LIMIT :limit OFFSET :offset
+        """), params).mappings().all()
+        total = db.execute(text(f"""
+            SELECT COUNT(*) FROM products p
+            JOIN product_categories c ON c.id = p.category_id
+            WHERE {where_sql}
+        """), params).scalar_one()
+
+    items = [{
+        "id": r["id"], "name": r["name"], "slug": r["slug"], "description": r["description"] or "",
+        "product_type": r["product_type"], "price": _money(r["price"]), "currency": r["currency"],
+        "sku": r["sku"], "stock_quantity": r["stock_quantity"], "image_url": r["image_url"],
+        "listing_id": r["listing_id"], "listing_price": _money(r["listing_price"]) if r["listing_price"] is not None else None,
+    } for r in rows]
+    return jsonify({"items": items, "page": page, "per_page": per_page, "total": total, "total_pages": max(1, (total + per_page - 1) // per_page)})
 
 
 def register_home_routes(app):
