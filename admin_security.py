@@ -3,7 +3,6 @@ import hmac
 import os
 import secrets
 from datetime import datetime, timedelta, timezone
-from urllib.parse import quote
 
 from flask import redirect, session, url_for, request, render_template
 from sqlalchemy import text
@@ -22,7 +21,6 @@ USER_SESSION_CREATED_KEY = "user_session_created_at"
 
 
 def _ensure_admin_credentials():
-    """Create the DB-backed admin credential once from the existing Render env vars."""
     username = os.getenv("ADMIN_USERNAME", "").strip()
     password = os.getenv("ADMIN_PASSWORD", "")
     email = os.getenv("ADMIN_EMAIL", "").strip().lower()
@@ -40,19 +38,14 @@ def _ensure_admin_credentials():
         """))
         row = db.execute(text("SELECT id FROM admin_credentials LIMIT 1")).first()
         if row is None:
-            db.execute(
-                text("""INSERT INTO admin_credentials
-                    (id, username, email, password_hash)
-                    VALUES (1, :username, :email, :password_hash)"""),
-                {
-                    "username": username,
-                    "email": email,
-                    "password_hash": generate_password_hash(password),
-                },
-            )
-            db.commit()
-        else:
-            db.commit()
+            db.execute(text("""INSERT INTO admin_credentials
+                (id, username, email, password_hash)
+                VALUES (1, :username, :email, :password_hash)"""), {
+                "username": username,
+                "email": email,
+                "password_hash": generate_password_hash(password),
+            })
+        db.commit()
 
 
 def register_admin_session_guard(app):
@@ -65,7 +58,7 @@ def register_admin_session_guard(app):
 
     @app.before_request
     def handle_admin_login_from_db():
-        """Use the DB-backed admin credential so a reset password takes effect."""
+        """Use the DB credential so a reset password takes effect immediately."""
         if request.path != "/login" or request.method != "POST":
             return None
         username = request.form.get("username", "").strip()
@@ -77,8 +70,10 @@ def register_admin_session_guard(app):
                 text("SELECT username, password_hash FROM admin_credentials WHERE username=:username LIMIT 1"),
                 {"username": username},
             ).mappings().first()
-        if row is None or not check_password_hash(row["password_hash"], password):
+        if row is None:
             return None
+        if not check_password_hash(row["password_hash"], password):
+            return "Invalid username or password.", 401
         session.clear()
         session.permanent = True
         mark_admin_authenticated()
@@ -88,33 +83,24 @@ def register_admin_session_guard(app):
     def guard_admin_session():
         if not session.get("admin_logged_in"):
             return None
-
         if session.get("admin_role") != ADMIN_ROLE:
             _clear_admin_session()
             return redirect(url_for("login"))
-
         now = datetime.now(timezone.utc).timestamp()
         authenticated_at = session.get("admin_authenticated_at")
         last_activity = session.get("admin_last_activity")
-
         if authenticated_at is None or last_activity is None:
             _clear_admin_session()
             return redirect(url_for("login"))
-
         try:
             authenticated_at = float(authenticated_at)
             last_activity = float(last_activity)
         except (TypeError, ValueError):
             _clear_admin_session()
             return redirect(url_for("login"))
-
-        if (
-            now - authenticated_at > ADMIN_ABSOLUTE_TIMEOUT_SECONDS
-            or now - last_activity > ADMIN_IDLE_TIMEOUT_SECONDS
-        ):
+        if now - authenticated_at > ADMIN_ABSOLUTE_TIMEOUT_SECONDS or now - last_activity > ADMIN_IDLE_TIMEOUT_SECONDS:
             _clear_admin_session()
             return redirect(url_for("login"))
-
         session["admin_last_activity"] = now
         return None
 
@@ -124,35 +110,26 @@ def register_admin_session_guard(app):
         user_id = session.get("user_id")
         if not user_id or session.get("admin_logged_in"):
             return None
-
         created_at = session.get(USER_SESSION_CREATED_KEY)
         try:
             created_ts = float(created_at) if created_at is not None else None
         except (TypeError, ValueError):
             created_ts = None
-
         if created_ts is None:
             session.clear()
             return redirect(url_for("user_login"))
-
         with SessionLocal() as db:
-            changed_at = db.execute(
-                text("SELECT password_changed_at FROM users WHERE id=:uid"),
-                {"uid": user_id},
-            ).scalar_one_or_none()
-
+            changed_at = db.execute(text("SELECT password_changed_at FROM users WHERE id=:uid"), {"uid": user_id}).scalar_one_or_none()
         if changed_at is not None:
             if changed_at.tzinfo is None:
                 changed_at = changed_at.replace(tzinfo=timezone.utc)
             if created_ts < changed_at.timestamp():
                 session.clear()
                 return redirect(url_for("user_login"))
-
         return None
 
     @app.after_request
     def attach_home_javascript(response):
-        """Load the commerce homepage enhancement without changing the existing template."""
         if request.path == "/" and response.status_code == 200 and "text/html" in response.content_type:
             body = response.get_data(as_text=True)
             marker = '<script src="/static/home.js" defer></script>'
@@ -169,12 +146,10 @@ def register_password_reset_routes(app):
         def forgot_password():
             if request.method == "GET":
                 return render_template("forgot_password.html", sent=False)
-
             identifier = request.form.get("identifier", "").strip()
             import app as app_module
             if not app_module.allow_password_reset(request.remote_addr, identifier, limit=5, window_seconds=900):
                 return render_template("forgot_password.html", sent=False, error="Too many reset attempts. Please try again later."), 429
-
             token, email = app_module.create_password_reset_token(identifier)
             if token and email:
                 try:
@@ -205,12 +180,10 @@ def register_password_reset_routes(app):
     def admin_forgot_password():
         if request.method == "GET":
             return render_template("admin_forgot_password.html", sent=False)
-
         identifier = request.form.get("identifier", "").strip().lower()
         allowed = os.getenv("ADMIN_EMAIL", "").strip().lower()
         if not allowed or not hmac.compare_digest(identifier, allowed):
             return render_template("admin_forgot_password.html", sent=True)
-
         now = datetime.now(timezone.utc)
         token = secrets.token_urlsafe(32)
         token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
@@ -243,7 +216,6 @@ def register_password_reset_routes(app):
             return render_template("admin_reset_password.html", token=token, error="Password must be at least 8 characters."), 400
         if password != confirm:
             return render_template("admin_reset_password.html", token=token, error="Passwords do not match."), 400
-
         token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
         now = datetime.now(timezone.utc)
         with SessionLocal() as db:
@@ -262,7 +234,6 @@ def register_password_reset_routes(app):
 
 
 def mark_admin_authenticated():
-    """Initialize timestamps and role for a newly authenticated admin session."""
     now = datetime.now(timezone.utc).timestamp()
     session["admin_logged_in"] = True
     session["admin_role"] = ADMIN_ROLE
@@ -271,7 +242,6 @@ def mark_admin_authenticated():
 
 
 def clear_admin_session():
-    """Public helper for explicitly terminating the privileged session."""
     _clear_admin_session()
 
 
