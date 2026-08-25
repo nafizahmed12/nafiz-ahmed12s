@@ -66,6 +66,12 @@ def register_csrf_protection(app):
         if request.method not in ("POST", "PUT", "PATCH", "DELETE"):
             return
 
+        # SSLCommerz browser callbacks originate from the external gateway,
+        # so their Origin/Referer is intentionally not the merchant origin.
+        # These endpoints perform their own server-side transaction validation.
+        if request.path.startswith("/api/payments/sslcommerz/"):
+            return
+
         if request.path.startswith("/api/"):
             if not _valid_same_origin_request():
                 abort(400, description="Cross-origin API request blocked.")
