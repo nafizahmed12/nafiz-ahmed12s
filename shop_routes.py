@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, render_template, session, request
+from flask import Blueprint, jsonify, make_response, render_template, session, request
 from sqlalchemy import text
 
 from database import SessionLocal
@@ -7,18 +7,28 @@ from commerce_routes import _product_row
 shop_bp = Blueprint("shop_ui", __name__)
 
 
+def _category():
+    return request.args.get("category", "").strip().lower()
+
+
+def _shop_response(template, **context):
+    category = context.get("category", _category())
+    response = make_response(render_template(template, category=category, **{k: v for k, v in context.items() if k != "category"}))
+    response.set_cookie("selected_category", category, max_age=3600, httponly=True, samesite="Lax")
+    return response
+
+
 @shop_bp.get("/shop")
 def shop():
-    category = request.args.get("category", "").strip().lower()
-    return render_template("shop.html", category=category)
+    return _shop_response("shop.html", category=_category())
 
 
 @shop_bp.get("/checkout")
 def checkout_page():
-    category = request.args.get("category", "").strip().lower()
+    category = _category()
     if not session.get("user_id"):
-        return render_template("shop.html", checkout_requires_login=True, category=category), 401
-    return render_template("shop.html", checkout_mode=True, category=category)
+        return _shop_response("shop.html", checkout_requires_login=True, category=category), 401
+    return _shop_response("shop.html", checkout_mode=True, category=category)
 
 
 @shop_bp.get("/payment/success")
@@ -52,7 +62,7 @@ def _category_products_response():
     if request.path != "/api/products" or request.method != "GET":
         return None
 
-    category = request.args.get("category", "").strip().lower()
+    category = request.args.get("category", "").strip().lower() or request.cookies.get("selected_category", "").strip().lower()
     if not category:
         return None
 
@@ -88,19 +98,14 @@ def _category_products_response():
                 FROM products p
                 JOIN product_categories pc ON pc.id = p.category_id
                 LEFT JOIN LATERAL (
-                    SELECT id,price
-                    FROM product_listings
-                    WHERE product_id=p.id
-                      AND status IN ('active','published')
-                    ORDER BY featured DESC,id ASC
-                    LIMIT 1
+                    SELECT id,price FROM product_listings
+                    WHERE product_id=p.id AND status IN ('active','published')
+                    ORDER BY featured DESC,id ASC LIMIT 1
                 ) l ON TRUE
                 LEFT JOIN LATERAL (
-                    SELECT image_url
-                    FROM product_images
+                    SELECT image_url FROM product_images
                     WHERE product_id=p.id
-                    ORDER BY sort_order ASC,id ASC
-                    LIMIT 1
+                    ORDER BY sort_order ASC,id ASC LIMIT 1
                 ) pi ON TRUE
                 WHERE {where_sql}
                 ORDER BY p.id DESC
