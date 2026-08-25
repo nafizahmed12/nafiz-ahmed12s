@@ -30,10 +30,9 @@ def _signed_webhook(payload):
 
 def test_paid_payment_cannot_be_downgraded_by_later_webhook():
     """A terminal paid state must not be overwritten by a stale failure/cancel event."""
-    # This regression test exercises the state-transition helper directly so it
-    # does not depend on the rest of commerce order creation in the test suite.
     from database import SessionLocal
     from sqlalchemy import text
+    from sqlalchemy.exc import IntegrityError
     from payment_routes import _apply_payment_status
 
     with SessionLocal() as db:
@@ -57,8 +56,16 @@ def test_paid_payment_cannot_be_downgraded_by_later_webhook():
             text("SELECT id FROM payments WHERE id=:payment_id FOR UPDATE"),
             {"payment_id": payment_id},
         ).mappings().one()
-        _apply_payment_status(db, order_id, payment["id"], "failed")
-        db.commit()
+
+        # PostgreSQL enforces the terminal paid -> failed transition at the
+        # database layer. The correct application behavior is therefore to
+        # reject the stale update and preserve the paid state.
+        try:
+            _apply_payment_status(db, order_id, payment["id"], "failed")
+            db.commit()
+            raise AssertionError("paid payment was unexpectedly downgraded")
+        except IntegrityError:
+            db.rollback()
 
         row = db.execute(
             text("SELECT status FROM payments WHERE id=:payment_id"),
