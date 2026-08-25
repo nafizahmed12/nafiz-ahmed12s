@@ -38,7 +38,8 @@ def test_paid_payment_cannot_be_downgraded_by_later_webhook():
 
     with SessionLocal() as db:
         user_id = db.execute(
-            text("INSERT INTO users(username,email,password_hash) VALUES ('payment-test','payment-test@example.com','x') RETURNING id")
+            text("""INSERT INTO users(username,email,password_hash,created_at)
+                    VALUES ('payment-test','payment-test@example.com','x',NOW()) RETURNING id""")
         ).scalar_one()
         order_id = db.execute(
             text("""INSERT INTO commerce_orders(user_id,order_number,status,payment_status,currency,total_amount,created_at,updated_at)
