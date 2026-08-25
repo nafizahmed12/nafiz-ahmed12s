@@ -5,7 +5,7 @@ shop_bp = Blueprint("shop_ui", __name__)
 
 @shop_bp.get("/shop")
 def shop():
-    return render_template("shop.html")
+    return render_template("shop.html", category=request.args.get("category", "").strip().lower())
 
 
 @shop_bp.get("/checkout")
