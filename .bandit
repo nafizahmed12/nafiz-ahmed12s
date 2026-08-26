@@ -1,0 +1,8 @@
+[bandit]
+# Reviewed exclusions:
+# B101: tests intentionally use Python assert statements.
+# B104: 0.0.0.0 is required by the container/Render web process.
+# B310: outbound URLs are application-controlled HTTPS endpoints.
+# B608: dynamic SQL fragments are internally generated; user values are bound parameters.
+exclude = tests
+skips = B101,B104,B310,B608
