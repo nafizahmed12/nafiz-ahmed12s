@@ -24,6 +24,7 @@ CATEGORIES = (
 
 
 def upgrade() -> None:
+    connection = op.get_bind()
     stmt = text(
         """
         INSERT INTO product_categories (name, slug, description, created_at)
@@ -31,13 +32,12 @@ def upgrade() -> None:
         ON CONFLICT (slug) DO NOTHING
         """
     )
-    connection = op.get_bind()
     for name, slug in CATEGORIES:
         connection.execute(stmt, {"name": name, "slug": slug})
 
 
 def downgrade() -> None:
-    stmt = text("DELETE FROM product_categories WHERE slug = :slug")
     connection = op.get_bind()
+    stmt = text("DELETE FROM product_categories WHERE slug = :slug")
     for _, slug in CATEGORIES:
         connection.execute(stmt, {"slug": slug})
