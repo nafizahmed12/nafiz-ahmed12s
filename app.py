@@ -1,6 +1,7 @@
 import hmac
 import logging
 import os
+import secrets
 from datetime import timedelta
 from urllib.parse import urlparse
 
@@ -38,7 +39,7 @@ secret_key = os.getenv("SECRET_KEY")
 if not secret_key:
     if os.getenv("RENDER"):
         raise RuntimeError("SECRET_KEY environment variable is required in production.")
-    secret_key = "dev-only-change-this-secret"
+    secret_key = secrets.token_urlsafe(32)
 app.secret_key = secret_key
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
