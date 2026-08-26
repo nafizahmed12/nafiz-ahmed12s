@@ -1,4 +1,5 @@
 from decimal import Decimal, InvalidOperation
+import base64
 
 from flask import Blueprint, jsonify, redirect, request, url_for, flash
 from sqlalchemy import text
@@ -27,6 +28,23 @@ def _product_payload(row):
     }
 
 
+def _uploaded_image_data_url():
+    file = request.files.get("image")
+    if not file or not file.filename:
+        return ""
+    allowed = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "image/gif": ".gif"}
+    content_type = (file.mimetype or "").lower()
+    if content_type not in allowed:
+        raise ValueError("Image must be JPG, PNG, WEBP or GIF.")
+    raw = file.read(1024 * 1024 + 1)
+    if len(raw) > 1024 * 1024:
+        raise ValueError("Image must be 1 MB or smaller.")
+    if not raw:
+        raise ValueError("The selected image is empty.")
+    encoded = base64.b64encode(raw).decode("ascii")
+    return f"data:{content_type};base64,{encoded}"
+
+
 def _parse_product_form():
     name = request.form.get("name", "").strip()
     slug = request.form.get("slug", "").strip().lower()
@@ -37,6 +55,9 @@ def _parse_product_form():
     currency = request.form.get("currency", "BDT").strip().upper()[:3] or "BDT"
     sku = request.form.get("sku", "").strip() or None
     image_url = request.form.get("image_url", "").strip()
+    uploaded_image = _uploaded_image_data_url()
+    if uploaded_image:
+        image_url = uploaded_image
     featured = request.form.get("featured") == "1"
     try:
         price = Decimal(request.form.get("price", "0").strip())
