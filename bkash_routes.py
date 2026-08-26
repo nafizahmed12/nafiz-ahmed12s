@@ -20,7 +20,7 @@ from sqlalchemy import text
 from database import SessionLocal
 from schema import allow_payment_attempt
 
-bkash_bp = Blueprint("bkash_api", __name__, url_prefix="/api")
+bkash_bp = Blueprint("bkash_api", __name__)
 logger = logging.getLogger(__name__)
 _TOKEN = {"value": None, "expires_at": 0.0}
 
@@ -93,9 +93,7 @@ def _get_token():
 
 
 def _success(result):
-    status_code = str(result.get("statusCode", ""))
-    transaction_status = str(result.get("transactionStatus", "")).upper()
-    return status_code == "0000" and transaction_status in {"COMPLETED", "SUCCESS"}
+    return str(result.get("statusCode", "")) == "0000" and str(result.get("transactionStatus", "")).upper() in {"COMPLETED", "SUCCESS"}
 
 
 def _order(order_id, user_id, db):
@@ -104,7 +102,7 @@ def _order(order_id, user_id, db):
         {"order_id": order_id, "user_id": user_id}).mappings().first()
 
 
-@bkash_bp.get("/../payment/bkash/<int:order_id>")
+@bkash_bp.get("/payment/bkash/<int:order_id>")
 def bkash_page(order_id):
     user_id = _user_id()
     if user_id is None:
@@ -114,70 +112,50 @@ def bkash_page(order_id):
     if order is None:
         return jsonify({"error": "Order not found."}), 404
     if order["payment_status"] == "paid":
-        return redirect(f"/payment-result/success?order_id={order_id}")
-    return render_template(
-        "bkash_checkout.html",
-        order=order,
-        script_url=os.getenv("BKASH_SCRIPT_URL", "").strip(),
-    )
+        return redirect(f"/payment/success?order_id={order_id}")
+    return render_template("bkash_checkout.html", order=order, script_url=os.getenv("BKASH_SCRIPT_URL", "").strip())
 
 
-@bkash_bp.post("/orders/<int:order_id>/payments/bkash/create")
+@bkash_bp.post("/api/orders/<int:order_id>/payments/bkash/create")
 def create_bkash_payment(order_id):
     user_id = _user_id()
     if user_id is None:
         return jsonify({"error": "Authentication required."}), 401
     if not allow_payment_attempt(request.remote_addr, user_id):
         return jsonify({"error": "Too many payment attempts. Please wait a few minutes and try again."}), 429
-
     with SessionLocal() as db:
         order = _order(order_id, user_id, db)
         if order is None:
             return jsonify({"error": "Order not found."}), 404
         if order["status"] in {"cancelled", "refunded"} or order["payment_status"] == "paid":
             return jsonify({"error": "This order cannot accept payment."}), 409
-
         payment = db.execute(text("""SELECT id,transaction_id,status,amount,currency,provider_reference
             FROM payments WHERE order_id=:order_id AND provider='bkash' AND status='initiated'
             ORDER BY id DESC LIMIT 1 FOR UPDATE"""), {"order_id": order_id}).mappings().first()
         if payment is None:
             invoice = f"BK-{order['order_number']}-{uuid4().hex[:8].upper()}"
-            payment_id = db.execute(text("""INSERT INTO payments
-                (order_id,provider,transaction_id,status,amount,currency,created_at,updated_at)
-                VALUES (:order_id,'bkash',:invoice,'initiated',:amount,:currency,NOW(),NOW()) RETURNING id"""),
-                {"order_id": order_id, "invoice": invoice, "amount": order["total_amount"],
-                 "currency": order["currency"] or "BDT"}).scalar_one()
-            payment = {"id": payment_id, "transaction_id": invoice, "status": "initiated",
-                       "amount": order["total_amount"], "currency": order["currency"] or "BDT",
-                       "provider_reference": None}
-            db.execute(text("UPDATE commerce_orders SET payment_status='initiated',updated_at=NOW() WHERE id=:order_id"),
-                       {"order_id": order_id})
+            payment_id = db.execute(text("""INSERT INTO payments(order_id,provider,transaction_id,status,amount,currency,created_at,updated_at)
+                VALUES(:order_id,'bkash',:invoice,'initiated',:amount,:currency,NOW(),NOW()) RETURNING id"""),
+                {"order_id": order_id, "invoice": invoice, "amount": order["total_amount"], "currency": order["currency"] or "BDT"}).scalar_one()
+            payment = {"id": payment_id, "transaction_id": invoice, "status": "initiated", "amount": order["total_amount"], "currency": order["currency"] or "BDT", "provider_reference": None}
+            db.execute(text("UPDATE commerce_orders SET payment_status='initiated',updated_at=NOW() WHERE id=:order_id"), {"order_id": order_id})
             db.commit()
-
         try:
-            result = _request("/checkout/payment/create", body={
-                "amount": _money(payment["amount"]),
-                "currency": str(payment["currency"] or "BDT").upper(),
-                "intent": "sale",
-                "merchantInvoiceNumber": str(payment["transaction_id"]),
-            })
+            result = _request("/checkout/payment/create", body={"amount": _money(payment["amount"]), "currency": str(payment["currency"] or "BDT").upper(), "intent": "sale", "merchantInvoiceNumber": str(payment["transaction_id"])})
         except Exception:
             logger.exception("bKash create failed order_id=%s", order_id)
             db.rollback()
             return jsonify({"error": "Could not create the bKash payment."}), 502
-
         payment_id_bkash = str(result.get("paymentID") or "").strip()
         if not payment_id_bkash:
             db.rollback()
             return jsonify({"error": "bKash did not return a paymentID."}), 502
-        db.execute(text("UPDATE payments SET provider_reference=:ref,updated_at=NOW() WHERE id=:id"),
-                   {"ref": payment_id_bkash, "id": payment["id"]})
+        db.execute(text("UPDATE payments SET provider_reference=:ref,updated_at=NOW() WHERE id=:id"), {"ref": payment_id_bkash, "id": payment["id"]})
         db.commit()
-
     return jsonify(result)
 
 
-@bkash_bp.post("/orders/<int:order_id>/payments/bkash/execute")
+@bkash_bp.post("/api/orders/<int:order_id>/payments/bkash/execute")
 def execute_bkash_payment(order_id):
     user_id = _user_id()
     if user_id is None:
@@ -186,12 +164,10 @@ def execute_bkash_payment(order_id):
     payment_id_bkash = str(body.get("paymentID", "")).strip()
     if not payment_id_bkash or len(payment_id_bkash) > 100:
         return jsonify({"error": "paymentID is required."}), 400
-
     with SessionLocal() as db:
         payment = db.execute(text("""SELECT p.id,p.order_id,p.status,p.amount,p.currency,p.provider_reference,p.transaction_id
             FROM payments p JOIN commerce_orders o ON o.id=p.order_id
-            WHERE p.provider='bkash' AND p.order_id=:order_id AND o.user_id=:user_id
-              AND p.provider_reference=:payment_id FOR UPDATE"""),
+            WHERE p.provider='bkash' AND p.order_id=:order_id AND o.user_id=:user_id AND p.provider_reference=:payment_id FOR UPDATE"""),
             {"order_id": order_id, "user_id": user_id, "payment_id": payment_id_bkash}).mappings().first()
         if payment is None:
             return jsonify({"error": "bKash payment not found."}), 404
@@ -203,29 +179,23 @@ def execute_bkash_payment(order_id):
             logger.exception("bKash execute failed order_id=%s payment_id=%s", order_id, payment_id_bkash)
             db.rollback()
             return jsonify({"error": "Could not execute the bKash payment."}), 502
-
         amount_ok = _money(result.get("amount")) == _money(payment["amount"])
         currency_ok = str(result.get("currency") or payment["currency"] or "BDT").upper() == str(payment["currency"] or "BDT").upper()
         invoice_ok = str(result.get("merchantInvoiceNumber") or payment["transaction_id"]) == str(payment["transaction_id"])
         if not (_success(result) and amount_ok and currency_ok and invoice_ok):
             db.rollback()
             return jsonify({"error": "bKash payment verification failed."}), 400
-
         trx_id = str(result.get("trxID") or result.get("trxId") or "").strip()
         if not trx_id:
             db.rollback()
             return jsonify({"error": "bKash did not return a transaction ID."}), 502
-        db.execute(text("""UPDATE payments SET status='paid',transaction_id=:trx_id,
-            provider_reference=:payment_id,updated_at=NOW() WHERE id=:payment_id_db"""),
-            {"trx_id": trx_id, "payment_id": payment_id_bkash, "payment_id_db": payment["id"]})
-        db.execute(text("""UPDATE commerce_orders SET payment_status='paid',
-            status=CASE WHEN status='pending' THEN 'confirmed' ELSE status END,updated_at=NOW()
-            WHERE id=:order_id"""), {"order_id": order_id})
+        db.execute(text("UPDATE payments SET status='paid',transaction_id=:trx_id,provider_reference=:payment_id,updated_at=NOW() WHERE id=:payment_id_db"), {"trx_id": trx_id, "payment_id": payment_id_bkash, "payment_id_db": payment["id"]})
+        db.execute(text("UPDATE commerce_orders SET payment_status='paid',status=CASE WHEN status='pending' THEN 'confirmed' ELSE status END,updated_at=NOW() WHERE id=:order_id"), {"order_id": order_id})
         db.commit()
     return jsonify({"status": "COMPLETED", "trxID": trx_id, "order_id": order_id})
 
 
-@bkash_bp.get("/orders/<int:order_id>/payments/bkash/status")
+@bkash_bp.get("/api/orders/<int:order_id>/payments/bkash/status")
 def query_bkash_payment(order_id):
     user_id = _user_id()
     if user_id is None:
@@ -233,8 +203,7 @@ def query_bkash_payment(order_id):
     with SessionLocal() as db:
         payment = db.execute(text("""SELECT p.id,p.status,p.amount,p.currency,p.provider_reference,p.transaction_id
             FROM payments p JOIN commerce_orders o ON o.id=p.order_id
-            WHERE p.provider='bkash' AND p.order_id=:order_id AND o.user_id=:user_id
-            ORDER BY p.id DESC LIMIT 1 FOR UPDATE"""), {"order_id": order_id, "user_id": user_id}).mappings().first()
+            WHERE p.provider='bkash' AND p.order_id=:order_id AND o.user_id=:user_id ORDER BY p.id DESC LIMIT 1 FOR UPDATE"""), {"order_id": order_id, "user_id": user_id}).mappings().first()
         if payment is None:
             return jsonify({"error": "bKash payment not found."}), 404
         if payment["status"] == "paid":
@@ -254,10 +223,8 @@ def query_bkash_payment(order_id):
         if _success(result) and amount_ok and currency_ok:
             trx_id = str(result.get("trxID") or result.get("trxId") or "").strip()
             if trx_id:
-                db.execute(text("UPDATE payments SET status='paid',transaction_id=:trx_id,updated_at=NOW() WHERE id=:id"),
-                           {"trx_id": trx_id, "id": payment["id"]})
-                db.execute(text("UPDATE commerce_orders SET payment_status='paid',status=CASE WHEN status='pending' THEN 'confirmed' ELSE status END,updated_at=NOW() WHERE id=:order_id"),
-                           {"order_id": order_id})
+                db.execute(text("UPDATE payments SET status='paid',transaction_id=:trx_id,updated_at=NOW() WHERE id=:id"), {"trx_id": trx_id, "id": payment["id"]})
+                db.execute(text("UPDATE commerce_orders SET payment_status='paid',status=CASE WHEN status='pending' THEN 'confirmed' ELSE status END,updated_at=NOW() WHERE id=:order_id"), {"order_id": order_id})
                 db.commit()
                 return jsonify({"status": "COMPLETED", "trxID": trx_id})
         db.commit()
