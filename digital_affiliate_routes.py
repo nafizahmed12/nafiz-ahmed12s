@@ -3,7 +3,7 @@ from secrets import token_urlsafe
 from decimal import Decimal
 from urllib.parse import urlparse
 
-from flask import Blueprint, jsonify, request, session, redirect, abort
+from flask import Blueprint, jsonify, request, session, redirect
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
@@ -28,6 +28,37 @@ def _valid_delivery_url(value):
         return False
     parsed = urlparse(value)
     return parsed.scheme in {"https", "http"} and bool(parsed.netloc)
+
+
+def _provision_paid_digital_purchases(db, user_id):
+    """Create one download entitlement for each digital product in a paid order."""
+    rows = db.execute(text("""SELECT DISTINCT o.id AS order_id, oi.product_id
+        FROM commerce_orders o
+        JOIN commerce_order_items oi ON oi.order_id=o.id
+        JOIN digital_products d ON d.product_id=oi.product_id
+        JOIN products p ON p.id=oi.product_id
+        WHERE o.user_id=:uid AND o.payment_status='paid'
+          AND p.product_type='digital' AND p.status='published' AND d.is_active=TRUE"""),
+        {"uid": user_id}).mappings().all()
+
+    created = 0
+    for row in rows:
+        exists = db.execute(text("""SELECT id FROM digital_purchases
+            WHERE user_id=:uid AND product_id=:product_id AND order_id=:order_id
+            LIMIT 1"""),
+            {"uid": user_id, "product_id": row["product_id"], "order_id": row["order_id"]}).scalar_one_or_none()
+        if exists is not None:
+            continue
+        token = token_urlsafe(32)
+        try:
+            db.execute(text("""INSERT INTO digital_purchases
+                (user_id,product_id,order_id,access_token,status,download_count,created_at,updated_at)
+                VALUES (:uid,:product_id,:order_id,:token,'active',0,NOW(),NOW())"""),
+                {"uid": user_id, "product_id": row["product_id"], "order_id": row["order_id"], "token": token})
+            created += 1
+        except IntegrityError:
+            db.rollback()
+    return created
 
 
 @bp.post("/digital-products")
@@ -78,6 +109,8 @@ def my_digital_purchases():
     if uid is None:
         return jsonify({"error": "Authentication required."}), 401
     with SessionLocal() as db:
+        _provision_paid_digital_purchases(db, uid)
+        db.commit()
         rows = db.execute(text("""SELECT dp.id,dp.product_id,p.name,p.slug,dp.access_token,dp.status,dp.download_count,dp.last_download_at
             FROM digital_purchases dp JOIN products p ON p.id=dp.product_id
             WHERE dp.user_id=:uid ORDER BY dp.id DESC"""), {"uid": uid}).mappings().all()
@@ -98,7 +131,7 @@ def digital_download(access_token):
     if len(access_token) > 128:
         return jsonify({"error": "Invalid download token."}), 400
     with SessionLocal() as db:
-        purchase = db.execute(text("""SELECT dp.id,dp.user_id,dp.product_id,dp.status,dp.download_count,dp.delivery_url,
+        purchase = db.execute(text("""SELECT dp.id,dp.user_id,dp.product_id,dp.status,dp.download_count,d.delivery_url,
                 p.name,p.status AS product_status
             FROM digital_purchases dp
             JOIN digital_products d ON d.product_id=dp.product_id
