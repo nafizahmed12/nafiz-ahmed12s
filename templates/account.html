@@ -14,8 +14,8 @@
 <body>
 <main class="account">
     <div class="top">
-        <div><span class="section-label">ACCOUNT</span><h1>Account settings</h1><p class="muted">Manage your profile, password and orders.</p></div>
-        <div class="account-actions"><a class="btn btn-primary" href="{{ url_for('orders_page') }}">My Orders</a><a class="btn btn-secondary" href="{{ url_for('dashboard') }}">← Dashboard</a></div>
+        <div><span class="section-label">ACCOUNT</span><h1>Account settings</h1><p class="muted">Manage your profile, password and order history.</p></div>
+        <div class="account-actions"><a class="btn btn-primary" href="{{ url_for('orders_page') }}">Order History</a><a class="btn btn-secondary" href="{{ url_for('dashboard') }}">← Dashboard</a></div>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
