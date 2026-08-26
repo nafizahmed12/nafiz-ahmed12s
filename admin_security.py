@@ -20,21 +20,31 @@ USER_SESSION_CREATED_KEY = "user_session_created_at"
 
 
 def _ensure_admin_credentials():
+    """Create/sync the bootstrap admin from environment variables.
+
+    This is intentionally idempotent so it is safe to run on every deployment.
+    ADMIN_EMAIL is optional because admin login only requires username/password.
+    """
     username = os.getenv("ADMIN_USERNAME", "").strip()
     password = os.getenv("ADMIN_PASSWORD", "")
-    email = os.getenv("ADMIN_EMAIL", "").strip().lower()
-    if not username or not password or not email:
+    email = os.getenv("ADMIN_EMAIL", "").strip().lower() or None
+    if not username or not password:
         return
     with SessionLocal() as db:
         db.execute(text("""CREATE TABLE IF NOT EXISTS admin_credentials (
             id INTEGER PRIMARY KEY, username VARCHAR(80) UNIQUE NOT NULL,
-            email VARCHAR(255) UNIQUE NOT NULL, password_hash VARCHAR(255) NOT NULL,
+            email VARCHAR(255) UNIQUE, password_hash VARCHAR(255) NOT NULL,
             password_changed_at TIMESTAMP WITH TIME ZONE NULL)"""))
-        row = db.execute(text("SELECT id FROM admin_credentials LIMIT 1")).first()
+        row = db.execute(text("SELECT id, username, email FROM admin_credentials ORDER BY id LIMIT 1")).mappings().first()
         if row is None:
             db.execute(text("""INSERT INTO admin_credentials
                 (id, username, email, password_hash) VALUES (1, :username, :email, :password_hash)"""),
                 {"username": username, "email": email, "password_hash": generate_password_hash(password)})
+        elif row["username"] != username or (email and row["email"] != email):
+            db.execute(text("""UPDATE admin_credentials
+                SET username=:username, email=:email
+                WHERE id=:id"""),
+                {"username": username, "email": email if email else row["email"], "id": row["id"]})
         db.commit()
 
 
@@ -156,13 +166,6 @@ def register_password_reset_routes(app):
                     send_admin_password_reset_email(allowed, token)
                 except Exception:
                     app.logger.exception("Admin password reset email delivery failed")
-                # Resend's sandbox mode (no verified sending domain) accepts the
-                # API call and returns a message id, but silently drops delivery
-                # for any recipient other than the account owner's own inbox
-                # during testing. There is no reliable client-side signal for
-                # that failure mode, so the reset link is always also logged
-                # here as a fallback recovery path — check Render logs if the
-                # email never arrives.
                 app.logger.warning("Admin password reset link (use if the email does not arrive): %s", reset_url)
             except Exception:
                 app.logger.exception("Could not build admin password reset link")
