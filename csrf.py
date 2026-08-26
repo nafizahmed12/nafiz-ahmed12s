@@ -5,6 +5,12 @@ from urllib.parse import urlparse
 from flask import abort, request, session
 
 
+class _CSRFToken(str):
+    """A token that works with both {{ csrf_token }} and {{ csrf_token() }}."""
+    def __call__(self):
+        return str(self)
+
+
 def _get_or_create_csrf_secret():
     """Per-session random value the token is bound to."""
     value = session.get("_csrf_secret")
@@ -72,7 +78,6 @@ def register_csrf_protection(app):
 
     @app.context_processor
     def _inject_csrf_token():
-        # Keep backwards compatibility with existing templates that call
-        # {{ csrf_token() }} while also exposing a JSON-safe token value for
-        # templates such as admin.html that use {{ csrf_token|tojson }}.
-        return {"csrf_token": generate_csrf_token}
+        # _CSRFToken is a str subclass, so Flask/Jinja can JSON-serialize it,
+        # while existing templates can still call it as csrf_token().
+        return {"csrf_token": _CSRFToken(generate_csrf_token())}
