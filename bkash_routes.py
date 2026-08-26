@@ -75,13 +75,9 @@ def _get_token():
     if not all((username, password, app_key, app_secret)):
         raise RuntimeError("bKash credentials are not fully configured")
     body = json.dumps({"app_key": app_key, "app_secret": app_secret}).encode()
-    req = Request(
-        f"{_base_url()}/checkout/token/grant",
-        data=body,
-        headers={"Accept": "application/json", "Content-Type": "application/json",
-                 "username": username, "password": password},
-        method="POST",
-    )
+    req = Request(f"{_base_url()}/checkout/token/grant", data=body,
+                  headers={"Accept": "application/json", "Content-Type": "application/json",
+                           "username": username, "password": password}, method="POST")
     with urlopen(req, timeout=30) as response:
         result = json.loads(response.read().decode("utf-8"))
     token = result.get("id_token")
@@ -106,7 +102,7 @@ def _order(order_id, user_id, db):
 def bkash_page(order_id):
     user_id = _user_id()
     if user_id is None:
-        return redirect("/login")
+        return redirect("/user-login")
     with SessionLocal() as db:
         order = _order(order_id, user_id, db)
     if order is None:
