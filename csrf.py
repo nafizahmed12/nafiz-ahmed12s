@@ -28,14 +28,7 @@ def _valid_csrf_token(submitted):
 
 
 def _valid_same_origin_request():
-    """Validate browser origin metadata for state-changing JSON API calls.
-
-    API endpoints use JSON fetch() rather than traditional HTML forms, so a
-    form token is not always available. Origin/Referer validation prevents a
-    cross-site browser from using the victim's session cookie to perform a
-    state-changing API request. Requests without these headers remain
-    compatible with server-to-server integrations and CLI clients.
-    """
+    """Validate browser origin metadata for state-changing JSON API calls."""
     expected_origin = request.host_url.rstrip("/")
 
     origin = request.headers.get("Origin")
@@ -53,10 +46,6 @@ def _valid_same_origin_request():
     return True
 
 
-# JSON API endpoints use same-origin browser validation instead of requiring
-# an HTML form token. External payment callbacks are also under /api/ and may
-# not send Origin/Referer; they have their own server-side signature/amount
-# validation in payment_routes.py.
 EXEMPT_PREFIXES = ("/api/", "/health")
 
 
@@ -66,9 +55,6 @@ def register_csrf_protection(app):
         if request.method not in ("POST", "PUT", "PATCH", "DELETE"):
             return
 
-        # SSLCommerz browser callbacks originate from the external gateway,
-        # so their Origin/Referer is intentionally not the merchant origin.
-        # These endpoints perform their own server-side transaction validation.
         if request.path.startswith("/api/payments/sslcommerz/"):
             return
 
@@ -86,5 +72,7 @@ def register_csrf_protection(app):
 
     @app.context_processor
     def _inject_csrf_token():
-        # Templates expect csrf_token to be the actual string value.
-        return {"csrf_token": generate_csrf_token()}
+        # Keep backwards compatibility with existing templates that call
+        # {{ csrf_token() }} while also exposing a JSON-safe token value for
+        # templates such as admin.html that use {{ csrf_token|tojson }}.
+        return {"csrf_token": generate_csrf_token}
