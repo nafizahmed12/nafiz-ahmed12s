@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>bKash Checkout | Nafiz Commerce</title>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f7f7f7;font-family:system-ui,-apple-system,sans-serif}.card{width:min(520px,calc(100% - 32px));background:#fff;padding:32px;border-radius:20px;box-shadow:0 12px 40px #0002;text-align:center}.price{font-size:30px;font-weight:800;margin:20px 0}.btn{border:0;border-radius:10px;padding:14px 22px;font-weight:800;cursor:pointer;background:#e2136e;color:#fff}.muted{color:#666}.error{color:#b00020;margin-top:16px}</style>
+{% if script_url %}<script src="{{ script_url }}"></script>{% endif %}
+</head>
+<body>
+<main class="card">
+<h1>Pay with bKash</h1>
+<p class="muted">Order #{{ order.order_number }}</p>
+<div class="price">{{ order.currency }} {{ "%.2f"|format(order.total_amount|float) }}</div>
+{% if script_url %}<button id="pay" class="btn" type="button">Pay with bKash</button>{% else %}<p class="error">BKASH_SCRIPT_URL is not configured. Add the official bKash Checkout script URL supplied during merchant onboarding.</p>{% endif %}
+<p id="message" class="muted"></p>
+</main>
+{% if script_url %}
+<script>
+const orderId={{ order.id|tojson }};
+const amount={{ "%.2f"|format(order.total_amount|float)|tojson }};
+let paymentID=null;
+function msg(text){document.getElementById('message').textContent=text;}
+function post(url, body){return fetch(url,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})}).then(async r=>{const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Payment request failed');return d;});}
+function start(){
+ if(!window.bKash){msg('bKash Checkout script failed to load.');return;}
+ bKash.init({
+  paymentMode:'checkout',
+  paymentRequest:{amount:amount,intent:'sale'},
+  createRequest:function(request){
+   post('/api/orders/'+orderId+'/payments/bkash/create',{}).then(function(data){
+    paymentID=data.paymentID;
+    bKash.create().onSuccess(data);
+   }).catch(function(e){msg(e.message);bKash.create().onError();});
+  },
+  executeRequestOnAuthorization:function(){
+   post('/api/orders/'+orderId+'/payments/bkash/execute',{paymentID:paymentID}).then(function(data){
+    if(data.status==='COMPLETED'){window.location='/payment/success?order_id='+orderId;}
+    else{msg('Payment could not be verified.');}
+   }).catch(function(e){msg(e.message);});
+  },
+  onClose:function(){msg('bKash checkout was closed.');}
+ });
+}
+document.getElementById('pay').addEventListener('click',start);
+</script>
+{% endif %}
+</body></html>
