@@ -86,4 +86,5 @@ def register_csrf_protection(app):
 
     @app.context_processor
     def _inject_csrf_token():
-        return {"csrf_token": generate_csrf_token}
+        # Templates expect csrf_token to be the actual string value.
+        return {"csrf_token": generate_csrf_token()}
