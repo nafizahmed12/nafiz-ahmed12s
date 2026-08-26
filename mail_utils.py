@@ -82,8 +82,12 @@ def send_password_reset_email(recipient, token):
     )
 
 
+def build_admin_reset_url(token):
+    return f"{_base_url()}/admin-reset-password?token={quote(token, safe='')}"
+
+
 def send_admin_password_reset_email(recipient, token):
-    reset_url = f"{_base_url()}/admin-reset-password?token={quote(token, safe='')}"
+    reset_url = build_admin_reset_url(token)
     return _send_email(
         recipient,
         "Reset your Nafiz Ahmed admin password",

@@ -149,11 +149,23 @@ def register_password_reset_routes(app):
                 db.execute(text("DELETE FROM admin_password_reset_tokens WHERE expires_at <= :now OR used_at IS NOT NULL"), {"now": now})
                 db.execute(text("INSERT INTO admin_password_reset_tokens (token_hash, expires_at) VALUES (:hash, :expires)"), {"hash": token_hash, "expires": now + timedelta(minutes=30)})
                 db.commit()
+            from mail_utils import build_admin_reset_url, send_admin_password_reset_email
             try:
-                from mail_utils import send_admin_password_reset_email
-                send_admin_password_reset_email(allowed, token)
+                reset_url = build_admin_reset_url(token)
+                try:
+                    send_admin_password_reset_email(allowed, token)
+                except Exception:
+                    app.logger.exception("Admin password reset email delivery failed")
+                # Resend's sandbox mode (no verified sending domain) accepts the
+                # API call and returns a message id, but silently drops delivery
+                # for any recipient other than the account owner's own inbox
+                # during testing. There is no reliable client-side signal for
+                # that failure mode, so the reset link is always also logged
+                # here as a fallback recovery path — check Render logs if the
+                # email never arrives.
+                app.logger.warning("Admin password reset link (use if the email does not arrive): %s", reset_url)
             except Exception:
-                app.logger.exception("Admin password reset email delivery failed")
+                app.logger.exception("Could not build admin password reset link")
                 return render_template("admin_forgot_password.html", sent=False, error="We could not send the reset email. Please check the email configuration."), 200
             return render_template("admin_forgot_password.html", sent=True, error=None), 200
 
