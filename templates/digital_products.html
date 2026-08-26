@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Digital Products | Nafiz Commerce</title></head>
+<body>
+<main style="max-width:900px;margin:40px auto;padding:20px;font-family:system-ui">
+<h1>Digital Products</h1>
+<p>Sell ebooks, templates, courses, code and other downloadable products.</p>
+<div id="products">Loading...</div>
+<script>
+async function loadProducts(){
+ const r=await fetch('/api/digital-products/mine',{credentials:'same-origin'});
+ if(!r.ok){document.getElementById('products').textContent='Please log in to manage your products.';return;}
+ const data=await r.json();
+ document.getElementById('products').innerHTML=data.items.length?data.items.map(p=>`<article style="border:1px solid #ddd;padding:16px;margin:12px 0;border-radius:10px"><h2>${escapeHtml(p.name)}</h2><p>${escapeHtml(p.slug)} · ${escapeHtml(p.price)} ${escapeHtml(p.currency)}</p><small>${p.is_active?'Published':'Inactive'}</small></article>`).join(''):'<p>No digital products yet.</p>';
+}
+function escapeHtml(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
+loadProducts();
+</script>
+</main></body></html>
