@@ -7,6 +7,7 @@ from sqlalchemy.exc import IntegrityError
 
 from database import SessionLocal
 from admin_auth import admin_required
+from admin_orders_routes import register_admin_orders_routes
 
 admin_product_bp = Blueprint("admin_product", __name__)
 
@@ -192,3 +193,4 @@ def archive_admin_product(product_id):
 def register_admin_product_routes(app):
     if "admin_product" not in app.blueprints:
         app.register_blueprint(admin_product_bp)
+    register_admin_orders_routes(app)
