@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='portfolio-theme.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-        body{min-height:100vh}.dash{max-width:1180px;margin:0 auto;padding:36px 22px 70px}.dash-nav{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:35px}.dash-brand{font-weight:800;font-size:22px}.dash-actions{display:flex;gap:10px;flex-wrap:wrap}.dash-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:24px 0 34px}.stat{padding:22px}.stat strong{display:block;font-size:30px;margin-top:6px}.panel{padding:26px;margin-bottom:22px}.panel form{display:grid;gap:13px}.panel input,.panel textarea{width:100%;box-sizing:border-box}.product-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.product-card{padding:22px}.flash{padding:12px 14px;border-radius:12px;margin-bottom:16px;background:rgba(255,255,255,.06)}.muted{opacity:.7}.empty{padding:25px;text-align:center;border:1px dashed rgba(255,255,255,.15);border-radius:16px}.product-status{display:inline-flex;padding:5px 9px;border-radius:999px;background:rgba(56,189,248,.12);color:#7dd3fc;font-size:12px;font-weight:700}.product-price{font-size:24px;font-weight:800;margin-top:8px}.product-message{margin-top:12px;min-height:20px}.product-message.error{color:#fca5a5}.product-message.success{color:#86efac}.recent-order{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.08)}.recent-order:last-child{border-bottom:none}.order-badge{padding:5px 10px;border-radius:999px;background:#18233e;font-size:12px;font-weight:800}.order-badge.paid{background:#123d2b;color:#8ff0bd}.order-badge.unpaid{background:#49331b;color:#ffd18a}.order-badge.failed{background:#4b2027;color:#ffadb7}@media(max-width:800px){.dash-grid,.product-grid{grid-template-columns:1fr}}
+        body{min-height:100vh}.dash{max-width:1180px;margin:0 auto;padding:36px 22px 70px}.dash-nav{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:35px}.dash-brand{font-weight:800;font-size:22px}.dash-actions{display:flex;gap:10px;flex-wrap:wrap}.dashboard-order-btn{display:inline-flex!important;visibility:visible!important;opacity:1!important;position:relative!important;z-index:20!important}.dash-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:24px 0 34px}.stat{padding:22px}.stat strong{display:block;font-size:30px;margin-top:6px}.panel{padding:26px;margin-bottom:22px}.panel form{display:grid;gap:13px}.panel input,.panel textarea{width:100%;box-sizing:border-box}.product-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.product-card{padding:22px}.flash{padding:12px 14px;border-radius:12px;margin-bottom:16px;background:rgba(255,255,255,.06)}.muted{opacity:.7}.empty{padding:25px;text-align:center;border:1px dashed rgba(255,255,255,.15);border-radius:16px}.product-status{display:inline-flex;padding:5px 9px;border-radius:999px;background:rgba(56,189,248,.12);color:#7dd3fc;font-size:12px;font-weight:700}.product-price{font-size:24px;font-weight:800;margin-top:8px}.product-message{margin-top:12px;min-height:20px}.product-message.error{color:#fca5a5}.product-message.success{color:#86efac}.recent-order{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.08)}.recent-order:last-child{border-bottom:none}.order-badge{padding:5px 10px;border-radius:999px;background:#18233e;font-size:12px;font-weight:800}.order-badge.paid{background:#123d2b;color:#8ff0bd}.order-badge.unpaid{background:#49331b;color:#ffd18a}.order-badge.failed{background:#4b2027;color:#ffadb7}@media(max-width:800px){.dash-grid,.product-grid{grid-template-columns:1fr}.dash-actions{width:100%}.dashboard-order-btn{width:100%;justify-content:center}}
     </style>
 </head>
 <body>
@@ -18,7 +18,7 @@
         <div class="dash-actions">
             <a class="btn btn-secondary" href="{{ url_for('home') }}">View Home</a>
             <a class="btn btn-secondary" href="{{ url_for('account') }}">Account Settings</a>
-            <a class="btn btn-secondary" href="{{ url_for('orders_page') }}">Order History</a>
+            <a class="btn btn-primary dashboard-order-btn" href="{{ url_for('orders_page') }}" aria-label="View My Orders">My Orders →</a>
             <a class="btn btn-primary" href="{{ url_for('user_logout') }}">Logout</a>
         </div>
     </header>
@@ -39,7 +39,7 @@
     <section class="glass-card panel">
         <div class="section-heading" style="text-align:left;margin-bottom:18px"><span class="section-label">RECENT ORDERS</span><h2>Your latest purchases</h2></div>
         <div id="recent-orders"><div class="empty"><p class="muted">Loading orders…</p></div></div>
-        <div style="margin-top:16px"><a class="btn btn-secondary" href="{{ url_for('orders_page') }}">Open Order History →</a></div>
+        <div style="margin-top:16px"><a class="btn btn-secondary dashboard-order-btn" href="{{ url_for('orders_page') }}">View All My Orders →</a></div>
     </section>
     <section class="glass-card panel">
         <span class="section-label">DIGITAL PRODUCTS</span>
