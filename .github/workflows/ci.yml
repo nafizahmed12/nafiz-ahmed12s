@@ -48,6 +48,7 @@ jobs:
           DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/ci_test
           ADMIN_USERNAME: ci-admin
           ADMIN_PASSWORD: ci-password
+          ADMIN_EMAIL: ci-admin@example.com
           RENDER: '0'
         run: python -c "import app; print('Application import OK')"
 
@@ -57,6 +58,7 @@ jobs:
           DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/ci_test
           ADMIN_USERNAME: ci-admin
           ADMIN_PASSWORD: ci-password
+          ADMIN_EMAIL: ci-admin@example.com
           RENDER: '0'
         run: |
           python - <<'PY'
@@ -75,6 +77,7 @@ jobs:
           DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/ci_test
           ADMIN_USERNAME: ci-admin
           ADMIN_PASSWORD: ci-password
+          ADMIN_EMAIL: ci-admin@example.com
           RENDER: '0'
         run: |
           python - <<'PY'
@@ -90,12 +93,23 @@ jobs:
           print('Alembic migrations apply successfully on PostgreSQL 16.')
           PY
 
+      - name: Verify CI admin fixture
+        env:
+          SECRET_KEY: ci-test-secret
+          DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/ci_test
+          ADMIN_USERNAME: ci-admin
+          ADMIN_PASSWORD: ci-password
+          ADMIN_EMAIL: ci-admin@example.com
+          RENDER: '0'
+        run: python -c "from admin_security import _ensure_admin_credentials; _ensure_admin_credentials(); print('Admin fixture ready')"
+
       - name: Run regression tests
         env:
           SECRET_KEY: ci-test-secret
           DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/ci_test
           ADMIN_USERNAME: ci-admin
           ADMIN_PASSWORD: ci-password
+          ADMIN_EMAIL: ci-admin@example.com
           RENDER: '0'
           PYTHONPATH: .
         run: python -m pytest -q
