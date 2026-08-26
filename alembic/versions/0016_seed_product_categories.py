@@ -6,6 +6,7 @@ Revises: 0015_admin_credentials
 from typing import Sequence, Union
 
 from alembic import op
+from sqlalchemy import text
 
 
 revision: str = "0016_seed_product_categories"
@@ -25,20 +26,18 @@ CATEGORIES = (
 def upgrade() -> None:
     # The admin UI submits category slugs. Keep these canonical rows present
     # in every deployment without creating duplicates on repeated migrations.
+    stmt = text(
+        """
+        INSERT INTO product_categories (name, slug, description, created_at)
+        VALUES (:name, :slug, '', NOW())
+        ON CONFLICT (slug) DO NOTHING
+        """
+    )
     for name, slug in CATEGORIES:
-        op.execute(
-            """
-            INSERT INTO product_categories (name, slug, description, created_at)
-            VALUES (:name, :slug, '', NOW())
-            ON CONFLICT (slug) DO NOTHING
-            """,
-            {"name": name, "slug": slug},
-        )
+        op.execute(stmt, {"name": name, "slug": slug})
 
 
 def downgrade() -> None:
+    stmt = text("DELETE FROM product_categories WHERE slug = :slug")
     for _, slug in CATEGORIES:
-        op.execute(
-            "DELETE FROM product_categories WHERE slug = :slug",
-            {"slug": slug},
-        )
+        op.execute(stmt, {"slug": slug})
