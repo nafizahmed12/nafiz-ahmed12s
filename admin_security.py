@@ -176,61 +176,64 @@ def register_password_reset_routes(app):
                 return redirect(url_for("user_login"))
             return render_template("reset_password.html", token=token, error="This reset link is invalid or expired."), 400
 
-    @app.route("/admin-forgot-password", methods=["GET", "POST"])
-    def admin_forgot_password():
-        if request.method == "GET":
-            return render_template("admin_forgot_password.html", sent=False)
-        identifier = request.form.get("identifier", "").strip().lower()
-        allowed = os.getenv("ADMIN_EMAIL", "").strip().lower()
-        if not allowed or not hmac.compare_digest(identifier, allowed):
+    # Guard admin routes as well so this registration function is idempotent.
+    if "admin_forgot_password" not in app.view_functions:
+        @app.route("/admin-forgot-password", methods=["GET", "POST"])
+        def admin_forgot_password():
+            if request.method == "GET":
+                return render_template("admin_forgot_password.html", sent=False)
+            identifier = request.form.get("identifier", "").strip().lower()
+            allowed = os.getenv("ADMIN_EMAIL", "").strip().lower()
+            if not allowed or not hmac.compare_digest(identifier, allowed):
+                return render_template("admin_forgot_password.html", sent=True)
+            now = datetime.now(timezone.utc)
+            token = secrets.token_urlsafe(32)
+            token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+            with SessionLocal() as db:
+                db.execute(text("""
+                    CREATE TABLE IF NOT EXISTS admin_password_reset_tokens (
+                        token_hash VARCHAR(64) PRIMARY KEY,
+                        expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+                        used_at TIMESTAMP WITH TIME ZONE NULL
+                    )
+                """))
+                db.execute(text("DELETE FROM admin_password_reset_tokens WHERE expires_at <= :now OR used_at IS NOT NULL"), {"now": now})
+                db.execute(text("INSERT INTO admin_password_reset_tokens (token_hash, expires_at) VALUES (:hash, :expires)"), {"hash": token_hash, "expires": now + timedelta(minutes=30)})
+                db.commit()
+            try:
+                from mail_utils import send_admin_password_reset_email
+                send_admin_password_reset_email(allowed, token)
+            except Exception:
+                app.logger.exception("Admin password reset email delivery failed")
             return render_template("admin_forgot_password.html", sent=True)
-        now = datetime.now(timezone.utc)
-        token = secrets.token_urlsafe(32)
-        token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
-        with SessionLocal() as db:
-            db.execute(text("""
-                CREATE TABLE IF NOT EXISTS admin_password_reset_tokens (
-                    token_hash VARCHAR(64) PRIMARY KEY,
-                    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-                    used_at TIMESTAMP WITH TIME ZONE NULL
-                )
-            """))
-            db.execute(text("DELETE FROM admin_password_reset_tokens WHERE expires_at <= :now OR used_at IS NOT NULL"), {"now": now})
-            db.execute(text("INSERT INTO admin_password_reset_tokens (token_hash, expires_at) VALUES (:hash, :expires)"), {"hash": token_hash, "expires": now + timedelta(minutes=30)})
-            db.commit()
-        try:
-            from mail_utils import send_admin_password_reset_email
-            send_admin_password_reset_email(allowed, token)
-        except Exception:
-            app.logger.exception("Admin password reset email delivery failed")
-        return render_template("admin_forgot_password.html", sent=True)
 
-    @app.route("/admin-reset-password", methods=["GET", "POST"])
-    def admin_reset_password():
-        token = request.args.get("token", "").strip() if request.method == "GET" else request.form.get("token", "").strip()
-        if request.method == "GET":
-            return render_template("admin_reset_password.html", token=token, error=None)
-        password = request.form.get("password", "")
-        confirm = request.form.get("confirm_password", "")
-        if len(password) < 8:
-            return render_template("admin_reset_password.html", token=token, error="Password must be at least 8 characters."), 400
-        if password != confirm:
-            return render_template("admin_reset_password.html", token=token, error="Passwords do not match."), 400
-        token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
-        now = datetime.now(timezone.utc)
-        with SessionLocal() as db:
-            claimed = db.execute(text("""
-                UPDATE admin_password_reset_tokens
-                SET used_at=:now
-                WHERE token_hash=:hash AND used_at IS NULL AND expires_at > :now
-            """), {"hash": token_hash, "now": now}).rowcount
-            if claimed != 1:
-                db.rollback()
-                return render_template("admin_reset_password.html", token=token, error="This reset link is invalid or expired."), 400
-            db.execute(text("UPDATE admin_credentials SET password_hash=:password_hash, password_changed_at=:now WHERE id=1"), {"password_hash": generate_password_hash(password), "now": now})
-            db.commit()
-        session.clear()
-        return redirect(url_for("login"))
+    if "admin_reset_password" not in app.view_functions:
+        @app.route("/admin-reset-password", methods=["GET", "POST"])
+        def admin_reset_password():
+            token = request.args.get("token", "").strip() if request.method == "GET" else request.form.get("token", "").strip()
+            if request.method == "GET":
+                return render_template("admin_reset_password.html", token=token, error=None)
+            password = request.form.get("password", "")
+            confirm = request.form.get("confirm_password", "")
+            if len(password) < 8:
+                return render_template("admin_reset_password.html", token=token, error="Password must be at least 8 characters."), 400
+            if password != confirm:
+                return render_template("admin_reset_password.html", token=token, error="Passwords do not match."), 400
+            token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+            now = datetime.now(timezone.utc)
+            with SessionLocal() as db:
+                claimed = db.execute(text("""
+                    UPDATE admin_password_reset_tokens
+                    SET used_at=:now
+                    WHERE token_hash=:hash AND used_at IS NULL AND expires_at > :now
+                """), {"hash": token_hash, "now": now}).rowcount
+                if claimed != 1:
+                    db.rollback()
+                    return render_template("admin_reset_password.html", token=token, error="This reset link is invalid or expired."), 400
+                db.execute(text("UPDATE admin_credentials SET password_hash=:password_hash, password_changed_at=:now WHERE id=1"), {"password_hash": generate_password_hash(password), "now": now})
+                db.commit()
+            session.clear()
+            return redirect(url_for("login"))
 
 
 def mark_admin_authenticated():
