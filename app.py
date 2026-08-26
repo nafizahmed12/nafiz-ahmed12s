@@ -13,6 +13,7 @@ from database import SessionLocal
 from error_handlers import register_error_handlers
 from commerce_routes import register_commerce_routes
 from payment_routes import register_payment_routes
+from bkash_routes import register_bkash_routes
 from seller_routes import register_seller_routes
 from digital_affiliate_routes import register_digital_affiliate_routes
 from shop_routes import register_shop_routes
@@ -49,6 +50,7 @@ app.config.update(
 register_error_handlers(app)
 register_commerce_routes(app)
 register_payment_routes(app)
+register_bkash_routes(app)
 register_seller_routes(app)
 register_digital_affiliate_routes(app)
 register_shop_routes(app)
