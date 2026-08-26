@@ -1,8 +1,9 @@
 from hashlib import sha256
 from secrets import token_urlsafe
 from decimal import Decimal
+from urllib.parse import urlparse
 
-from flask import Blueprint, jsonify, request, session
+from flask import Blueprint, jsonify, request, session, redirect, abort
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
@@ -20,6 +21,13 @@ def _uid():
 
 def _money(v):
     return format(Decimal(str(v or 0)), ".2f")
+
+
+def _valid_delivery_url(value):
+    if not value:
+        return False
+    parsed = urlparse(value)
+    return parsed.scheme in {"https", "http"} and bool(parsed.netloc)
 
 
 @bp.post("/digital-products")
@@ -41,6 +49,8 @@ def create_digital_product():
         return jsonify({"error": "name, slug and a non-negative price are required."}), 400
     if len(slug) > 180:
         return jsonify({"error": "Slug is too long."}), 400
+    if not _valid_delivery_url(delivery_url):
+        return jsonify({"error": "A valid HTTP(S) delivery_url is required."}), 400
     with SessionLocal() as db:
         try:
             product_id = db.execute(text("""INSERT INTO products (name,slug,description,product_type,price,currency,sku,stock_quantity,status,created_at,updated_at) VALUES (:name,:slug,:description,'digital',:price,'BDT',:sku,0,'published',NOW(),NOW()) RETURNING id"""), {"name": name, "slug": slug, "description": description, "price": price, "sku": "DIG-" + token_urlsafe(8)}).scalar_one()
@@ -60,6 +70,52 @@ def my_digital_products():
     with SessionLocal() as db:
         rows = db.execute(text("""SELECT p.id,p.name,p.slug,p.price,p.currency,dp.delivery_url,dp.file_name,dp.version,dp.is_active FROM digital_products dp JOIN products p ON p.id=dp.product_id WHERE dp.owner_user_id=:uid ORDER BY dp.id DESC"""), {"uid": uid}).mappings().all()
     return jsonify({"items": [{"id": r["id"], "name": r["name"], "slug": r["slug"], "price": _money(r["price"]), "currency": r["currency"], "delivery_url": r["delivery_url"], "file_name": r["file_name"], "version": r["version"], "is_active": r["is_active"]} for r in rows]})
+
+
+@bp.get("/digital-purchases")
+def my_digital_purchases():
+    uid = _uid()
+    if uid is None:
+        return jsonify({"error": "Authentication required."}), 401
+    with SessionLocal() as db:
+        rows = db.execute(text("""SELECT dp.id,dp.product_id,p.name,p.slug,dp.access_token,dp.status,dp.download_count,dp.last_download_at
+            FROM digital_purchases dp JOIN products p ON p.id=dp.product_id
+            WHERE dp.user_id=:uid ORDER BY dp.id DESC"""), {"uid": uid}).mappings().all()
+    return jsonify({"items": [
+        {"id": r["id"], "product_id": r["product_id"], "name": r["name"], "slug": r["slug"],
+         "download_url": request.host_url.rstrip("/") + "/api/digital-download/" + r["access_token"],
+         "status": r["status"], "download_count": r["download_count"],
+         "last_download_at": r["last_download_at"].isoformat() if r["last_download_at"] else None}
+        for r in rows
+    ]})
+
+
+@bp.get("/digital-download/<string:access_token>")
+def digital_download(access_token):
+    uid = _uid()
+    if uid is None:
+        return jsonify({"error": "Authentication required."}), 401
+    if len(access_token) > 128:
+        return jsonify({"error": "Invalid download token."}), 400
+    with SessionLocal() as db:
+        purchase = db.execute(text("""SELECT dp.id,dp.user_id,dp.product_id,dp.status,dp.download_count,dp.delivery_url,
+                p.name,p.status AS product_status
+            FROM digital_purchases dp
+            JOIN digital_products d ON d.product_id=dp.product_id
+            JOIN products p ON p.id=dp.product_id
+            WHERE dp.access_token=:token AND dp.user_id=:uid
+            FOR UPDATE"""), {"token": access_token, "uid": uid}).mappings().first()
+        if purchase is None:
+            return jsonify({"error": "Download not found."}), 404
+        if purchase["status"] != "active" or purchase["product_status"] != "published":
+            return jsonify({"error": "This download is no longer available."}), 410
+        delivery_url = purchase["delivery_url"]
+        if not _valid_delivery_url(delivery_url):
+            return jsonify({"error": "Digital product delivery is not configured."}), 503
+        db.execute(text("""UPDATE digital_purchases SET download_count=download_count+1,
+            last_download_at=NOW(),updated_at=NOW() WHERE id=:id"""), {"id": purchase["id"]})
+        db.commit()
+    return redirect(delivery_url, code=302)
 
 
 @bp.post("/affiliate/join")
