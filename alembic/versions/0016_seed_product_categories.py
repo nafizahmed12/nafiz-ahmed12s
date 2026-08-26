@@ -24,8 +24,6 @@ CATEGORIES = (
 
 
 def upgrade() -> None:
-    # The admin UI submits category slugs. Keep these canonical rows present
-    # in every deployment without creating duplicates on repeated migrations.
     stmt = text(
         """
         INSERT INTO product_categories (name, slug, description, created_at)
@@ -33,11 +31,13 @@ def upgrade() -> None:
         ON CONFLICT (slug) DO NOTHING
         """
     )
+    connection = op.get_bind()
     for name, slug in CATEGORIES:
-        op.execute(stmt, {"name": name, "slug": slug})
+        connection.execute(stmt, {"name": name, "slug": slug})
 
 
 def downgrade() -> None:
     stmt = text("DELETE FROM product_categories WHERE slug = :slug")
+    connection = op.get_bind()
     for _, slug in CATEGORIES:
-        op.execute(stmt, {"slug": slug})
+        connection.execute(stmt, {"slug": slug})
