@@ -73,14 +73,21 @@ def _provision_paid_digital_purchases(db, user_id):
     return created
 
 
+def _owner_user_id(db):
+    configured_username = os.getenv("ADMIN_USERNAME", "").strip()
+    if not configured_username:
+        return None
+    return db.execute(
+        text("SELECT id FROM users WHERE username=:username LIMIT 1"),
+        {"username": configured_username},
+    ).scalar_one_or_none()
+
+
 @bp.post("/digital-products")
 def create_digital_product():
     # Publishing is an owner-only operation. Do not rely on UI hiding.
     if not _is_owner_admin():
         return jsonify({"error": "Admin authentication required."}), 401
-    uid = _uid()
-    if uid is None:
-        return jsonify({"error": "Authentication required."}), 401
     body = request.get_json(silent=True) or {}
     name = str(body.get("name", "")).strip()
     slug = str(body.get("slug", "")).strip().lower()
@@ -98,9 +105,12 @@ def create_digital_product():
     if not _valid_delivery_url(delivery_url):
         return jsonify({"error": "A valid HTTP(S) delivery_url is required."}), 400
     with SessionLocal() as db:
+        owner_user_id = _owner_user_id(db)
+        if owner_user_id is None:
+            return jsonify({"error": "Configured admin owner account was not found."}), 500
         try:
             product_id = db.execute(text("""INSERT INTO products (name,slug,description,product_type,price,currency,sku,stock_quantity,status,created_at,updated_at) VALUES (:name,:slug,:description,'digital',:price,'BDT',:sku,0,'published',NOW(),NOW()) RETURNING id"""), {"name": name, "slug": slug, "description": description, "price": price, "sku": "DIG-" + token_urlsafe(8)}).scalar_one()
-            db.execute(text("""INSERT INTO digital_products (product_id,owner_user_id,delivery_url,file_name,created_at,updated_at) VALUES (:product_id,:uid,:url,:file,NOW(),NOW())"""), {"product_id": product_id, "uid": uid, "url": delivery_url, "file": file_name})
+            db.execute(text("""INSERT INTO digital_products (product_id,owner_user_id,delivery_url,file_name,created_at,updated_at) VALUES (:product_id,:uid,:url,:file,NOW(),NOW())"""), {"product_id": product_id, "uid": owner_user_id, "url": delivery_url, "file": file_name})
             db.commit()
         except IntegrityError:
             db.rollback()
