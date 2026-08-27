@@ -60,9 +60,8 @@ def test_authenticated_user_cannot_archive_admin_product():
 def test_authenticated_user_cannot_create_admin_product():
     _regular_user_session()
     response = client.post("/admin/products", data={"name": "Unauthorized"})
-    assert response.status_code == 401 or response.status_code == 302
-    if response.is_json:
-        assert response.get_json() == {"error": "Admin authentication required."}
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/login")
 
 
 def test_authenticated_user_cannot_access_admin_orders():
