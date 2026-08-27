@@ -2,6 +2,8 @@ from hashlib import sha256
 from secrets import token_urlsafe
 from decimal import Decimal
 from urllib.parse import urlparse
+import hmac
+import os
 
 from flask import Blueprint, jsonify, request, session, redirect
 from sqlalchemy import text
@@ -10,6 +12,7 @@ from sqlalchemy.exc import IntegrityError
 from database import SessionLocal
 
 bp = Blueprint("digital_affiliate_api", __name__, url_prefix="/api")
+ADMIN_ROLE = "admin"
 
 
 def _uid():
@@ -17,6 +20,18 @@ def _uid():
         return int(session.get("user_id")) if session.get("user_id") is not None else None
     except (TypeError, ValueError):
         return None
+
+
+def _is_owner_admin():
+    configured_username = os.getenv("ADMIN_USERNAME", "").strip()
+    session_username = str(session.get("admin_username", "")).strip()
+    return (
+        bool(configured_username)
+        and session.get("admin_logged_in") is True
+        and session.get("admin_role") == ADMIN_ROLE
+        and bool(session_username)
+        and hmac.compare_digest(session_username, configured_username)
+    )
 
 
 def _money(v):
@@ -31,7 +46,6 @@ def _valid_delivery_url(value):
 
 
 def _provision_paid_digital_purchases(db, user_id):
-    """Create one download entitlement for each digital product in a paid order."""
     rows = db.execute(text("""SELECT DISTINCT o.id AS order_id, oi.product_id
         FROM commerce_orders o
         JOIN commerce_order_items oi ON oi.order_id=o.id
@@ -40,12 +54,10 @@ def _provision_paid_digital_purchases(db, user_id):
         WHERE o.user_id=:uid AND o.payment_status='paid'
           AND p.product_type='digital' AND p.status='published' AND d.is_active=TRUE"""),
         {"uid": user_id}).mappings().all()
-
     created = 0
     for row in rows:
         exists = db.execute(text("""SELECT id FROM digital_purchases
-            WHERE user_id=:uid AND product_id=:product_id AND order_id=:order_id
-            LIMIT 1"""),
+            WHERE user_id=:uid AND product_id=:product_id AND order_id=:order_id LIMIT 1"""),
             {"uid": user_id, "product_id": row["product_id"], "order_id": row["order_id"]}).scalar_one_or_none()
         if exists is not None:
             continue
@@ -63,6 +75,9 @@ def _provision_paid_digital_purchases(db, user_id):
 
 @bp.post("/digital-products")
 def create_digital_product():
+    # Publishing is an owner-only operation. Do not rely on UI hiding.
+    if not _is_owner_admin():
+        return jsonify({"error": "Admin authentication required."}), 401
     uid = _uid()
     if uid is None:
         return jsonify({"error": "Authentication required."}), 401
@@ -113,14 +128,8 @@ def my_digital_purchases():
         db.commit()
         rows = db.execute(text("""SELECT dp.id,dp.product_id,p.name,p.slug,dp.access_token,dp.status,dp.download_count,dp.last_download_at
             FROM digital_purchases dp JOIN products p ON p.id=dp.product_id
-            WHERE dp.user_id=:uid ORDER BY dp.id DESC"""), {"uid": uid}).mappings().all()
-    return jsonify({"items": [
-        {"id": r["id"], "product_id": r["product_id"], "name": r["name"], "slug": r["slug"],
-         "download_url": request.host_url.rstrip("/") + "/api/digital-download/" + r["access_token"],
-         "status": r["status"], "download_count": r["download_count"],
-         "last_download_at": r["last_download_at"].isoformat() if r["last_download_at"] else None}
-        for r in rows
-    ]})
+            WHERE dp.user_id=:uid ORDER BY dp.id DESC"""), {"uid": user_id}).mappings().all()
+    return jsonify({"items": [{"id": r["id"], "product_id": r["product_id"], "name": r["name"], "slug": r["slug"], "download_url": request.host_url.rstrip("/") + "/api/digital-download/" + r["access_token"], "status": r["status"], "download_count": r["download_count"], "last_download_at": r["last_download_at"].isoformat() if r["last_download_at"] else None} for r in rows]})
 
 
 @bp.get("/digital-download/<string:access_token>")
@@ -133,11 +142,8 @@ def digital_download(access_token):
     with SessionLocal() as db:
         purchase = db.execute(text("""SELECT dp.id,dp.user_id,dp.product_id,dp.status,dp.download_count,d.delivery_url,
                 p.name,p.status AS product_status
-            FROM digital_purchases dp
-            JOIN digital_products d ON d.product_id=dp.product_id
-            JOIN products p ON p.id=dp.product_id
-            WHERE dp.access_token=:token AND dp.user_id=:uid
-            FOR UPDATE"""), {"token": access_token, "uid": uid}).mappings().first()
+            FROM digital_purchases dp JOIN digital_products d ON d.product_id=dp.product_id JOIN products p ON p.id=dp.product_id
+            WHERE dp.access_token=:token AND dp.user_id=:uid FOR UPDATE"""), {"token": access_token, "uid": uid}).mappings().first()
         if purchase is None:
             return jsonify({"error": "Download not found."}), 404
         if purchase["status"] != "active" or purchase["product_status"] != "published":
@@ -145,8 +151,7 @@ def digital_download(access_token):
         delivery_url = purchase["delivery_url"]
         if not _valid_delivery_url(delivery_url):
             return jsonify({"error": "Digital product delivery is not configured."}), 503
-        db.execute(text("""UPDATE digital_purchases SET download_count=download_count+1,
-            last_download_at=NOW(),updated_at=NOW() WHERE id=:id"""), {"id": purchase["id"]})
+        db.execute(text("UPDATE digital_purchases SET download_count=download_count+1,last_download_at=NOW(),updated_at=NOW() WHERE id=:id"), {"id": purchase["id"]})
         db.commit()
     return redirect(delivery_url, code=302)
 
