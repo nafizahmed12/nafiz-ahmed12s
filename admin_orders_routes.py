@@ -8,9 +8,10 @@ from admin_auth import admin_required
 
 admin_orders_bp = Blueprint("admin_orders", __name__)
 
-ORDER_STATUSES = {"pending", "processing", "completed", "cancelled", "refunded"}
+# Keep these values aligned with the order states already stored in the database.
+ORDER_STATUSES = {"pending", "processing", "confirmed", "completed", "cancelled", "refunded"}
 FULFILLMENT_STATUSES = {"unfulfilled", "processing", "fulfilled", "shipped", "delivered", "cancelled"}
-PAYMENT_STATUSES = {"pending", "paid", "failed", "refunded", "cancelled"}
+PAYMENT_STATUSES = {"pending", "initiated", "paid", "failed", "refunded", "cancelled"}
 
 
 def _money(value):
@@ -19,13 +20,13 @@ def _money(value):
 
 @admin_orders_bp.get("/admin/orders")
 @admin_required
-def admin_orders_page():
+def admin_orders():
     return render_template("admin_orders.html")
 
 
 @admin_orders_bp.get("/api/admin/orders")
 @admin_required
-def admin_orders():
+def admin_orders_api():
     with SessionLocal() as db:
         rows = db.execute(text("""
             SELECT o.id,o.order_number,o.user_id,o.status,o.payment_status,o.fulfillment_status,
