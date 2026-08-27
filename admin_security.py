@@ -4,7 +4,7 @@ import os
 import secrets
 from datetime import datetime, timedelta, timezone
 
-from flask import redirect, session, url_for, request, render_template
+from flask import jsonify, redirect, session, url_for, request, render_template
 from sqlalchemy import text
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -76,19 +76,26 @@ def register_admin_session_guard(app):
     def guard_admin_session():
         if not session.get("admin_logged_in"):
             return None
+
+        def reject_admin_session():
+            _clear_admin_session()
+            if request.path.startswith("/api/"):
+                return jsonify({"error": "Admin authentication required."}), 401
+            return redirect(url_for("login"))
+
         if session.get("admin_role") != ADMIN_ROLE:
-            _clear_admin_session(); return redirect(url_for("login"))
+            return reject_admin_session()
         configured_username = os.getenv("ADMIN_USERNAME", "").strip()
         session_username = str(session.get("admin_username", "")).strip()
         if not configured_username or not session_username or not hmac.compare_digest(session_username, configured_username):
-            _clear_admin_session(); return redirect(url_for("login"))
+            return reject_admin_session()
         now = datetime.now(timezone.utc).timestamp()
         try:
             authenticated_at = float(session.get("admin_authenticated_at")); last_activity = float(session.get("admin_last_activity"))
         except (TypeError, ValueError):
-            _clear_admin_session(); return redirect(url_for("login"))
+            return reject_admin_session()
         if now - authenticated_at > ADMIN_ABSOLUTE_TIMEOUT_SECONDS or now - last_activity > ADMIN_IDLE_TIMEOUT_SECONDS:
-            _clear_admin_session(); return redirect(url_for("login"))
+            return reject_admin_session()
         session["admin_last_activity"] = now
 
     @app.before_request
