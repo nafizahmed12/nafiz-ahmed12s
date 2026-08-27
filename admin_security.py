@@ -170,16 +170,11 @@ def register_password_reset_routes(app):
                 db.execute(text("DELETE FROM admin_password_reset_tokens WHERE expires_at <= :now OR used_at IS NOT NULL"), {"now": now})
                 db.execute(text("INSERT INTO admin_password_reset_tokens (token_hash, expires_at) VALUES (:hash, :expires)"), {"hash": token_hash, "expires": now + timedelta(minutes=30)})
                 db.commit()
-            from mail_utils import build_admin_reset_url, send_admin_password_reset_email
+            from mail_utils import send_admin_password_reset_email
             try:
-                reset_url = build_admin_reset_url(token)
-                try:
-                    send_admin_password_reset_email(allowed, token)
-                except Exception:
-                    app.logger.exception("Admin password reset email delivery failed")
-                app.logger.warning("Admin password reset link (use if the email does not arrive): %s", reset_url)
+                send_admin_password_reset_email(allowed, token)
             except Exception:
-                app.logger.exception("Could not build admin password reset link")
+                app.logger.exception("Admin password reset email delivery failed")
                 return render_template("admin_forgot_password.html", sent=False, error="We could not send the reset email. Please check the email configuration."), 200
             return render_template("admin_forgot_password.html", sent=True, error=None), 200
 
