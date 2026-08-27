@@ -1,7 +1,5 @@
 [bandit]
-# Tests use Python assert intentionally; the remaining skips are reviewed false positives:
-# B104: 0.0.0.0 is required by the container/Render web process.
-# B310: outbound endpoints are application-controlled HTTPS endpoints.
-# B608: dynamic SQL fragments are generated internally; values are parameterized.
-exclude = tests
+# Tests contain intentional dummy credentials/tokens and are excluded from
+# the production security scan. Keep the production false-positive skips here.
+exclude = tests,.venv
 skips = B101,B104,B310,B608
