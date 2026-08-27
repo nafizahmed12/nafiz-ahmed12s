@@ -128,7 +128,7 @@ def my_digital_purchases():
         db.commit()
         rows = db.execute(text("""SELECT dp.id,dp.product_id,p.name,p.slug,dp.access_token,dp.status,dp.download_count,dp.last_download_at
             FROM digital_purchases dp JOIN products p ON p.id=dp.product_id
-            WHERE dp.user_id=:uid ORDER BY dp.id DESC"""), {"uid": user_id}).mappings().all()
+            WHERE dp.user_id=:uid ORDER BY dp.id DESC"""), {"uid": uid}).mappings().all()
     return jsonify({"items": [{"id": r["id"], "product_id": r["product_id"], "name": r["name"], "slug": r["slug"], "download_url": request.host_url.rstrip("/") + "/api/digital-download/" + r["access_token"], "status": r["status"], "download_count": r["download_count"], "last_download_at": r["last_download_at"].isoformat() if r["last_download_at"] else None} for r in rows]})
 
 
@@ -142,8 +142,11 @@ def digital_download(access_token):
     with SessionLocal() as db:
         purchase = db.execute(text("""SELECT dp.id,dp.user_id,dp.product_id,dp.status,dp.download_count,d.delivery_url,
                 p.name,p.status AS product_status
-            FROM digital_purchases dp JOIN digital_products d ON d.product_id=dp.product_id JOIN products p ON p.id=dp.product_id
-            WHERE dp.access_token=:token AND dp.user_id=:uid FOR UPDATE"""), {"token": access_token, "uid": uid}).mappings().first()
+            FROM digital_purchases dp
+            JOIN digital_products d ON d.product_id=dp.product_id
+            JOIN products p ON p.id=dp.product_id
+            WHERE dp.access_token=:token AND dp.user_id=:uid
+            FOR UPDATE"""), {"token": access_token, "uid": uid}).mappings().first()
         if purchase is None:
             return jsonify({"error": "Download not found."}), 404
         if purchase["status"] != "active" or purchase["product_status"] != "published":
@@ -151,7 +154,8 @@ def digital_download(access_token):
         delivery_url = purchase["delivery_url"]
         if not _valid_delivery_url(delivery_url):
             return jsonify({"error": "Digital product delivery is not configured."}), 503
-        db.execute(text("UPDATE digital_purchases SET download_count=download_count+1,last_download_at=NOW(),updated_at=NOW() WHERE id=:id"), {"id": purchase["id"]})
+        db.execute(text("""UPDATE digital_purchases SET download_count=download_count+1,
+            last_download_at=NOW(),updated_at=NOW() WHERE id=:id"""), {"id": purchase["id"]})
         db.commit()
     return redirect(delivery_url, code=302)
 
