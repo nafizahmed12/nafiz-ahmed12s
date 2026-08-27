@@ -69,7 +69,7 @@ def register_admin_session_guard(app):
             return None
         if not check_password_hash(row["password_hash"], password):
             return "Invalid username or password.", 401
-        session.clear(); session.permanent = True; mark_admin_authenticated()
+        session.clear(); session.permanent = True; mark_admin_authenticated(row["username"])
         return redirect(url_for("admin"))
 
     @app.before_request
@@ -77,6 +77,10 @@ def register_admin_session_guard(app):
         if not session.get("admin_logged_in"):
             return None
         if session.get("admin_role") != ADMIN_ROLE:
+            _clear_admin_session(); return redirect(url_for("login"))
+        configured_username = os.getenv("ADMIN_USERNAME", "").strip()
+        session_username = str(session.get("admin_username", "")).strip()
+        if not configured_username or not session_username or not hmac.compare_digest(session_username, configured_username):
             _clear_admin_session(); return redirect(url_for("login"))
         now = datetime.now(timezone.utc).timestamp()
         try:
@@ -178,7 +182,7 @@ def register_password_reset_routes(app):
             token = request.args.get("token", "").strip() if request.method == "GET" else request.form.get("token", "").strip()
             if request.method == "GET": return render_template("admin_reset_password.html", token=token, error=None)
             password = request.form.get("password", ""); confirm = request.form.get("confirm_password", "")
-            if len(password) < 8: return render_template("admin_reset_password.html", token=token, error="Password must be at least 8 characters."), 400
+            if len(password) < 8: return render_template("admin_reset_password.html", token=token, error="Passwords do not match."), 400
             if password != confirm: return render_template("admin_reset_password.html", token=token, error="Passwords do not match."), 400
             token_hash = hashlib.sha256(token.encode()).hexdigest(); now = datetime.now(timezone.utc)
             with SessionLocal() as db:
@@ -189,9 +193,13 @@ def register_password_reset_routes(app):
             session.clear(); return redirect(url_for("login"))
 
 
-def mark_admin_authenticated():
+def mark_admin_authenticated(username):
+    configured_username = os.getenv("ADMIN_USERNAME", "").strip()
+    if not configured_username or not username or not hmac.compare_digest(str(username).strip(), configured_username):
+        raise ValueError("Configured admin identity mismatch.")
     now = datetime.now(timezone.utc).timestamp()
     session["admin_logged_in"] = True; session["admin_role"] = ADMIN_ROLE
+    session["admin_username"] = configured_username
     session["admin_authenticated_at"] = now; session["admin_last_activity"] = now
 
 
@@ -200,4 +208,4 @@ def clear_admin_session(): _clear_admin_session()
 
 def _clear_admin_session():
     session.pop("admin_logged_in", None); session.pop("admin_role", None)
-    session.pop("admin_authenticated_at", None); session.pop("admin_last_activity", None); session.pop("_permanent", None)
+    session.pop("admin_username", None); session.pop("admin_authenticated_at", None); session.pop("admin_last_activity", None); session.pop("_permanent", None)
