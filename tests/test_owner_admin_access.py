@@ -63,3 +63,47 @@ def test_forged_admin_session_with_wrong_owner_username_is_rejected():
 
     assert response.status_code == 302
     assert response.headers["Location"].endswith("/login")
+
+
+def test_authenticated_user_cannot_publish_digital_product():
+    with client.session_transaction() as session:
+        session.clear()
+        session["user_id"] = 999999
+        session["username"] = "regular-user"
+        session["user_session_created_at"] = 9999999999
+
+    response = client.post(
+        "/api/digital-products",
+        json={
+            "name": "Unauthorized product",
+            "slug": "unauthorized-product",
+            "price": "100",
+            "delivery_url": "https://example.com/file",
+        },
+    )
+
+    assert response.status_code == 401
+    assert response.get_json() == {"error": "Admin authentication required."}
+
+
+def test_forged_admin_session_cannot_publish_digital_product():
+    with client.session_transaction() as session:
+        session.clear()
+        session["admin_logged_in"] = True
+        session["admin_role"] = "admin"
+        session["admin_username"] = "not-the-owner"
+        session["admin_authenticated_at"] = 9999999999
+        session["admin_last_activity"] = 9999999999
+
+    response = client.post(
+        "/api/digital-products",
+        json={
+            "name": "Forged product",
+            "slug": "forged-product",
+            "price": "100",
+            "delivery_url": "https://example.com/file",
+        },
+    )
+
+    assert response.status_code == 401
+    assert response.get_json() == {"error": "Admin authentication required."}
