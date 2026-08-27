@@ -166,8 +166,21 @@ Sitemap: https://nafiz-ahmed12s.onrender.com/sitemap.xml
 
 @app.route("/sitemap.xml")
 def sitemap_xml():
-    site_url = url_for("home", _external=True)
-    content = f'''<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>{site_url}</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>\n</urlset>\n'''
+    site_url = url_for("home", _external=True).rstrip("/")
+    urls = [
+        (site_url + "/", "weekly", "1.0"),
+        (site_url + "/shop", "daily", "0.9"),
+        (site_url + "/about", "monthly", "0.7"),
+        (site_url + "/contact", "monthly", "0.7"),
+        (site_url + "/privacy-policy", "yearly", "0.5"),
+        (site_url + "/terms", "yearly", "0.5"),
+        (site_url + "/refund-policy", "yearly", "0.5"),
+    ]
+    entries = "\n".join(
+        f"  <url><loc>{loc}</loc><changefreq>{freq}</changefreq><priority>{priority}</priority></url>"
+        for loc, freq, priority in urls
+    )
+    content = f'''<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{entries}\n</urlset>\n'''
     return Response(content, mimetype="application/xml")
 
 @app.route("/")
@@ -179,6 +192,22 @@ def home():
             return render_template("published_site.html", website=website)
         abort(404)
     return render_template("index.html")
+
+@app.route("/about")
+def about():
+    return render_template("about.html")
+
+@app.route("/privacy-policy")
+def privacy_policy():
+    return render_template("privacy_policy.html")
+
+@app.route("/terms")
+def terms():
+    return render_template("terms.html")
+
+@app.route("/refund-policy")
+def refund_policy():
+    return render_template("refund_policy.html")
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -326,8 +355,10 @@ def user_logout():
     flash("You have been logged out.", "success")
     return redirect(url_for("user_login"))
 
-@app.route("/contact", methods=["POST"])
+@app.route("/contact", methods=["GET", "POST"])
 def contact():
+    if request.method == "GET":
+        return render_template("contact.html")
     if not allow_contact(request.remote_addr, limit=5, window_seconds=900):
         return "Too many messages from this network. Please try again later.", 429
     name = request.form.get("name", "").strip()
