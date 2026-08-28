@@ -3,15 +3,18 @@ name: CI
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
-  group: ci-main
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   validate:
     runs-on: ubuntu-latest
+
     services:
       postgres:
         image: postgres:16
@@ -26,6 +29,7 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -33,7 +37,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: "3.12"
           cache: pip
 
       - name: Install dependencies
@@ -49,7 +53,7 @@ jobs:
           ADMIN_USERNAME: ci-admin
           ADMIN_PASSWORD: ci-password
           ADMIN_EMAIL: ci-admin@example.com
-          RENDER: '0'
+          RENDER: "0"
         run: python -c "import app; print('Application import OK')"
 
       - name: Health smoke test
@@ -59,14 +63,22 @@ jobs:
           ADMIN_USERNAME: ci-admin
           ADMIN_PASSWORD: ci-password
           ADMIN_EMAIL: ci-admin@example.com
-          RENDER: '0'
+          RENDER: "0"
         run: |
           python - <<'PY'
           import app
+
           client = app.app.test_client()
-          for path in ('/health', '/health/ready'):
+
+          for path in ("/health", "/health/ready"):
               response = client.get(path)
-              print(path, response.status_code, response.get_data(as_text=True))
+
+              print(
+                  path,
+                  response.status_code,
+                  response.get_data(as_text=True),
+              )
+
               if response.status_code != 200:
                   raise SystemExit(1)
           PY
@@ -78,19 +90,29 @@ jobs:
           ADMIN_USERNAME: ci-admin
           ADMIN_PASSWORD: ci-password
           ADMIN_EMAIL: ci-admin@example.com
-          RENDER: '0'
+          RENDER: "0"
         run: |
           python - <<'PY'
           from pathlib import Path
-          from alembic.config import Config
+
           from alembic import command
+          from alembic.config import Config
 
           root = Path.cwd()
-          config = Config(str(root / 'alembic.ini'))
-          config.set_main_option('script_location', str(root / 'alembic'))
-          command.upgrade(config, 'head')
+
+          config = Config(str(root / "alembic.ini"))
+          config.set_main_option(
+              "script_location",
+              str(root / "alembic"),
+          )
+
+          command.upgrade(config, "head")
           command.current(config, verbose=True)
-          print('Alembic migrations apply successfully on PostgreSQL 16.')
+
+          print(
+              "Alembic migrations apply successfully "
+              "on PostgreSQL 16."
+          )
           PY
 
       - name: Verify CI admin fixture
@@ -100,8 +122,13 @@ jobs:
           ADMIN_USERNAME: ci-admin
           ADMIN_PASSWORD: ci-password
           ADMIN_EMAIL: ci-admin@example.com
-          RENDER: '0'
-        run: python -c "from admin_security import _ensure_admin_credentials; _ensure_admin_credentials(); print('Admin fixture ready')"
+          RENDER: "0"
+        run: |
+          python -c "
+          from admin_security import _ensure_admin_credentials
+          _ensure_admin_credentials()
+          print('Admin fixture ready')
+          "
 
       - name: Run regression tests
         env:
@@ -110,6 +137,6 @@ jobs:
           ADMIN_USERNAME: ci-admin
           ADMIN_PASSWORD: ci-password
           ADMIN_EMAIL: ci-admin@example.com
-          RENDER: '0'
+          RENDER: "0"
           PYTHONPATH: .
         run: python -m pytest -q

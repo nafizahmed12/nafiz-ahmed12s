@@ -4,12 +4,11 @@ import os
 import secrets
 from datetime import datetime, timedelta, timezone
 
-from flask import jsonify, redirect, session, url_for, request, render_template
+from flask import Response, jsonify, redirect, session, url_for, request, render_template
 from sqlalchemy import text
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from database import SessionLocal
-from admin_product_routes import register_admin_product_routes
 from supplier_auth_routes import register_supplier_auth_routes
 from home_routes import register_home_routes
 from admin_auth import ADMIN_ROLE
@@ -48,12 +47,89 @@ def _ensure_admin_credentials():
         db.commit()
 
 
+def _seo_base_url():
+    """Use an explicit public URL when configured, otherwise derive it safely."""
+    configured = os.getenv("PUBLIC_BASE_URL", "").strip().rstrip("/")
+    return configured or url_for("home", _external=True).rstrip("/")
+
+
 def register_admin_session_guard(app):
-    register_admin_product_routes(app)
     register_supplier_auth_routes(app)
     register_home_routes(app)
     register_password_reset_routes(app)
     _ensure_admin_credentials()
+
+    @app.before_request
+    def handle_legacy_logout_get():
+        """Prevent GET /user-logout from changing session state.
+
+        Existing logout links remain usable by showing a confirmation form whose
+        POST is protected by the application's CSRF middleware.
+        """
+        if request.path != "/user-logout" or request.method != "GET":
+            return None
+        token = session.get("_csrf_secret")
+        if not token:
+            token = secrets.token_hex(32)
+            session["_csrf_secret"] = token
+        return Response(
+            "<!doctype html><html lang='en'><head><meta charset='utf-8'>"
+            "<meta name='viewport' content='width=device-width,initial-scale=1'>"
+            "<title>Confirm logout — Nafiz</title></head><body>"
+            "<main style='max-width:520px;margin:12vh auto;padding:24px;font-family:system-ui,sans-serif'>"
+            "<h1>Confirm logout</h1><p>Are you sure you want to sign out?</p>"
+            "<form method='post' action='/user-logout'>"
+            f"<input type='hidden' name='csrf_token' value='{token}'>"
+            "<button type='submit'>Sign out</button>"
+            "</form></main></body></html>",
+            status=200,
+            mimetype="text/html",
+        )
+
+    @app.before_request
+    def serve_dynamic_seo_files():
+        """Override stale hard-coded SEO URLs with the active public URL."""
+        if request.path == "/robots.txt" and request.method == "GET":
+            base = _seo_base_url()
+            content = (
+                "User-agent: *\n"
+                "Allow: /\n"
+                "Disallow: /admin\n"
+                "Disallow: /login\n"
+                "Disallow: /logout\n"
+                "Disallow: /dashboard\n"
+                "Disallow: /account\n"
+                "Disallow: /register\n"
+                "Disallow: /user-login\n"
+                "Disallow: /user-logout\n"
+                "Disallow: /forgot-password\n"
+                "Disallow: /reset-password\n\n"
+                f"Sitemap: {base}/sitemap.xml\n"
+            )
+            return Response(content, mimetype="text/plain")
+
+        if request.path == "/sitemap.xml" and request.method == "GET":
+            base = _seo_base_url()
+            urls = [
+                (base + "/", "weekly", "1.0"),
+                (base + "/shop", "daily", "0.9"),
+                (base + "/about", "monthly", "0.7"),
+                (base + "/contact", "monthly", "0.7"),
+                (base + "/privacy-policy", "yearly", "0.5"),
+                (base + "/terms", "yearly", "0.5"),
+                (base + "/refund-policy", "yearly", "0.5"),
+            ]
+            entries = "\n".join(
+                f"  <url><loc>{loc}</loc><changefreq>{freq}</changefreq><priority>{priority}</priority></url>"
+                for loc, freq, priority in urls
+            )
+            content = (
+                '<?xml version="1.0" encoding="UTF-8"?>\n'
+                '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+                f"{entries}\n</urlset>\n"
+            )
+            return Response(content, mimetype="application/xml")
+        return None
 
     @app.before_request
     def handle_admin_login_from_db():
@@ -121,6 +197,19 @@ def register_admin_session_guard(app):
             marker = '<script src="/static/home.js" defer></script>'
             if marker not in body and "</body>" in body:
                 response.set_data(body.replace("</body>", marker + "</body>"))
+        return response
+
+    @app.after_request
+    def harden_content_security_policy(response):
+        """Keep scripts same-origin while preserving existing inline app code."""
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; base-uri 'self'; object-src 'none'; "
+            "frame-ancestors 'none'; form-action 'self'; "
+            "img-src 'self' data: https:; font-src 'self' data: https:; "
+            "style-src 'self' 'unsafe-inline' https:; "
+            "script-src 'self' 'unsafe-inline'; connect-src 'self'; "
+            "media-src 'self' https:;"
+        )
         return response
 
 
