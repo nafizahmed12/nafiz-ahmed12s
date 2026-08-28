@@ -89,6 +89,21 @@
     footerGrid.appendChild(section);
   }
 
+  function renameStoreBranding() {
+    const logo = document.querySelector('.logo');
+    if (logo) logo.innerHTML = 'Nafiz <span>-Ecommerce</span>';
+
+    const eyebrow = document.querySelector('.eyebrow');
+    if (eyebrow) eyebrow.textContent = 'Nafiz -Ecommerce • Trending now';
+
+    const footerBrand = document.querySelector('.footer h3');
+    if (footerBrand) footerBrand.textContent = 'Nafiz -Ecommerce';
+
+    document.title = 'Nafiz -Ecommerce — Modern Online Store';
+    const description = document.querySelector('meta[name="description"]');
+    if (description) description.setAttribute('content', 'Nafiz -Ecommerce — modern online shopping.');
+  }
+
   async function loadProducts() {
     const grid = document.querySelector('.products');
     if (!grid) return;
@@ -103,6 +118,7 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
+    renameStoreBranding();
     addTrustLinks();
     loadProducts();
   });
