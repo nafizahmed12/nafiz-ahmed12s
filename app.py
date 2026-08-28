@@ -147,7 +147,10 @@ def favicon_ico():
 
 @app.route("/robots.txt")
 def robots_txt():
-    content = """User-agent: *
+    site_url = os.getenv("PUBLIC_BASE_URL", "").strip().rstrip("/")
+    if not site_url:
+        site_url = request.url_root.rstrip("/")
+    content = f"""User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /login
@@ -160,7 +163,7 @@ Disallow: /user-logout
 Disallow: /forgot-password
 Disallow: /reset-password
 
-Sitemap: https://nafiz-ahmed12s.onrender.com/sitemap.xml
+Sitemap: {site_url}/sitemap.xml
 """
     return Response(content, mimetype="text/plain")
 
@@ -347,11 +350,9 @@ def published_site(slug):
         abort(404)
     return render_template("published_site.html", website=website)
 
-@app.route("/user-logout")
+@app.route("/user-logout", methods=["POST"])
 def user_logout():
-    session.pop("user_id", None)
-    session.pop("username", None)
-    session.pop("_permanent", None)
+    session.clear()
     flash("You have been logged out.", "success")
     return redirect(url_for("user_login"))
 

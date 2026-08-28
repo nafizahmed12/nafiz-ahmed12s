@@ -14,7 +14,7 @@ body{min-height:100vh}.dash{max-width:1180px;margin:0 auto;padding:20px 22px 70p
 <main class="dash">
 <header class="dash-nav">
 <div><div class="dash-brand">Nafiz<span class="gradient-text">.</span></div><span class="muted">User Dashboard</span></div>
-<div class="dash-actions"><a class="btn btn-secondary" href="{{ url_for('home') }}">View Home</a><a class="btn btn-secondary" href="{{ url_for('account') }}">Account Settings</a><a class="btn btn-primary dashboard-order-btn" href="{{ url_for('orders_page') }}" aria-label="View My Orders">My Orders →</a><a class="btn btn-primary" href="{{ url_for('user_logout') }}">Logout</a></div>
+<div class="dash-actions"><a class="btn btn-secondary" href="{{ url_for('home') }}">View Home</a><a class="btn btn-secondary" href="{{ url_for('account') }}">Account Settings</a><a class="btn btn-primary dashboard-order-btn" href="{{ url_for('orders_page') }}" aria-label="View My Orders">My Orders →</a><form method="post" action="{{ url_for('user_logout') }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-primary" type="submit">Logout</button></form></div>
 </header>
 {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="flash">{{ message }}</div>{% endfor %}{% endwith %}
 <section class="section-heading"><span class="section-label">DASHBOARD</span><h1>Welcome, <span class="gradient-text">{{ user.username }}</span></h1><p>Manage your account, cart and orders from one place.</p></section>
