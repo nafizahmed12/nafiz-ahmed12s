@@ -61,7 +61,7 @@ def register_admin_session_guard(app):
 
     @app.before_request
     def handle_legacy_logout_get():
-        """Prevent the GET /user-logout endpoint from changing session state.
+        """Prevent GET /user-logout from changing session state.
 
         Existing logout links remain usable by showing a confirmation form whose
         POST is protected by the application's CSRF middleware.
@@ -197,6 +197,19 @@ def register_admin_session_guard(app):
             marker = '<script src="/static/home.js" defer></script>'
             if marker not in body and "</body>" in body:
                 response.set_data(body.replace("</body>", marker + "</body>"))
+        return response
+
+    @app.after_request
+    def harden_content_security_policy(response):
+        """Keep scripts same-origin while preserving existing inline app code."""
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; base-uri 'self'; object-src 'none'; "
+            "frame-ancestors 'none'; form-action 'self'; "
+            "img-src 'self' data: https:; font-src 'self' data: https:; "
+            "style-src 'self' 'unsafe-inline' https:; "
+            "script-src 'self' 'unsafe-inline'; connect-src 'self'; "
+            "media-src 'self' https:;"
+        )
         return response
 
 
