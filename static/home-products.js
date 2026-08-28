@@ -72,6 +72,23 @@
     });
   }
 
+  function addTrustLinks() {
+    const footerGrid = document.querySelector('.footer .footer-grid');
+    if (!footerGrid || footerGrid.querySelector('[data-trust-links]')) return;
+
+    const section = document.createElement('div');
+    section.setAttribute('data-trust-links', 'true');
+    section.innerHTML = `
+      <b>INFORMATION</b>
+      <a href="/about">About Us</a>
+      <a href="/contact">Contact Us</a>
+      <a href="/privacy-policy">Privacy Policy</a>
+      <a href="/terms">Terms &amp; Conditions</a>
+      <a href="/refund-policy">Refund &amp; Return Policy</a>
+    `;
+    footerGrid.appendChild(section);
+  }
+
   async function loadProducts() {
     const grid = document.querySelector('.products');
     if (!grid) return;
@@ -85,5 +102,8 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', loadProducts);
+  document.addEventListener('DOMContentLoaded', () => {
+    addTrustLinks();
+    loadProducts();
+  });
 })();
