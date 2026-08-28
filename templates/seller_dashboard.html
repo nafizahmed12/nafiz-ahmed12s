@@ -18,7 +18,7 @@
         <div class="dash-actions">
             <a class="btn btn-secondary" href="{{ url_for('home') }}">View Home</a>
             <a class="btn btn-secondary" href="{{ url_for('dashboard') }}">My Account</a>
-            <a class="btn btn-primary" href="{{ url_for('user_logout') }}">Logout</a>
+            <form method="post" action="{{ url_for('user_logout') }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-primary" type="submit">Logout</button></form>
         </div>
     </header>
 

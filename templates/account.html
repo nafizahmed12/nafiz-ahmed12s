@@ -52,7 +52,7 @@
         <span class="section-label">SESSION</span>
         <h2>Sign out</h2>
         <p class="muted">Log out from this browser when you are finished.</p>
-        <a class="btn btn-secondary" href="{{ url_for('user_logout') }}">Logout</a>
+        <form method="post" action="{{ url_for('user_logout') }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-secondary" type="submit">Logout</button></form>
     </section>
 </main>
 </body>
