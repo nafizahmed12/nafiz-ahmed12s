@@ -11,7 +11,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout repo (full history)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -63,7 +63,7 @@ jobs:
           echo "Full extraction verification passed."
 
       - name: Upload backup artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: code-backup-${{ github.run_id }}
           path: backup/
