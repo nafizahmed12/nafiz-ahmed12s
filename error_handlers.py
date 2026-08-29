@@ -5,13 +5,10 @@ import uuid
 
 from flask import g, jsonify, request, url_for
 
-from admin_security import register_admin_session_guard
-
 
 def register_error_handlers(app):
     """Register production-safe error handlers, request tracing, timing and SEO metadata."""
     app.logger.setLevel(logging.INFO)
-    register_admin_session_guard(app)
 
     @app.before_request
     def assign_request_context():
@@ -60,13 +57,7 @@ def register_error_handlers(app):
 
     @app.after_request
     def finalize_security_headers(response):
-        """Apply the strictest CSP compatible with the current application.
-
-        The application still contains inline handlers/scripts, so removing
-        unsafe-inline completely would break existing UI. External JavaScript
-        execution is nevertheless blocked; a future frontend refactor can
-        remove unsafe-inline and move to nonces/hashes.
-        """
+        """Apply the strictest CSP compatible with the current application."""
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; base-uri 'self'; object-src 'none'; "
             "frame-ancestors 'none'; form-action 'self'; "
@@ -95,34 +86,22 @@ def register_error_handlers(app):
 
     @app.errorhandler(404)
     def handle_not_found(error):
-        app.logger.info(
-            "not_found request_id=%s method=%s path=%s remote=%s",
-            getattr(g, "request_id", "-"), request.method, request.path, request.remote_addr,
-        )
+        app.logger.info("not_found request_id=%s method=%s path=%s remote=%s", getattr(g, "request_id", "-"), request.method, request.path, request.remote_addr)
         return _response("not_found", "The requested resource was not found."), 404
 
     @app.errorhandler(413)
     def handle_request_too_large(error):
-        app.logger.warning(
-            "request_too_large request_id=%s path=%s method=%s remote=%s",
-            getattr(g, "request_id", "-"), request.path, request.method, request.remote_addr,
-        )
+        app.logger.warning("request_too_large request_id=%s path=%s method=%s remote=%s", getattr(g, "request_id", "-"), request.path, request.method, request.remote_addr)
         return _response("request_too_large", "Request is too large."), 413
 
     @app.errorhandler(429)
     def handle_rate_limited(error):
-        app.logger.warning(
-            "rate_limited request_id=%s path=%s method=%s remote=%s",
-            getattr(g, "request_id", "-"), request.path, request.method, request.remote_addr,
-        )
+        app.logger.warning("rate_limited request_id=%s path=%s method=%s remote=%s", getattr(g, "request_id", "-"), request.path, request.method, request.remote_addr)
         return _response("rate_limited", "Too many requests. Please try again later."), 429
 
     @app.errorhandler(500)
     def handle_internal_error(error):
-        app.logger.exception(
-            "internal_error request_id=%s path=%s method=%s remote=%s",
-            getattr(g, "request_id", "-"), request.path, request.method, request.remote_addr,
-        )
+        app.logger.exception("internal_error request_id=%s path=%s method=%s remote=%s", getattr(g, "request_id", "-"), request.path, request.method, request.remote_addr)
         return _response("internal_error", "An internal server error occurred."), 500
 
 
