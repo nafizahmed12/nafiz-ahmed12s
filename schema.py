@@ -3,7 +3,6 @@ import hashlib
 import secrets
 
 from flask import has_request_context, session
-from flask.sessions import SecureCookieSession
 from sqlalchemy import func, select, text
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -13,18 +12,6 @@ from models import User, Website, Message, Subscriber
 
 
 USER_SESSION_CREATED_KEY = "user_session_created_at"
-
-_original_session_clear = SecureCookieSession.clear
-
-
-def _clear_preserving_user_marker(self):
-    marker = self.get(USER_SESSION_CREATED_KEY)
-    _original_session_clear(self)
-    if marker is not None:
-        self[USER_SESSION_CREATED_KEY] = marker
-
-
-SecureCookieSession.clear = _clear_preserving_user_marker
 
 
 def _mark_user_session_authenticated():
@@ -46,17 +33,17 @@ def create_user(username, email, password):
             db.rollback()
             return None
         db.refresh(user)
-        _mark_user_session_authenticated()
         return user
 
 
 def _allow_rate_limited_request(table_name, key, limit, window_seconds):
-    """Atomically allow requests using shared PostgreSQL storage."""
+    """Atomically allow requests using PostgreSQL or a serialized SQLite transaction."""
     now = datetime.now(timezone.utc)
     window = timedelta(seconds=window_seconds)
 
     with SessionLocal() as db:
-        if db.bind.dialect.name == "postgresql":
+        dialect = db.bind.dialect.name
+        if dialect == "postgresql":
             result = db.execute(
                 text(f"""
                     INSERT INTO {table_name}
@@ -79,6 +66,11 @@ def _allow_rate_limited_request(table_name, key, limit, window_seconds):
             ).scalar_one()
             db.commit()
             return result <= limit
+
+        # SQLite has no useful SELECT ... FOR UPDATE semantics. BEGIN IMMEDIATE
+        # serializes the read/modify/write section and prevents concurrent bypasses.
+        if dialect == "sqlite":
+            db.execute(text("BEGIN IMMEDIATE"))
 
         row = db.execute(
             text(f"SELECT window_started_at, request_count FROM {table_name} WHERE rate_key = :key"),
@@ -123,64 +115,51 @@ def _safe_rate_key(value, max_length=255):
 
 
 def allow_registration(ip_address, limit=10, window_seconds=3600):
-    key = _safe_rate_key(ip_address)
-    return _allow_rate_limited_request("registration_rate_limits", key, limit, window_seconds)
+    return _allow_rate_limited_request("registration_rate_limits", _safe_rate_key(ip_address), limit, window_seconds)
 
 
 def allow_login(ip_address, identifier, limit=10, window_seconds=900):
     ip_key = _safe_rate_key(ip_address, 200)
     identity_key = _safe_rate_key(identifier, 255).lower()
-    key = f"{ip_key}:{identity_key}"
-    return _allow_rate_limited_request("login_rate_limits", key, limit, window_seconds)
+    return _allow_rate_limited_request("login_rate_limits", f"{ip_key}:{identity_key}", limit, window_seconds)
 
 
 def allow_contact(ip_address, limit=5, window_seconds=900):
-    key = _safe_rate_key(ip_address)
-    return _allow_rate_limited_request("contact_rate_limits", key, limit, window_seconds)
+    return _allow_rate_limited_request("contact_rate_limits", _safe_rate_key(ip_address), limit, window_seconds)
 
 
 def allow_subscription(ip_address, limit=10, window_seconds=3600):
-    key = _safe_rate_key(ip_address)
-    return _allow_rate_limited_request("subscribe_rate_limits", key, limit, window_seconds)
+    return _allow_rate_limited_request("subscribe_rate_limits", _safe_rate_key(ip_address), limit, window_seconds)
 
 
 def allow_cart_action(ip_address, user_id, limit=60, window_seconds=60):
     ip_key = _safe_rate_key(ip_address, 200)
     user_key = _safe_rate_key(str(user_id) if user_id else None, 50)
-    key = f"{ip_key}:{user_key}"
-    return _allow_rate_limited_request("cart_rate_limits", key, limit, window_seconds)
+    return _allow_rate_limited_request("cart_rate_limits", f"{ip_key}:{user_key}", limit, window_seconds)
 
 
 def allow_checkout(ip_address, user_id, limit=10, window_seconds=300):
     ip_key = _safe_rate_key(ip_address, 200)
     user_key = _safe_rate_key(str(user_id) if user_id else None, 50)
-    key = f"{ip_key}:{user_key}"
-    return _allow_rate_limited_request("checkout_rate_limits", key, limit, window_seconds)
+    return _allow_rate_limited_request("checkout_rate_limits", f"{ip_key}:{user_key}", limit, window_seconds)
 
 
 def allow_payment_attempt(ip_address, user_id, limit=10, window_seconds=600):
     ip_key = _safe_rate_key(ip_address, 200)
     user_key = _safe_rate_key(str(user_id) if user_id else None, 50)
-    key = f"{ip_key}:{user_key}"
-    return _allow_rate_limited_request("payment_rate_limits", key, limit, window_seconds)
+    return _allow_rate_limited_request("payment_rate_limits", f"{ip_key}:{user_key}", limit, window_seconds)
 
 
 def allow_password_reset(ip_address, identifier, limit=5, window_seconds=900):
     ip_key = _safe_rate_key(ip_address, 200)
     identity_key = _safe_rate_key(identifier, 255).lower()
-    return _allow_rate_limited_request(
-        "login_rate_limits", f"password-reset:{ip_key}:{identity_key}", limit, window_seconds
-    )
+    return _allow_rate_limited_request("login_rate_limits", f"password-reset:{ip_key}:{identity_key}", limit, window_seconds)
 
 
 def authenticate_user(identifier, password):
     identifier = identifier.strip()
     with SessionLocal() as db:
-        user = db.scalar(
-            select(User).where(
-                (User.username == identifier) | (User.email == identifier.lower())
-            )
-        )
+        user = db.scalar(select(User).where((User.username == identifier) | (User.email == identifier.lower())))
         if user and check_password_hash(user.password_hash, password):
             _mark_user_session_authenticated()
             return user
@@ -193,72 +172,49 @@ def get_user(user_id):
 
 
 def create_password_reset_token(identifier, expires_minutes=30):
-    """Return (token, email) for a valid user, otherwise (None, None)."""
     identifier = (identifier or "").strip()
     if not identifier:
         return None, None
     with SessionLocal() as db:
-        user = db.scalar(
-            select(User).where(
-                (User.username == identifier) | (User.email == identifier.lower())
-            )
-        )
+        user = db.scalar(select(User).where((User.username == identifier) | (User.email == identifier.lower())))
         if user is None:
             return None, None
         now = datetime.now(timezone.utc)
-        db.execute(
-            text("DELETE FROM password_reset_tokens WHERE user_id=:uid OR expires_at <= :now"),
-            {"uid": user.id, "now": now},
-        )
+        db.execute(text("DELETE FROM password_reset_tokens WHERE user_id=:uid OR expires_at <= :now"), {"uid": user.id, "now": now})
         token = secrets.token_urlsafe(32)
         token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
-        db.execute(
-            text("""INSERT INTO password_reset_tokens
+        db.execute(text("""INSERT INTO password_reset_tokens
                 (user_id, token_hash, expires_at, created_at)
-                VALUES (:uid, :hash, :expires, :created)"""),
-            {
-                "uid": user.id,
-                "hash": token_hash,
-                "expires": now + timedelta(minutes=expires_minutes),
-                "created": now,
-            },
-        )
+                VALUES (:uid, :hash, :expires, :created)"""), {
+            "uid": user.id, "hash": token_hash,
+            "expires": now + timedelta(minutes=expires_minutes), "created": now,
+        })
         db.commit()
         return token, user.email
 
 
 def reset_password_with_token(token, new_password):
-    """Consume a reset token atomically so it cannot be reused concurrently."""
     if not token or len(new_password or "") < 8:
         return False
     token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
     now = datetime.now(timezone.utc)
     with SessionLocal() as db:
-        claimed = db.execute(
-            text("""UPDATE password_reset_tokens
-                   SET used_at=:now
-                   WHERE token_hash=:hash
-                     AND used_at IS NULL
-                     AND expires_at > :now"""),
-            {"hash": token_hash, "now": now},
-        ).rowcount
-        if claimed != 1:
-            db.rollback()
-            return False
-
-        row = db.execute(
-            text("SELECT user_id FROM password_reset_tokens WHERE token_hash=:hash LIMIT 1"),
-            {"hash": token_hash},
-        ).mappings().first()
+        row = db.execute(text("""SELECT user_id FROM password_reset_tokens
+                               WHERE token_hash=:hash AND used_at IS NULL AND expires_at > :now
+                               LIMIT 1"""), {"hash": token_hash, "now": now}).mappings().first()
         if row is None:
             db.rollback()
             return False
-
+        claimed = db.execute(text("""UPDATE password_reset_tokens SET used_at=:now
+                                    WHERE token_hash=:hash AND used_at IS NULL AND expires_at > :now"""),
+                              {"hash": token_hash, "now": now}).rowcount
+        if claimed != 1:
+            db.rollback()
+            return False
         user = db.get(User, row["user_id"])
         if user is None:
             db.rollback()
             return False
-
         user.password_hash = generate_password_hash(new_password)
         user.password_changed_at = now
         db.commit()
