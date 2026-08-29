@@ -5,13 +5,10 @@ import uuid
 
 from flask import g, jsonify, request, url_for
 
-from admin_security import register_admin_session_guard
-
 
 def register_error_handlers(app):
     """Register production-safe error handlers, request tracing, timing and SEO metadata."""
     app.logger.setLevel(logging.INFO)
-    register_admin_session_guard(app)
 
     @app.before_request
     def assign_request_context():
@@ -30,12 +27,8 @@ def register_error_handlers(app):
             response.headers["Server-Timing"] = f"app;dur={duration_ms:.1f}"
             app.logger.info(
                 "request_complete request_id=%s method=%s path=%s status=%s duration_ms=%.1f remote=%s",
-                getattr(g, "request_id", "-"),
-                request.method,
-                request.path,
-                response.status_code,
-                duration_ms,
-                request.remote_addr,
+                getattr(g, "request_id", "-"), request.method, request.path,
+                response.status_code, duration_ms, request.remote_addr,
             )
         return response
 
@@ -45,7 +38,7 @@ def register_error_handlers(app):
         if request.path == "/" and response.mimetype == "text/html":
             try:
                 html = response.get_data(as_text=True)
-                if "rel=\"canonical\"" not in html and "property=\"og:title\"" not in html:
+                if 'rel="canonical"' not in html and 'property="og:title"' not in html:
                     canonical_url = url_for("home", _external=True)
                     structured_data = {
                         "@context": "https://schema.org",
@@ -62,6 +55,35 @@ def register_error_handlers(app):
                 app.logger.exception("Homepage SEO metadata injection failed")
         return response
 
+    @app.after_request
+    def attach_shop_design(response):
+        """Load the marketplace-style product card enhancement on the shop page."""
+        if request.path == "/shop" and response.status_code == 200 and "text/html" in response.content_type:
+            body = response.get_data(as_text=True)
+            marker = '<script src="/static/shop-enhance.js" defer></script>'
+            if marker not in body and "</body>" in body:
+                response.set_data(body.replace("</body>", marker + "</body>", 1))
+        return response
+
+    @app.after_request
+    def finalize_security_headers(response):
+        """Apply the strictest CSP compatible with the current application."""
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; base-uri 'self'; object-src 'none'; "
+            "frame-ancestors 'none'; form-action 'self'; "
+            "img-src 'self' data: https:; font-src 'self' data: https:; "
+            "style-src 'self' 'unsafe-inline' https:; "
+            "script-src 'self' 'unsafe-inline'; connect-src 'self'; "
+            "media-src 'self' https:; worker-src 'self'; manifest-src 'self';"
+        )
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
+        if request.is_secure:
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        return response
+
     @app.errorhandler(400)
     def handle_bad_request(error):
         _log_client_error("bad_request", error)
@@ -74,46 +96,30 @@ def register_error_handlers(app):
 
     @app.errorhandler(404)
     def handle_not_found(error):
-        app.logger.info(
-            "not_found request_id=%s method=%s path=%s remote=%s",
-            getattr(g, "request_id", "-"), request.method, request.path, request.remote_addr,
-        )
+        app.logger.info("not_found request_id=%s method=%s path=%s remote=%s", getattr(g, "request_id", "-"), request.method, request.path, request.remote_addr)
         return _response("not_found", "The requested resource was not found."), 404
 
     @app.errorhandler(413)
     def handle_request_too_large(error):
-        app.logger.warning(
-            "request_too_large request_id=%s path=%s method=%s remote=%s",
-            getattr(g, "request_id", "-"), request.path, request.method, request.remote_addr,
-        )
+        app.logger.warning("request_too_large request_id=%s path=%s method=%s remote=%s", getattr(g, "request_id", "-"), request.path, request.method, request.remote_addr)
         return _response("request_too_large", "Request is too large."), 413
 
     @app.errorhandler(429)
     def handle_rate_limited(error):
-        app.logger.warning(
-            "rate_limited request_id=%s path=%s method=%s remote=%s",
-            getattr(g, "request_id", "-"), request.path, request.method, request.remote_addr,
-        )
+        app.logger.warning("rate_limited request_id=%s path=%s method=%s remote=%s", getattr(g, "request_id", "-"), request.path, request.method, request.remote_addr)
         return _response("rate_limited", "Too many requests. Please try again later."), 429
 
     @app.errorhandler(500)
     def handle_internal_error(error):
-        app.logger.exception(
-            "internal_error request_id=%s path=%s method=%s remote=%s",
-            getattr(g, "request_id", "-"), request.path, request.method, request.remote_addr,
-        )
+        app.logger.exception("internal_error request_id=%s path=%s method=%s remote=%s", getattr(g, "request_id", "-"), request.path, request.method, request.remote_addr)
         return _response("internal_error", "An internal server error occurred."), 500
 
 
 def _log_client_error(code, error):
     logging.getLogger("app").warning(
         "%s request_id=%s path=%s method=%s remote=%s error=%s",
-        code,
-        getattr(g, "request_id", "-"),
-        request.path,
-        request.method,
-        request.remote_addr,
-        error,
+        code, getattr(g, "request_id", "-"), request.path,
+        request.method, request.remote_addr, error,
     )
 
 

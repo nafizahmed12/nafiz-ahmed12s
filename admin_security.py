@@ -19,11 +19,7 @@ USER_SESSION_CREATED_KEY = "user_session_created_at"
 
 
 def _ensure_admin_credentials():
-    """Create/sync the bootstrap admin from environment variables.
-
-    This is intentionally idempotent so it is safe to run on every deployment.
-    ADMIN_EMAIL is optional because admin login only requires username/password.
-    """
+    """Create/sync the bootstrap admin from environment variables."""
     username = os.getenv("ADMIN_USERNAME", "").strip()
     password = os.getenv("ADMIN_PASSWORD", "")
     email = os.getenv("ADMIN_EMAIL", "").strip().lower() or None
@@ -40,15 +36,12 @@ def _ensure_admin_credentials():
                 (id, username, email, password_hash) VALUES (1, :username, :email, :password_hash)"""),
                 {"username": username, "email": email, "password_hash": generate_password_hash(password)})
         elif row["username"] != username or (email and row["email"] != email):
-            db.execute(text("""UPDATE admin_credentials
-                SET username=:username, email=:email
-                WHERE id=:id"""),
+            db.execute(text("""UPDATE admin_credentials SET username=:username, email=:email WHERE id=:id"""),
                 {"username": username, "email": email if email else row["email"], "id": row["id"]})
         db.commit()
 
 
 def _seo_base_url():
-    """Use an explicit public URL when configured, otherwise derive it safely."""
     configured = os.getenv("PUBLIC_BASE_URL", "").strip().rstrip("/")
     return configured or url_for("home", _external=True).rstrip("/")
 
@@ -61,11 +54,6 @@ def register_admin_session_guard(app):
 
     @app.before_request
     def handle_legacy_logout_get():
-        """Prevent GET /user-logout from changing session state.
-
-        Existing logout links remain usable by showing a confirmation form whose
-        POST is protected by the application's CSRF middleware.
-        """
         if request.path != "/user-logout" or request.method != "GET":
             return None
         token = session.get("_csrf_secret")
@@ -80,55 +68,31 @@ def register_admin_session_guard(app):
             "<h1>Confirm logout</h1><p>Are you sure you want to sign out?</p>"
             "<form method='post' action='/user-logout'>"
             f"<input type='hidden' name='csrf_token' value='{token}'>"
-            "<button type='submit'>Sign out</button>"
-            "</form></main></body></html>",
-            status=200,
-            mimetype="text/html",
+            "<button type='submit'>Sign out</button></form></main></body></html>",
+            status=200, mimetype="text/html",
         )
 
     @app.before_request
     def serve_dynamic_seo_files():
-        """Override stale hard-coded SEO URLs with the active public URL."""
         if request.path == "/robots.txt" and request.method == "GET":
             base = _seo_base_url()
-            content = (
-                "User-agent: *\n"
-                "Allow: /\n"
-                "Disallow: /admin\n"
-                "Disallow: /login\n"
-                "Disallow: /logout\n"
-                "Disallow: /dashboard\n"
-                "Disallow: /account\n"
-                "Disallow: /register\n"
-                "Disallow: /user-login\n"
-                "Disallow: /user-logout\n"
-                "Disallow: /forgot-password\n"
-                "Disallow: /reset-password\n\n"
-                f"Sitemap: {base}/sitemap.xml\n"
-            )
+            content = ("User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /login\n"
+                       "Disallow: /logout\nDisallow: /dashboard\nDisallow: /account\n"
+                       "Disallow: /register\nDisallow: /user-login\nDisallow: /user-logout\n"
+                       "Disallow: /forgot-password\nDisallow: /reset-password\n\n"
+                       f"Sitemap: {base}/sitemap.xml\n")
             return Response(content, mimetype="text/plain")
-
         if request.path == "/sitemap.xml" and request.method == "GET":
             base = _seo_base_url()
-            urls = [
-                (base + "/", "weekly", "1.0"),
-                (base + "/shop", "daily", "0.9"),
-                (base + "/about", "monthly", "0.7"),
-                (base + "/contact", "monthly", "0.7"),
-                (base + "/privacy-policy", "yearly", "0.5"),
-                (base + "/terms", "yearly", "0.5"),
-                (base + "/refund-policy", "yearly", "0.5"),
-            ]
-            entries = "\n".join(
-                f"  <url><loc>{loc}</loc><changefreq>{freq}</changefreq><priority>{priority}</priority></url>"
-                for loc, freq, priority in urls
-            )
-            content = (
-                '<?xml version="1.0" encoding="UTF-8"?>\n'
-                '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-                f"{entries}\n</urlset>\n"
-            )
-            return Response(content, mimetype="application/xml")
+            urls = [(base + "/", "weekly", "1.0"), (base + "/shop", "daily", "0.9"),
+                    (base + "/about", "monthly", "0.7"), (base + "/contact", "monthly", "0.7"),
+                    (base + "/privacy-policy", "yearly", "0.5"), (base + "/terms", "yearly", "0.5"),
+                    (base + "/refund-policy", "yearly", "0.5")]
+            entries = "\n".join(f"  <url><loc>{loc}</loc><changefreq>{freq}</changefreq><priority>{priority}</priority></url>"
+                                  for loc, freq, priority in urls)
+            return Response('<?xml version="1.0" encoding="UTF-8"?>\n'
+                            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+                            f"{entries}\n</urlset>\n", mimetype="application/xml")
         return None
 
     @app.before_request
@@ -139,26 +103,28 @@ def register_admin_session_guard(app):
         password = request.form.get("password", "")
         if not username or not password:
             return None
+        from schema import allow_login
+        if not allow_login(request.remote_addr, username, limit=5, window_seconds=900):
+            return "Too many login attempts. Please try again in a few minutes.", 429
         with SessionLocal() as db:
-            row = db.execute(text("SELECT username, password_hash FROM admin_credentials WHERE username=:username LIMIT 1"), {"username": username}).mappings().first()
-        if row is None:
-            return None
-        if not check_password_hash(row["password_hash"], password):
+            row = db.execute(text("SELECT username, password_hash FROM admin_credentials WHERE username=:username LIMIT 1"),
+                             {"username": username}).mappings().first()
+        if row is None or not check_password_hash(row["password_hash"], password):
             return "Invalid username or password.", 401
-        session.clear(); session.permanent = True; mark_admin_authenticated(row["username"])
+        session.clear()
+        session.permanent = True
+        mark_admin_authenticated(row["username"])
         return redirect(url_for("admin"))
 
     @app.before_request
     def guard_admin_session():
         if not session.get("admin_logged_in"):
             return None
-
         def reject_admin_session():
             _clear_admin_session()
             if request.path.startswith("/api/"):
                 return jsonify({"error": "Admin authentication required."}), 401
             return redirect(url_for("login"))
-
         if session.get("admin_role") != ADMIN_ROLE:
             return reject_admin_session()
         configured_username = os.getenv("ADMIN_USERNAME", "").strip()
@@ -179,6 +145,16 @@ def register_admin_session_guard(app):
         user_id = session.get("user_id")
         if not user_id or session.get("admin_logged_in"):
             return None
+
+        # Password-change invalidation is needed only on authenticated areas.
+        # Avoid an extra database query on public/static requests.
+        protected_prefixes = (
+            "/dashboard", "/account", "/orders", "/api/cart", "/api/checkout",
+            "/api/orders", "/api/payments", "/seller", "/supplier",
+        )
+        if not any(request.path == prefix or request.path.startswith(prefix + "/") for prefix in protected_prefixes):
+            return None
+
         try:
             created_ts = float(session.get(USER_SESSION_CREATED_KEY))
         except (TypeError, ValueError):
@@ -201,14 +177,11 @@ def register_admin_session_guard(app):
 
     @app.after_request
     def harden_content_security_policy(response):
-        """Keep scripts same-origin while preserving existing inline app code."""
         response.headers["Content-Security-Policy"] = (
-            "default-src 'self'; base-uri 'self'; object-src 'none'; "
-            "frame-ancestors 'none'; form-action 'self'; "
-            "img-src 'self' data: https:; font-src 'self' data: https:; "
-            "style-src 'self' 'unsafe-inline' https:; "
-            "script-src 'self' 'unsafe-inline'; connect-src 'self'; "
-            "media-src 'self' https:;"
+            "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; "
+            "form-action 'self'; img-src 'self' data: https:; font-src 'self' data: https:; "
+            "style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline'; "
+            "connect-src 'self'; media-src 'self' https:; worker-src 'self'; manifest-src 'self';"
         )
         return response
 
@@ -223,13 +196,13 @@ def register_password_reset_routes(app):
             if not app_module.allow_password_reset(request.remote_addr, identifier, limit=5, window_seconds=900):
                 return render_template("forgot_password.html", sent=False, error="Too many reset attempts. Please try again later."), 429
             token, email = app_module.create_password_reset_token(identifier)
-            sent = False
             if token and email:
                 try:
-                    app_module.send_password_reset_email(email, token); sent = True
+                    app_module.send_password_reset_email(email, token)
                 except Exception:
                     app.logger.exception("Password reset email delivery failed")
-            return render_template("forgot_password.html", sent=sent, error=None if sent else "We could not send the reset email. Please check your email configuration and try again."), 200
+            # Always return the same response to prevent account enumeration.
+            return render_template("forgot_password.html", sent=True, error=None), 200
 
     if "reset_password" not in app.view_functions:
         @app.route("/reset-password", methods=["GET", "POST"])
