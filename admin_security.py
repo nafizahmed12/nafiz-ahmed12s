@@ -103,13 +103,9 @@ def register_admin_session_guard(app):
         password = request.form.get("password", "")
         if not username or not password:
             return None
-
-        # Protect the privileged login endpoint against brute-force attacks.
-        # Reuse the shared DB-backed limiter used by normal user authentication.
         from schema import allow_login
         if not allow_login(request.remote_addr, username, limit=5, window_seconds=900):
             return "Too many login attempts. Please try again in a few minutes.", 429
-
         with SessionLocal() as db:
             row = db.execute(text("SELECT username, password_hash FROM admin_credentials WHERE username=:username LIMIT 1"),
                              {"username": username}).mappings().first()
@@ -149,6 +145,16 @@ def register_admin_session_guard(app):
         user_id = session.get("user_id")
         if not user_id or session.get("admin_logged_in"):
             return None
+
+        # Password-change invalidation is needed only on authenticated areas.
+        # Avoid an extra database query on public/static requests.
+        protected_prefixes = (
+            "/dashboard", "/account", "/orders", "/api/cart", "/api/checkout",
+            "/api/orders", "/api/payments", "/seller", "/supplier",
+        )
+        if not any(request.path == prefix or request.path.startswith(prefix + "/") for prefix in protected_prefixes):
+            return None
+
         try:
             created_ts = float(session.get(USER_SESSION_CREATED_KEY))
         except (TypeError, ValueError):
@@ -175,7 +181,7 @@ def register_admin_session_guard(app):
             "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; "
             "form-action 'self'; img-src 'self' data: https:; font-src 'self' data: https:; "
             "style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline'; "
-            "connect-src 'self'; media-src 'self' https:;"
+            "connect-src 'self'; media-src 'self' https:; worker-src 'self'; manifest-src 'self';"
         )
         return response
 
@@ -190,13 +196,13 @@ def register_password_reset_routes(app):
             if not app_module.allow_password_reset(request.remote_addr, identifier, limit=5, window_seconds=900):
                 return render_template("forgot_password.html", sent=False, error="Too many reset attempts. Please try again later."), 429
             token, email = app_module.create_password_reset_token(identifier)
-            sent = False
             if token and email:
                 try:
-                    app_module.send_password_reset_email(email, token); sent = True
+                    app_module.send_password_reset_email(email, token)
                 except Exception:
                     app.logger.exception("Password reset email delivery failed")
-            return render_template("forgot_password.html", sent=sent, error=None if sent else "We could not send the reset email. Please check your email configuration and try again."), 200
+            # Always return the same response to prevent account enumeration.
+            return render_template("forgot_password.html", sent=True, error=None), 200
 
     if "reset_password" not in app.view_functions:
         @app.route("/reset-password", methods=["GET", "POST"])
