@@ -56,6 +56,16 @@ def register_error_handlers(app):
         return response
 
     @app.after_request
+    def attach_shop_design(response):
+        """Load the marketplace-style product card enhancement on the shop page."""
+        if request.path == "/shop" and response.status_code == 200 and "text/html" in response.content_type:
+            body = response.get_data(as_text=True)
+            marker = '<script src="/static/shop-enhance.js" defer></script>'
+            if marker not in body and "</body>" in body:
+                response.set_data(body.replace("</body>", marker + "</body>", 1))
+        return response
+
+    @app.after_request
     def finalize_security_headers(response):
         """Apply the strictest CSP compatible with the current application."""
         response.headers["Content-Security-Policy"] = (
