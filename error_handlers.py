@@ -30,12 +30,8 @@ def register_error_handlers(app):
             response.headers["Server-Timing"] = f"app;dur={duration_ms:.1f}"
             app.logger.info(
                 "request_complete request_id=%s method=%s path=%s status=%s duration_ms=%.1f remote=%s",
-                getattr(g, "request_id", "-"),
-                request.method,
-                request.path,
-                response.status_code,
-                duration_ms,
-                request.remote_addr,
+                getattr(g, "request_id", "-"), request.method, request.path,
+                response.status_code, duration_ms, request.remote_addr,
             )
         return response
 
@@ -45,7 +41,7 @@ def register_error_handlers(app):
         if request.path == "/" and response.mimetype == "text/html":
             try:
                 html = response.get_data(as_text=True)
-                if "rel=\"canonical\"" not in html and "property=\"og:title\"" not in html:
+                if 'rel="canonical"' not in html and 'property="og:title"' not in html:
                     canonical_url = url_for("home", _external=True)
                     structured_data = {
                         "@context": "https://schema.org",
@@ -60,6 +56,31 @@ def register_error_handlers(app):
                     response.set_data(html)
             except Exception:
                 app.logger.exception("Homepage SEO metadata injection failed")
+        return response
+
+    @app.after_request
+    def finalize_security_headers(response):
+        """Apply the strictest CSP compatible with the current application.
+
+        The application still contains inline handlers/scripts, so removing
+        unsafe-inline completely would break existing UI. External JavaScript
+        execution is nevertheless blocked; a future frontend refactor can
+        remove unsafe-inline and move to nonces/hashes.
+        """
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; base-uri 'self'; object-src 'none'; "
+            "frame-ancestors 'none'; form-action 'self'; "
+            "img-src 'self' data: https:; font-src 'self' data: https:; "
+            "style-src 'self' 'unsafe-inline' https:; "
+            "script-src 'self' 'unsafe-inline'; connect-src 'self'; "
+            "media-src 'self' https:; worker-src 'self'; manifest-src 'self';"
+        )
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
+        if request.is_secure:
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         return response
 
     @app.errorhandler(400)
@@ -108,12 +129,8 @@ def register_error_handlers(app):
 def _log_client_error(code, error):
     logging.getLogger("app").warning(
         "%s request_id=%s path=%s method=%s remote=%s error=%s",
-        code,
-        getattr(g, "request_id", "-"),
-        request.path,
-        request.method,
-        request.remote_addr,
-        error,
+        code, getattr(g, "request_id", "-"), request.path,
+        request.method, request.remote_addr, error,
     )
 
 
