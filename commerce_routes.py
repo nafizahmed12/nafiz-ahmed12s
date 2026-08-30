@@ -6,7 +6,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
 from database import SessionLocal
-from schema import allow_cart_action, allow_checkout
+from schema import allow_cart_action, allow_checkout, allow_review_submission
 
 commerce_bp = Blueprint("commerce_api", __name__, url_prefix="/api")
 
@@ -136,6 +136,64 @@ def product_detail(product_id):
         if row is None:
             return jsonify({"error": "Product not found."}), 404
     return jsonify(_product_row(row))
+
+
+@commerce_bp.get("/products/<int:product_id>/reviews")
+def list_product_reviews(product_id):
+    with SessionLocal() as db:
+        product_exists = db.execute(text("SELECT 1 FROM products WHERE id=:product_id AND status NOT IN ('draft','archived')"), {"product_id": product_id}).scalar_one_or_none()
+        if product_exists is None:
+            return jsonify({"error": "Product not found."}), 404
+        summary = db.execute(text("SELECT COUNT(*) AS review_count, COALESCE(AVG(rating),0) AS average_rating FROM product_reviews WHERE product_id=:product_id AND status='approved'"), {"product_id": product_id}).mappings().first()
+        rows = db.execute(text("""SELECT r.id,r.rating,r.title,r.body,r.created_at,u.username
+            FROM product_reviews r JOIN users u ON u.id=r.user_id
+            WHERE r.product_id=:product_id AND r.status='approved'
+            ORDER BY r.created_at DESC LIMIT 50"""), {"product_id": product_id}).mappings().all()
+    return jsonify({
+        "review_count": summary["review_count"],
+        "average_rating": round(float(summary["average_rating"]), 1),
+        "items": [{
+            "id": row["id"], "rating": row["rating"], "title": row["title"] or "",
+            "body": row["body"], "author": row["username"],
+            "created_at": row["created_at"].isoformat() if hasattr(row["created_at"], "isoformat") else (str(row["created_at"]) if row["created_at"] else None),
+        } for row in rows],
+    })
+
+
+@commerce_bp.post("/products/<int:product_id>/reviews")
+def submit_product_review(product_id):
+    user_id = _user_id()
+    if user_id is None:
+        return jsonify({"error": "Authentication required."}), 401
+    if not allow_review_submission(request.remote_addr, user_id):
+        return jsonify({"error": "Too many review submissions. Please try again later."}), 429
+    body = request.get_json(silent=True) or {}
+    try:
+        rating = int(body.get("rating"))
+    except (TypeError, ValueError):
+        return jsonify({"error": "rating must be an integer between 1 and 5."}), 400
+    if rating < 1 or rating > 5:
+        return jsonify({"error": "rating must be between 1 and 5."}), 400
+    title = str(body.get("title") or "").strip()[:180]
+    review_body = str(body.get("body") or "").strip()
+    if not review_body:
+        return jsonify({"error": "A review body is required."}), 400
+    if len(review_body) > 5000:
+        return jsonify({"error": "Review body must be 5000 characters or fewer."}), 400
+    with SessionLocal() as db:
+        product = db.execute(text("SELECT id FROM products WHERE id=:product_id AND status NOT IN ('draft','archived')"), {"product_id": product_id}).scalar_one_or_none()
+        if product is None:
+            return jsonify({"error": "Product not found."}), 404
+        existing_id = db.execute(text("SELECT id FROM product_reviews WHERE product_id=:product_id AND user_id=:user_id"), {"product_id": product_id, "user_id": user_id}).scalar_one_or_none()
+        if existing_id is None:
+            db.execute(text("""INSERT INTO product_reviews (product_id,user_id,rating,title,body,status,created_at,updated_at)
+                VALUES (:product_id,:user_id,:rating,:title,:body,'pending',NOW(),NOW())"""),
+                {"product_id": product_id, "user_id": user_id, "rating": rating, "title": title or None, "body": review_body})
+        else:
+            db.execute(text("""UPDATE product_reviews SET rating=:rating,title=:title,body=:body,status='pending',updated_at=NOW()
+                WHERE id=:id"""), {"id": existing_id, "rating": rating, "title": title or None, "body": review_body})
+        db.commit()
+    return jsonify({"success": True, "status": "pending", "message": "Thanks! Your review will appear once it's approved."}), 201
 
 
 @commerce_bp.get("/cart")

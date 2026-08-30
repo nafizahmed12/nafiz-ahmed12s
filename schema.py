@@ -156,6 +156,12 @@ def allow_password_reset(ip_address, identifier, limit=5, window_seconds=900):
     return _allow_rate_limited_request("login_rate_limits", f"password-reset:{ip_key}:{identity_key}", limit, window_seconds)
 
 
+def allow_review_submission(ip_address, user_id, limit=5, window_seconds=3600):
+    ip_key = _safe_rate_key(ip_address, 200)
+    user_key = _safe_rate_key(str(user_id) if user_id else None, 50)
+    return _allow_rate_limited_request("review_rate_limits", f"{ip_key}:{user_key}", limit, window_seconds)
+
+
 def authenticate_user(identifier, password):
     identifier = identifier.strip()
     with SessionLocal() as db:
