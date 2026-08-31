@@ -9,6 +9,7 @@ from database import SessionLocal
 from admin_auth import admin_required
 from admin_orders_routes import register_admin_orders_routes
 from admin_reviews_routes import register_admin_review_routes
+from admin_affiliate_routes import register_admin_affiliate_routes
 
 admin_product_bp = Blueprint("admin_product", __name__)
 
@@ -196,3 +197,4 @@ def register_admin_product_routes(app):
         app.register_blueprint(admin_product_bp)
     register_admin_orders_routes(app)
     register_admin_review_routes(app)
+    register_admin_affiliate_routes(app)

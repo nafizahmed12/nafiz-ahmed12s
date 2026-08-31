@@ -196,6 +196,16 @@ def home():
         abort(404)
     return render_template("index.html")
 
+@app.route("/product/<int:product_id>")
+def product_page(product_id):
+    return render_template("product.html", product_id=product_id)
+
+
+@app.route("/affiliate-picks")
+def affiliate_picks_page():
+    return render_template("affiliate_picks.html")
+
+
 @app.route("/about")
 def about():
     return render_template("about.html")

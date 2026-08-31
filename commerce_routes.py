@@ -394,5 +394,16 @@ def order_detail(order_id):
     return jsonify({"id": order["id"], "order_number": order["order_number"], "status": order["status"], "payment_status": order["payment_status"], "fulfillment_status": order["fulfillment_status"], "currency": order["currency"], "subtotal": _money(order["subtotal"]), "shipping_amount": _money(order["shipping_amount"]), "discount_amount": _money(order["discount_amount"]), "total_amount": _money(order["total_amount"]), "created_at": order["created_at"].isoformat() if order["created_at"] else None, "updated_at": order["updated_at"].isoformat() if order["updated_at"] else None, "items": [{"product_id": i["product_id"], "listing_id": i["listing_id"], "product_name": i["product_name"], "unit_price": _money(i["unit_price"]), "quantity": i["quantity"], "line_total": _money(i["line_total"]), "seller_id": i["seller_id"], "supplier_product_id": i["supplier_product_id"]} for i in items]})
 
 
+@commerce_bp.get("/affiliate-products")
+def list_affiliate_products():
+    with SessionLocal() as db:
+        rows = db.execute(text("""SELECT id,name,description,amazon_url,image_url,display_price
+            FROM affiliate_products WHERE status='published' ORDER BY sort_order ASC,id DESC""")).mappings().all()
+    return jsonify({"items": [{
+        "id": r["id"], "name": r["name"], "description": r["description"] or "",
+        "amazon_url": r["amazon_url"], "image_url": r["image_url"], "display_price": r["display_price"] or "",
+    } for r in rows]})
+
+
 def register_commerce_routes(app):
     app.register_blueprint(commerce_bp)
