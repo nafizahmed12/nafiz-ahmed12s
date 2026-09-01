@@ -82,6 +82,14 @@ def _cleanup_rate_limit_records(connection):
         )
 
 
+def _env_flag(name, default=False):
+    """Parse a boolean environment variable without treating '0' as true."""
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
 def init_db():
     """Bootstrap local/dev databases and compatibility tables.
 
@@ -91,7 +99,7 @@ def init_db():
     """
     from models import User, Website, Message, Subscriber  # noqa: F401
 
-    auto_create = os.getenv("AUTO_CREATE_DB", "0" if os.getenv("RENDER") else "1").strip() == "1"
+    auto_create = _env_flag("AUTO_CREATE_DB", default=not _env_flag("RENDER"))
     if auto_create:
         Base.metadata.create_all(bind=engine)
 
