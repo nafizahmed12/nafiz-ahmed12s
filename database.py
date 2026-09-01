@@ -82,10 +82,26 @@ def _cleanup_rate_limit_records(connection):
         )
 
 
+def _env_flag(name, default=False):
+    """Parse a boolean environment variable without treating '0' as true."""
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
 def init_db():
+    """Bootstrap local/dev databases and compatibility tables.
+
+    Production deployments should run the canonical Alembic migrations instead
+    of calling SQLAlchemy create_all(), which can otherwise leave the schema
+    ahead of Alembic's revision history.
+    """
     from models import User, Website, Message, Subscriber  # noqa: F401
 
-    Base.metadata.create_all(bind=engine)
+    auto_create = _env_flag("AUTO_CREATE_DB", default=not _env_flag("RENDER"))
+    if auto_create:
+        Base.metadata.create_all(bind=engine)
 
     with engine.begin() as connection:
         connection.execute(
@@ -191,4 +207,7 @@ def init_db():
         _cleanup_rate_limit_records(connection)
         connection.execute(text("SELECT 1"))
 
-    print(f"Database initialized successfully using {engine.url.get_backend_name()}")
+    print(
+        "Database initialized successfully using "
+        f"{engine.url.get_backend_name()} (auto_create={auto_create})"
+    )
