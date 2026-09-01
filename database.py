@@ -83,9 +83,17 @@ def _cleanup_rate_limit_records(connection):
 
 
 def init_db():
+    """Bootstrap local/dev databases and compatibility tables.
+
+    Production deployments should run the canonical Alembic migrations instead
+    of calling SQLAlchemy create_all(), which can otherwise leave the schema
+    ahead of Alembic's revision history.
+    """
     from models import User, Website, Message, Subscriber  # noqa: F401
 
-    Base.metadata.create_all(bind=engine)
+    auto_create = os.getenv("AUTO_CREATE_DB", "0" if os.getenv("RENDER") else "1").strip() == "1"
+    if auto_create:
+        Base.metadata.create_all(bind=engine)
 
     with engine.begin() as connection:
         connection.execute(
@@ -191,4 +199,7 @@ def init_db():
         _cleanup_rate_limit_records(connection)
         connection.execute(text("SELECT 1"))
 
-    print(f"Database initialized successfully using {engine.url.get_backend_name()}")
+    print(
+        "Database initialized successfully using "
+        f"{engine.url.get_backend_name()} (auto_create={auto_create})"
+    )
