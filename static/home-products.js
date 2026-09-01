@@ -8,6 +8,15 @@
     return `${prefix}${esc(value)}`;
   };
 
+  function loadMarketplaceStyles() {
+    if (document.querySelector('link[data-marketplace-home]')) return;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = '/static/marketplace-home.css';
+    link.setAttribute('data-marketplace-home', 'true');
+    document.head.appendChild(link);
+  }
+
   function renderProducts(products) {
     const grid = document.querySelector('.products');
     if (!grid) return;
@@ -17,7 +26,7 @@
       return;
     }
 
-    grid.innerHTML = products.slice(0, 8).map((p, index) => {
+    grid.innerHTML = products.slice(0, 10).map((p, index) => {
       const image = p.image_url
         ? `<img src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy">`
         : '<span style="font-size:48px">🛍️</span>';
@@ -94,7 +103,7 @@
     if (logo) logo.innerHTML = 'Nafiz <span>-Ecommerce</span>';
 
     const eyebrow = document.querySelector('.eyebrow');
-    if (eyebrow) eyebrow.textContent = 'Nafiz -Ecommerce • Trending now';
+    if (eyebrow) eyebrow.textContent = 'Nafiz -Ecommerce • Marketplace';
 
     const footerBrand = document.querySelector('.footer h3');
     if (footerBrand) footerBrand.textContent = 'Nafiz -Ecommerce';
@@ -113,11 +122,12 @@
       const data = await response.json();
       renderProducts(data.products || []);
     } catch (_) {
-      // Keep the existing fallback cards if the API is temporarily unavailable.
+      // Keep the existing fallback card if the API is temporarily unavailable.
     }
   }
 
   document.addEventListener('DOMContentLoaded', () => {
+    loadMarketplaceStyles();
     renameStoreBranding();
     addTrustLinks();
     loadProducts();
