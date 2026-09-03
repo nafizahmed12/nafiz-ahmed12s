@@ -1,0 +1,28 @@
+name: Normalize iPhone SEO URLs
+
+on:
+  push:
+    branches:
+      - seo/clean-pro-series-canonicals
+
+permissions:
+  contents: write
+
+jobs:
+  normalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Normalize URLs
+        run: python scripts/normalize_iphone_seo_urls.py
+      - name: Commit normalized files
+        run: |
+          if git diff --quiet; then
+            echo "No changes needed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add static/iphone-18-pro.html static/iphone-18-pro-max.html static/iphone-18-series.html
+          git commit -m "SEO: normalize iPhone clean URLs"
+          git push
