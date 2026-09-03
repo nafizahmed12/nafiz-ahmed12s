@@ -19,7 +19,7 @@
             padding-bottom: 40px;
         }
 
-        /* Navbar Header with Logo */
+        /* Header / Navbar */
         .header {
             background-color: #161b22;
             border-bottom: 1px solid #21262d;
@@ -70,7 +70,7 @@
             color: #f97316;
         }
 
-        /* Main Product Layout */
+        /* Product Grid */
         .product-grid {
             display: grid;
             grid-template-columns: 480px 1fr;
@@ -83,7 +83,7 @@
             }
         }
 
-        /* Gallery Section */
+        /* Gallery */
         .main-image-container {
             width: 100%;
             height: 480px;
@@ -101,6 +101,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            transition: opacity 0.3s ease;
         }
 
         .thumbnail-list {
@@ -123,7 +124,7 @@
         }
 
         .thumb.active, .thumb:hover {
-            border-color: #f97316;
+            border-color: #ea580c;
         }
 
         .thumb img {
@@ -132,7 +133,7 @@
             object-fit: cover;
         }
 
-        /* Product Info Section */
+        /* Product Info */
         .brand-link {
             font-size: 13px;
             color: #ea580c;
@@ -180,7 +181,6 @@
             color: #38bdf8;
         }
 
-        /* Description Box */
         .description-box {
             font-size: 14px;
             color: #94a3b8;
@@ -231,8 +231,8 @@
         }
 
         .option-btn.active {
-            border-color: #f97316;
-            background-color: rgba(249, 115, 22, 0.1);
+            border-color: #ea580c;
+            background-color: rgba(234, 88, 12, 0.1);
             color: #ffffff;
         }
 
@@ -243,7 +243,7 @@
             display: inline-block;
         }
 
-        /* Quantity Controls */
+        /* Quantity */
         .quantity-wrapper {
             margin-bottom: 25px;
         }
@@ -279,7 +279,7 @@
             font-weight: 600;
         }
 
-        /* Action Buttons */
+        /* Actions */
         .action-buttons {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -368,7 +368,7 @@
 </head>
 <body>
 
-    <!-- Header Logo Navbar -->
+    <!-- Header -->
     <header class="header">
         <div class="nav-container">
             <a href="/" class="logo">
@@ -388,19 +388,25 @@
         </div>
 
         <div class="product-grid">
-            <!-- Left: Gallery (Royalty Free Unsplash Images) -->
+            <!-- Left: Interactive Gallery -->
             <div>
                 <div class="main-image-container">
                     <img src="https://images.unsplash.com/photo-1592750475338-74b7b21085ab?q=80&w=800&auto=format&fit=crop" alt="{{ phone.name }}" id="mainImg">
                 </div>
                 <div class="thumbnail-list">
-                    <div class="thumb active"><img src="https://images.unsplash.com/photo-1592750475338-74b7b21085ab?q=80&w=200&auto=format&fit=crop"></div>
-                    <div class="thumb"><img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=200&auto=format&fit=crop"></div>
-                    <div class="thumb"><img src="https://images.unsplash.com/photo-1580910051074-3eb694886505?q=80&w=200&auto=format&fit=crop"></div>
+                    <div class="thumb active" onclick="changeImage(this, 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?q=80&w=800&auto=format&fit=crop')">
+                        <img src="https://images.unsplash.com/photo-1592750475338-74b7b21085ab?q=80&w=200&auto=format&fit=crop">
+                    </div>
+                    <div class="thumb" onclick="changeImage(this, 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=800&auto=format&fit=crop')">
+                        <img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=200&auto=format&fit=crop">
+                    </div>
+                    <div class="thumb" onclick="changeImage(this, 'https://images.unsplash.com/photo-1580910051074-3eb694886505?q=80&w=800&auto=format&fit=crop')">
+                        <img src="https://images.unsplash.com/photo-1580910051074-3eb694886505?q=80&w=200&auto=format&fit=crop">
+                    </div>
                 </div>
             </div>
 
-            <!-- Right: Details -->
+            <!-- Right: Product Details -->
             <div>
                 <span class="brand-link">Nafiz Official Store</span>
                 <h1 class="product-title">{{ phone.name }}</h1>
@@ -419,27 +425,33 @@
                     Experience top-tier performance with advanced display technology, premium durable build, long-lasting battery efficiency, and crystal-clear camera optics.
                 </div>
 
-                <!-- Color Selection -->
+                <!-- Interactive Color Selection -->
                 <div class="section-box">
                     <div class="option-title">Color Edition:</div>
                     <div class="options-grid">
-                        <div class="option-btn active"><span class="color-dot" style="background:#ea580c;"></span> Titanium</div>
-                        <div class="option-btn"><span class="color-dot" style="background:#1e293b;"></span> Midnight</div>
-                        <div class="option-btn"><span class="color-dot" style="background:#e2e8f0;"></span> Silver</div>
+                        <div class="option-btn active" onclick="selectOption(this)">
+                            <span class="color-dot" style="background:#ea580c;"></span> Titanium
+                        </div>
+                        <div class="option-btn" onclick="selectOption(this)">
+                            <span class="color-dot" style="background:#1e293b;"></span> Midnight
+                        </div>
+                        <div class="option-btn" onclick="selectOption(this)">
+                            <span class="color-dot" style="background:#e2e8f0;"></span> Silver
+                        </div>
                     </div>
                 </div>
 
-                <!-- Storage Selection -->
+                <!-- Interactive Storage Selection -->
                 <div class="section-box">
                     <div class="option-title">Storage Capacity:</div>
                     <div class="options-grid">
-                        <div class="option-btn">128GB</div>
-                        <div class="option-btn active">256GB</div>
-                        <div class="option-btn">512GB</div>
+                        <div class="option-btn" onclick="selectOption(this)">128GB</div>
+                        <div class="option-btn active" onclick="selectOption(this)">256GB</div>
+                        <div class="option-btn" onclick="selectOption(this)">512GB</div>
                     </div>
                 </div>
 
-                <!-- Quantity -->
+                <!-- Quantity Control -->
                 <div class="quantity-wrapper">
                     <div class="option-title">Select Quantity:</div>
                     <div class="quantity-control">
@@ -468,6 +480,28 @@
     </div>
 
     <script>
+        // Image Switcher
+        function changeImage(element, src) {
+            document.getElementById('mainImg').src = src;
+            
+            // Remove active class from all thumbs
+            let thumbs = document.querySelectorAll('.thumb');
+            thumbs.forEach(thumb => thumb.classList.remove('active'));
+            
+            // Add active class to clicked thumb
+            element.classList.add('active');
+        }
+
+        // Color and Storage Option Selector
+        function selectOption(element) {
+            let parentGrid = element.parentElement;
+            let options = parentGrid.querySelectorAll('.option-btn');
+            
+            options.forEach(option => option.classList.remove('active'));
+            element.classList.add('active');
+        }
+
+        // Quantity Counter
         let count = 1;
         function increaseQty() {
             count++;
