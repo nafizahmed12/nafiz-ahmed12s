@@ -1,6 +1,7 @@
 import os
+from datetime import datetime, timezone
 
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text, event
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 
@@ -53,6 +54,17 @@ def create_database_engine():
 
 
 engine = create_database_engine()
+
+
+@event.listens_for(engine, "connect")
+def _register_sqlite_compatibility_functions(dbapi_connection, connection_record):
+    """Provide PostgreSQL-compatible NOW() for local SQLite development/tests."""
+    if engine.dialect.name == "sqlite":
+        dbapi_connection.create_function(
+            "NOW", 0, lambda: datetime.now(timezone.utc).isoformat()
+        )
+
+
 SessionLocal = sessionmaker(
     bind=engine,
     autoflush=False,
@@ -204,6 +216,23 @@ def init_db():
                 "ON password_reset_tokens (expires_at)"
             )
         )
+
+        if connection.dialect.name == "sqlite":
+            connection.execute(
+                text(
+                    """
+                    CREATE TRIGGER IF NOT EXISTS prevent_paid_payment_downgrade
+                    BEFORE UPDATE OF status ON payments
+                    FOR EACH ROW
+                    WHEN OLD.status = 'paid'
+                         AND NEW.status IN ('pending', 'initiated', 'failed', 'cancelled')
+                    BEGIN
+                        SELECT RAISE(ABORT, 'paid payment cannot be downgraded');
+                    END
+                    """
+                )
+            )
+
         _cleanup_rate_limit_records(connection)
         connection.execute(text("SELECT 1"))
 
