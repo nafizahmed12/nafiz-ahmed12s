@@ -23,6 +23,6 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add static/iphone-18-pro.html static/iphone-18-pro-max.html static/iphone-18-series.html
-          git commit -m "SEO: normalize iPhone clean URLs"
+          git add admin_security.py static/iphone-18-pro.html static/iphone-18-pro-max.html static/iphone-18-series.html
+          git commit -m "SEO: add clean Series Hub route"
           git push
