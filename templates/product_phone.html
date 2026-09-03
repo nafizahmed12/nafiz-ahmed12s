@@ -1,12 +1,23 @@
 <!DOCTYPE html>
-<html>
+<html lang="bn">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ phone.name }} Price in BD - Nafiz Ecommerce</title>
     <meta name="description" content="Buy {{ phone.name }} at {{ phone.price }} BDT in Bangladesh. {{ phone.details }}">
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #12181f; color: #fff; margin: 0; padding: 40px; display: flex; justify-content: center; }
+        .card { background: #1a232e; padding: 30px; border-radius: 12px; max-width: 500px; width: 100%; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        h1 { color: #20e382; margin-top: 0; }
+        .price { font-size: 24px; font-weight: bold; color: #20e382; margin: 15px 0; }
+        p { line-height: 1.6; color: #cbd5e1; }
+    </style>
 </head>
 <body>
-    <h1>{{ phone.name }}</h1>
-    <h2>Price: {{ phone.price }} BDT</h2>
-    <p><b>Details:</b> {{ phone.details }}</p>
+    <div class="card">
+        <h1>{{ phone.name }}</h1>
+        <div class="price">Price: {{ phone.price }} BDT</div>
+        <p><strong>Details:</strong> {{ phone.details }}</p>
+    </div>
 </body>
 </html>
