@@ -191,6 +191,7 @@ def register_admin_session_guard(app):
     @app.after_request
     def rewrite_iphone_seo_urls(response):
         if request.path in {"/iphone-18", "/iphone-18-pro", "/iphone-18-pro-max"} and response.status_code == 200 and "text/html" in response.content_type:
+            response.direct_passthrough = False
             body = response.get_data(as_text=True)
             replacements = {
                 "/static/iphone-18-pro-max.html": "/iphone-18-pro-max",
