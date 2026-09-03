@@ -158,7 +158,6 @@ def add_home_affiliate_products(response):
                 FROM affiliate_products
                 WHERE status='published'
                 ORDER BY sort_order ASC,id DESC
-                LIMIT 4
             """)).mappings().all()
     except Exception:
         current_app.logger.exception("Failed to load home affiliate products")
