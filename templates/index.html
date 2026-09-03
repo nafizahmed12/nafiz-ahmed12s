@@ -1,264 +1,380 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    
-    <!-- SEO Title -->
-    <title>Nafiz Ecommerce | Tech News, Farm Fresh Mangoes & Premium Marketplace in BD</title>
-    
-    <meta name="google-site-verification" content="xr4sQZS1JJ1E6LdL47pRj31LmTHsQOvQKCntdiO7W_Q" />
-
-    <!-- SEO Meta Description -->
-    <meta name="description" content="Welcome to Nafiz Ecommerce. Get the latest tech news, smartphone updates, digital products, and farm-fresh mangoes in Bangladesh with fast delivery.">
-
-    <!-- SEO Keywords -->
-    <meta name="keywords" content="Nafiz Ecommerce, Tech News BD, Latest Gadgets Bangladesh, Smartphone Updates 2026, Fresh Mangoes BD, Digital Products Bangladesh">
-
-    <!-- Social Media / Open Graph Meta Tags (Facebook & Messenger Sharing) -->
-    <meta property="og:site_name" content="Nafiz Ecommerce">
-    <meta property="og:title" content="Nafiz Ecommerce - Daily Tech News & Premium Marketplace">
-    <meta property="og:description" content="Discover daily tech news, smartphone updates, digital products, and authentic products in Bangladesh at Nafiz Ecommerce.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://nafiz-ahmed12s.onrender.com/">
-    
-    <!-- Indexing & Robots Tag -->
-    <meta name="robots" content="index, follow">
-
-    <!-- Canonical URL -->
-    <link rel="canonical" href="https://nafiz-ahmed12s.onrender.com/">
-
-    <!-- Fonts & Preconnect -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nafiz Store - Tech That Powers Your Life</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-    :root{--bg-void:#071810;--bg-panel:#0e2417;--bg-panel-2:#13301e;--bg-header:#050f0a;--line:#1f3c28;--line-soft:#152a1c;--ink:#f4f1e6;--ink-muted:#a9c0ac;--ink-faint:#6f8b78;--gold:#d9ae42;--gold-soft:#f0c968;--leaf:#3f8a3a;--leaf-soft:#5aab52;--tile-farm:#c98a2e;--tile-digital:#3462c9;--tile-affiliate:#6b46c1;--tile-ads:#c2452e;--tile-deals:#a13355;--radius-s:8px;--radius-m:14px;--radius-l:22px;--shadow-soft:0 18px 40px -22px rgba(0,0,0,.65);--font-display:'Fraunces',serif;--font-body:'Manrope',sans-serif}
-    *,*::before,*::after{box-sizing:border-box}html{scroll-behavior:smooth}@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}html{scroll-behavior:auto!important}}
-    body{margin:0;background:var(--bg-void);color:var(--ink);font-family:var(--font-body);line-height:1.5;-webkit-font-smoothing:antialiased}
-    img,svg{display:block;max-width:100%}a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer}ul{list-style:none;margin:0;padding:0}h1,h2,h3,p{margin:0}
-    :focus-visible{outline:2px solid var(--gold-soft);outline-offset:3px;border-radius:4px}
-    .wrap{max-width:1240px;margin:0 auto;padding:0 32px}@media (max-width:640px){.wrap{padding:0 18px}}
-    .icon{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
-    .btn{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;border-radius:999px;border:1px solid transparent;font-family:var(--font-body);font-weight:700;font-size:15px;transition:transform .18s ease,background .18s ease,border-color .18s ease}
-    .btn:hover{transform:translateY(-1px)}.btn-gold{background:var(--gold);color:#1c1305}.btn-gold:hover{background:var(--gold-soft)}
-    .btn-ghost{background:transparent;color:var(--ink);border-color:var(--line)}.btn-ghost:hover{border-color:var(--ink-muted)}
-    .btn-leaf{background:var(--leaf);color:#eafbe8}.btn-leaf:hover{background:var(--leaf-soft)}.btn-sm{padding:9px 18px;font-size:13.5px}
-    .top{background:var(--bg-header);border-bottom:1px solid var(--line-soft);text-align:center;padding:8px;font-size:11px;font-weight:700;color:var(--ink-muted)}
-    .header{background:var(--bg-header);border-bottom:1px solid var(--line)}
-    .header-main{display:flex;align-items:center;gap:28px;padding:18px 0}
-    .logo{display:flex;align-items:center;gap:10px;flex-shrink:0;font-family:var(--font-display);font-size:21px;font-weight:600}
-    .logo span{color:var(--gold-soft);font-style:italic}
-    .search{flex:1;display:flex;max-width:640px;height:44px}
-    .search input{flex:1;border:1px solid var(--line);background:var(--bg-panel);color:var(--ink);padding:0 16px;font-size:14px;font-family:inherit;border-radius:10px 0 0 10px}
-    .search input::placeholder{color:var(--ink-faint)}
-    .search button{background:var(--gold);border:1px solid var(--gold);border-radius:0 10px 10px 0;width:52px;color:#1c1305;font-size:18px;font-weight:800}
-    @media (max-width:900px){.search{display:none}}
-    .account{display:flex;align-items:center;gap:22px;margin-left:auto;flex-shrink:0;font-size:13px;font-weight:700}
-    .account .hide{color:var(--ink-muted)}.account .hide:hover{color:var(--ink)}
-    .cart{font-size:20px}
-    .menu{border-top:1px solid var(--line-soft)}
-    .menu .wrap{height:52px;display:flex;align-items:center;gap:26px;overflow:auto;white-space:nowrap;scrollbar-width:none}
-    .menu .wrap::-webkit-scrollbar{display:none}
-    .menu a{font-size:14.5px;font-weight:600;color:var(--ink-muted);padding:4px 0;border-bottom:2px solid transparent}
-    .menu a:hover{color:var(--ink)}
-    .hero{background:radial-gradient(ellipse 900px 500px at 78% 20%,rgba(63,138,58,.35),transparent 60%),linear-gradient(180deg,var(--bg-void),#081a11 60%,var(--bg-void));padding:56px 0;margin-top:0}
-    .hero .wrap{display:grid;grid-template-columns:1.1fr 1fr;gap:40px;align-items:center}
-    .hero-eyebrow{display:inline-flex;align-items:center;gap:8px;background:var(--bg-panel-2);border:1px solid var(--line);padding:7px 14px;border-radius:999px;font-size:12.5px;font-weight:700;color:var(--gold-soft);margin-bottom:20px}
-    .hero h1{font-family:var(--font-display);font-weight:600;font-size:clamp(34px,4.4vw,52px);line-height:1.08;letter-spacing:-.5px}
-    .hero p{margin-top:18px;max-width:46ch;color:var(--ink-muted);font-size:16px}
-    .actions{display:flex;gap:14px;margin-top:26px;flex-wrap:wrap}
-    .hero-art{position:relative;aspect-ratio:1/0.85}
-    @media (max-width:900px){.hero .wrap{grid-template-columns:1fr}.hero-art{order:-1;max-width:300px;margin:0 auto}}
-    .section{margin-top:0;padding:44px 0}
-    .section-head,.head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:22px;gap:16px}
-    .section-head h2,.head h2{font-family:var(--font-display);font-size:26px;font-weight:600}
-    .section-head p,.head p{color:var(--ink-faint);font-size:13px;margin-top:4px}
-    .see{font-weight:700;font-size:14px;color:var(--gold-soft)}
-    .cat-grid,.categories{display:grid;grid-template-columns:repeat(6,1fr);gap:16px}
-    .cat-tile,.cat{background:var(--bg-panel);border:1px solid var(--line);border-radius:var(--radius-m);padding:22px 14px;text-align:center;transition:transform .18s ease,border-color .18s ease}
-    .cat-tile:hover,.cat:hover{transform:translateY(-3px);border-color:var(--ink-faint)}
-    .tile-icon,.ico{width:48px;height:48px;border-radius:12px;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:22px;background:var(--leaf)}
-    .cat-tile strong,.cat b{display:block;font-size:13.5px;font-weight:700}
-    .cat-tile small,.cat small{display:block;font-size:11px;color:var(--ink-faint);margin-top:2px}
-    @media (max-width:900px){.cat-grid,.categories{grid-template-columns:repeat(3,1fr)}}
-    @media (max-width:520px){.cat-grid,.categories{grid-template-columns:repeat(2,1fr)}}
-    .stats-bar{margin:8px 0 0;background:linear-gradient(120deg,var(--bg-panel-2),var(--bg-panel));border:1px solid var(--line);border-radius:var(--radius-l);padding:24px 30px;display:grid;grid-template-columns:repeat(5,1fr)}
-    .stat-item{display:flex;align-items:center;gap:10px;padding:0 12px;border-left:1px solid var(--line)}
-    .stat-item:first-child{border-left:none;padding-left:0}
-    .stat-item strong{display:block;font-family:var(--font-display);font-size:19px;font-weight:600}
-    .stat-item small{display:block;font-size:11px;color:var(--ink-faint)}
-    @media (max-width:900px){.stats-bar{grid-template-columns:repeat(3,1fr);row-gap:18px}}
-    @media (max-width:560px){.stats-bar{grid-template-columns:repeat(2,1fr)}}
-    .products{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
-    .product{background:var(--bg-panel);border:1px solid var(--line);border-radius:var(--radius-m);overflow:hidden;display:flex;flex-direction:column;transition:transform .18s ease,border-color .18s ease}
-    .product:hover{transform:translateY(-4px);border-color:var(--ink-faint)}
-    .product-img{position:relative;aspect-ratio:1/0.92;background:var(--bg-panel-2);display:flex;align-items:center;justify-content:center;padding:16px}
-    .product-img img{width:100%;height:100%;object-fit:contain}
-    .badge{position:absolute;top:10px;left:10px;background:var(--tile-ads);color:#fff;font-size:10px;font-weight:800;padding:3px 8px;border-radius:6px}
-    .product-body{padding:14px;display:flex;flex-direction:column;gap:6px;flex:1}
-    .product-body small{font-size:10.5px;text-transform:uppercase;color:var(--gold-soft);font-weight:700;letter-spacing:.3px}
-    .product-body h3{font-size:13.5px;font-weight:700;line-height:1.35;min-height:2.6em}
-    .stars{font-size:11px;color:var(--gold)}
-    .price-row{display:flex;align-items:center;justify-content:space-between;margin-top:auto}
-    .price{font-family:var(--font-display);font-weight:600;font-size:16px;color:var(--gold-soft)}
-    .add{width:32px;height:32px;border-radius:99px;background:var(--leaf);color:#eafbe8;border:none;flex-shrink:0;font-size:16px;font-weight:800;transition:background .15s ease,transform .15s ease}
-    .add:hover{background:var(--leaf-soft);transform:scale(1.05)}
-    .promo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
-    .promo-card{border-radius:var(--radius-l);padding:26px 24px;min-height:150px;display:flex;flex-direction:column;justify-content:flex-end;position:relative;overflow:hidden}
-    .promo-card::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 88% 12%,rgba(255,255,255,.16),transparent 55%)}
-    .promo-card small{position:relative;font-size:11px;font-weight:700;opacity:.85}
-    .promo-card h3{position:relative;font-family:var(--font-display);font-weight:600;font-size:21px;line-height:1.2;margin:8px 0 14px}
-    .promo-card .btn{position:relative;align-self:flex-start}
-    .promo-card.mango{background:linear-gradient(135deg,#143a1e,#0d2415)}
-    .promo-card.digital{background:linear-gradient(135deg,#1a2c57,#101c3b)}
-    .promo-card.affiliate{background:linear-gradient(135deg,#3a2064,#241040)}
-    @media (max-width:900px){.promo-grid{grid-template-columns:1fr}}
-    .deal{background:var(--bg-panel-2);border:1px solid var(--line);color:var(--ink);border-radius:var(--radius-l);padding:26px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
-    .deal strong{font-family:var(--font-display);font-size:20px;font-weight:600}
-    .deal p{margin:6px 0 0;color:var(--ink-muted);font-size:12.5px}
-    .trust{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-    .trust div{background:var(--bg-panel);border:1px solid var(--line);border-radius:var(--radius-m);padding:18px}
-    .trust b{font-size:13px}.trust span{display:block;font-size:11px;color:var(--ink-faint);margin-top:4px}
-    @media (max-width:1050px){.products{grid-template-columns:repeat(4,1fr)}}
-    .footer{margin-top:20px;background:var(--bg-header);border-top:1px solid var(--line);color:var(--ink);padding:44px 0 30px}
-    .footergrid{display:grid;grid-template-columns:2fr repeat(3,1fr);gap:28px}
-    .footer h3{margin:0;color:var(--gold-soft);font-family:var(--font-display);font-weight:600}
-    .footer b{font-size:12px;color:var(--ink);letter-spacing:.3px}
-    .footer p,.footer a{display:block;color:var(--ink-muted);font-size:12px;line-height:2}
-    .footer a:hover{color:var(--ink)}
-    .wa{position:fixed;right:18px;bottom:18px;background:#25d366;color:#fff;padding:13px 17px;border-radius:50px;font-size:12px;font-weight:800;box-shadow:0 6px 20px rgba(0,0,0,.3);z-index:30;display:flex;align-items:center;gap:8px}
-    @media(max-width:760px){.nav{flex-wrap:wrap;padding:10px 0}.search{order:3;flex-basis:100%;max-width:none;display:flex}.products{grid-template-columns:repeat(2,1fr)}.footergrid{grid-template-columns:1fr 1fr}.deal{flex-direction:column;align-items:flex-start}.hero-eyebrow{margin-bottom:16px}}
-    @media(max-width:450px){.products{gap:8px}.trust{grid-template-columns:1fr}.wa span{display:none}.wa{width:50px;height:50px;padding:0;justify-content:center}}
-    .nav{min-height:70px;display:flex;align-items:center;gap:22px}
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+
+        /* Top Announcement Bar */
+        .top-bar {
+            background-color: #0f172a;
+            color: #94a3b8;
+            font-size: 12px;
+            padding: 8px 0;
+        }
+
+        .top-bar-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Navigation Header */
+        .header {
+            background-color: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 800;
+            color: #0f172a;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo span {
+            color: #2563eb;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 24px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #334155;
+            font-size: 14px;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: #2563eb;
+        }
+
+        .nav-icons {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            color: #334155;
+            font-size: 18px;
+        }
+
+        /* Hero Banner Section */
+        .hero-section {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .hero-card {
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            border-radius: 20px;
+            padding: 40px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .hero-title {
+            font-size: 42px;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1.2;
+            margin-bottom: 15px;
+        }
+
+        .hero-title span {
+            color: #2563eb;
+        }
+
+        .hero-desc {
+            font-size: 15px;
+            color: #64748b;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+
+        .btn-primary {
+            background-color: #2563eb;
+            color: #ffffff;
+            padding: 12px 28px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-block;
+            transition: background 0.2s;
+        }
+
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+        }
+
+        .hero-image img {
+            width: 100%;
+            border-radius: 12px;
+            object-fit: contain;
+        }
+
+        /* Trust Badges */
+        .trust-grid {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+
+        .trust-item {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .trust-item i {
+            color: #2563eb;
+            font-size: 20px;
+        }
+
+        /* Categories Section */
+        .section-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 15px;
+        }
+
+        .category-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px 10px;
+            text-align: center;
+            text-decoration: none;
+            color: #0f172a;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .category-card:hover {
+            transform: translateY(-3px);
+            border-color: #2563eb;
+        }
+
+        .category-card i {
+            font-size: 28px;
+            color: #2563eb;
+            margin-bottom: 10px;
+        }
+
+        .category-card span {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        /* Products Grid */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .product-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 16px;
+            transition: box-shadow 0.2s;
+        }
+
+        .product-card:hover {
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+
+        .product-img {
+            height: 180px;
+            width: 100%;
+            background: #f8fafc;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+
+        .product-img img {
+            max-height: 80%;
+            object-fit: contain;
+        }
+
+        .product-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 8px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .product-rating {
+            font-size: 12px;
+            color: #f59e0b;
+            margin-bottom: 10px;
+        }
+
+        .product-price {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        @media (max-width: 900px) {
+            .hero-card { grid-template-columns: 1fr; text-align: center; }
+            .trust-grid { grid-template-columns: 1fr 1fr; }
+            .categories-grid { grid-template-columns: repeat(3, 1fr); }
+            .products-grid { grid-template-columns: repeat(2, 1fr); }
+            .nav-links { display: none; }
+        }
     </style>
 </head>
 <body>
 
-<div class="top">🥭 Free delivery on orders over ৳999 &nbsp; • &nbsp; 🔒 Secure checkout &nbsp; • &nbsp; 💬 Friendly support</div>
-
-<header class="header">
-  <div class="wrap nav">
-    <a class="logo" href="{{ url_for('home') }}">Nafiz <span>-Ecommerce</span></a>
-    <form class="search" action="{{ url_for('shop_ui.shop') }}" method="get">
-      <input name="q" type="search" placeholder="Search products, tech news, brands and more…">
-      <button type="submit" aria-label="Search">⌕</button>
-    </form>
-    <div class="account">
-      <a class="hide" href="{{ url_for('user_login') }}">Sign in</a>
-      <a class="hide" href="{{ url_for('dashboard') }}">Account</a>
-      <a class="cart" href="{{ url_for('shop_ui.shop') }}" aria-label="Cart">🛒</a>
+    <div class="top-bar">
+        <div class="top-bar-container">
+            <div><i class="fa-solid fa-truck-fast"></i> Free Delivery on orders over ৳5000</div>
+            <div>Support: +880 1700-000000</div>
+        </div>
     </div>
-  </div>
-  <nav class="menu">
-    <div class="wrap">
-      <a href="{{ url_for('shop_ui.shop') }}">Shop</a>
-      <a href="#products">Popular</a>
-      <a href="#categories">Categories</a>
-      <a href="#deals">Deals</a>
-      <a href="{{ url_for('affiliate_picks_page') }}">Affiliate Picks</a>
-      <a href="{{ url_for('shop_ui.shop') }}">All Products</a>
-    </div>
-  </nav>
-</header>
 
-<section class="hero">
-  <div class="wrap">
-    <div class="hero-copy">
-      <span class="hero-eyebrow">🌿 Fresh from our farm</span>
-      <h1>Pure. Fresh.<br>Premium marketplace.</h1>
-      <p>Browse farm-fresh mangoes, tech updates, digital products and everyday essentials — handpicked and delivered across Bangladesh with a simple, friendly experience.</p>
-      <div class="actions">
-        <a class="btn btn-gold" href="{{ url_for('shop_ui.shop') }}">Shop now →</a>
-        <a class="btn btn-ghost" href="#categories">Browse categories</a>
-      </div>
-    </div>
-    <div class="hero-art">
-      <svg viewBox="0 0 420 360" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <radialGradient id="basketGlow" cx="50%" cy="45%" r="60%"><stop offset="0%" stop-color="#1a4324"/><stop offset="100%" stop-color="#0c2216"/></radialGradient>
-          <linearGradient id="mangoBody" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f2c14e"/><stop offset="55%" stop-color="#e08a2e"/><stop offset="100%" stop-color="#c2601f"/></linearGradient>
-        </defs>
-        <circle cx="210" cy="180" r="170" fill="url(#basketGlow)"/>
-        <path d="M60 210 Q212 260 360 210 L344 302 Q212 336 76 302 Z" fill="#7a4a26"/>
-        <g transform="translate(210 170)">
-          <ellipse cx="-38" cy="10" rx="46" ry="58" fill="url(#mangoBody)" transform="rotate(-18)"/>
-          <ellipse cx="34" cy="6" rx="50" ry="62" fill="url(#mangoBody)" transform="rotate(14)"/>
-          <ellipse cx="-4" cy="-38" rx="44" ry="54" fill="url(#mangoBody)" transform="rotate(-4)"/>
-          <ellipse cx="0" cy="40" rx="52" ry="50" fill="url(#mangoBody)"/>
-          <path d="M-100 -20 Q-70 -70 -20 -60 L-30 -30 Q-70 -20 -100 -20Z" fill="#3f8a3a"/>
-        </g>
-      </svg>
-    </div>
-  </div>
-</section>
+    <header class="header">
+        <div class="nav-container">
+            <a href="/" class="logo">
+                <i class="fa-solid fa-bolt" style="color:#2563eb;"></i> NAFIZ<span>STORE</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="/shop">Shop</a></li>
+                <li><a href="/categories">Categories</a></li>
+                <li><a href="/deals">Deals</a></li>
+            </ul>
+            <div class="nav-icons">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <i class="fa-regular fa-user"></i>
+                <i class="fa-solid fa-cart-shopping"></i>
+            </div>
+        </div>
+    </header>
 
-<main class="wrap">
-  <section class="cat-tiles" id="categories" style="margin-top:8px">
-    <div class="categories">
-      <a class="cat" href="{{ url_for('shop_ui.shop',category='fashion') }}"><div class="ico">👕</div><b>Fashion</b><small>Shop →</small></a>
-      <a class="cat" href="{{ url_for('shop_ui.shop',category='clothing') }}"><div class="ico">🧥</div><b>Clothing</b><small>Shop →</small></a>
-      <a class="cat" href="{{ url_for('shop_ui.shop',category='beauty') }}"><div class="ico">✨</div><b>Beauty</b><small>Shop →</small></a>
-      <a class="cat" href="{{ url_for('shop_ui.shop',category='accessories') }}"><div class="ico">👜</div><b>Accessories</b><small>Shop →</small></a>
-      <a class="cat" href="{{ url_for('shop_ui.shop') }}"><div class="ico">🎧</div><b>Electronics</b><small>Shop →</small></a>
-      <a class="cat" href="{{ url_for('shop_ui.shop') }}"><div class="ico">🏠</div><b>Home</b><small>Shop →</small></a>
+    <div class="hero-section">
+        <div class="hero-card">
+            <div>
+                <h1 class="hero-title">Tech That<br><span>Powers Your Life</span></h1>
+                <p class="hero-desc">Discover the latest electronics, smart devices and accessories at the best prices with official warranty.</p>
+                <a href="/shop" class="btn-primary">Shop Now</a>
+            </div>
+            <div class="hero-image">
+                <img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=800&auto=format&fit=crop" alt="Featured Tech">
+            </div>
+        </div>
     </div>
-  </section>
 
-  <section class="stats-bar">
-    <div class="stat-item"><strong>10K+</strong><small>Happy customers</small></div>
-    <div class="stat-item"><strong>50K+</strong><small>Products sold</small></div>
-    <div class="stat-item"><strong>200+</strong><small>Premium products</small></div>
-    <div class="stat-item"><strong>99%</strong><small>Customer satisfaction</small></div>
-    <div class="stat-item"><strong>24/7</strong><small>Support available</small></div>
-  </section>
-
-  <section class="section" style="padding-bottom:0">
-    <div class="promo-grid">
-      <div class="promo-card mango"><small>Special offer</small><h3>Up to 30% off premium mangoes</h3><a href="{{ url_for('shop_ui.shop') }}" class="btn btn-leaf btn-sm">Shop now</a></div>
-      <div class="promo-card digital"><small>Digital products</small><h3>Grow your skills, anytime</h3><a href="{{ url_for('shop_ui.shop') }}" class="btn btn-gold btn-sm">Explore now</a></div>
-      <div class="promo-card affiliate"><small>Earn more</small><h3>Join our affiliate program</h3><a href="{{ url_for('affiliate_picks_page') }}" class="btn btn-gold btn-sm">Join now</a></div>
+    <div class="trust-grid">
+        <div class="trust-item"><i class="fa-solid fa-shield-halved"></i> 100% Genuine Products</div>
+        <div class="trust-item"><i class="fa-solid fa-award"></i> Official Warranty</div>
+        <div class="trust-item"><i class="fa-solid fa-rotate-left"></i> Easy Returns</div>
+        <div class="trust-item"><i class="fa-solid fa-lock"></i> Secure Checkout</div>
     </div>
-  </section>
 
-  <section class="section" id="products">
-    <div class="head">
-      <div><h2>Popular products & Tech News</h2><p>Handpicked products and latest updates for everyday shopping</p></div>
-      <a class="see" href="{{ url_for('shop_ui.shop') }}">View all →</a>
+    <div class="section-container">
+        <div class="section-header">
+            <h2 class="section-title">Popular Categories</h2>
+        </div>
+        <div class="categories-grid">
+            <a href="/shop" class="category-card"><i class="fa-solid fa-mobile-screen-button"></i><span>Mobiles</span></a>
+            <a href="/shop" class="category-card"><i class="fa-solid fa-laptop"></i><span>Laptops</span></a>
+            <a href="/shop" class="category-card"><i class="fa-solid fa-headphones"></i><span>Audio</span></a>
+            <a href="/shop" class="category-card"><i class="fa-solid fa-plug"></i><span>Accessories</span></a>
+            <a href="/shop" class="category-card"><i class="fa-solid fa-stopwatch"></i><span>Smart Watches</span></a>
+            <a href="/shop" class="category-card"><i class="fa-solid fa-gamepad"></i><span>Gaming</span></a>
+        </div>
     </div>
-    <div class="products">
-      <div class="product"><div class="product-img">Loading products…</div><div class="product-body"><h3>Loading products…</h3></div></div>
+
+    <div class="section-container">
+        <div class="section-header">
+            <h2 class="section-title">Best Sellers</h2>
+        </div>
+        <div class="products-grid">
+            <div class="product-card">
+                <div class="product-img">
+                    <img src="https://images.unsplash.com/photo-1592750475338-74b7b21085ab?q=80&w=800&auto=format&fit=crop" alt="iPhone 15 Pro">
+                </div>
+                <a href="/phone-detail/iphone15pro" class="product-name">iPhone 15 Pro 256GB</a>
+                <div class="product-rating"><i class="fa-solid fa-star"></i> 4.9 (128)</div>
+                <div class="product-price">৳135,000</div>
+            </div>
+        </div>
     </div>
-  </section>
 
-  <section class="section" id="deals">
-    <div class="deal">
-      <div><strong>🔥 Deals you don't want to miss</strong><p>Check selected products and limited-time offers.</p></div>
-      <a class="btn btn-gold" href="{{ url_for('shop_ui.shop') }}">Explore deals →</a>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="trust">
-      <div><b>🚚 Reliable delivery</b><span>Flexible delivery options</span></div>
-      <div><b>🔐 Secure checkout</b><span>Protected payment flow</span></div>
-      <div><b>↩ Easy returns</b><span>Customer-friendly process</span></div>
-      <div><b>💬 Support</b><span>We're here to help</span></div>
-    </div>
-  </section>
-</main>
-
-<footer class="footer">
-  <div class="wrap footergrid">
-    <div><h3>Nafiz Ecommerce</h3><p>Premium marketplace for farm fresh mangoes, tech updates, digital products, and everyday shopping.</p></div>
-    <div><b>SHOP</b><a href="{{ url_for('shop_ui.shop') }}">All products</a><a href="#categories">Categories</a><a href="#deals">Deals</a></div>
-    <div><b>ACCOUNT</b><a href="{{ url_for('user_login') }}">Login</a><a href="{{ url_for('register') }}">Create account</a></div>
-    <div><b>HELP</b><a href="/about">About Us</a><a href="/contact">Contact</a></div>
-  </div>
-</footer>
-
-<a class="wa" href="https://wa.me/8801643777251?text=Hello%20Nafiz%2C%20I%20need%20help." target="_blank" rel="noopener noreferrer"><span>💬</span><span>Chat on WhatsApp</span></a>
-<script src="{{ url_for('static', filename='home-products.js') }}" defer></script>
 </body>
 </html>
