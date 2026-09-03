@@ -18,8 +18,17 @@ def _reset_admin_login_rate_limits():
 
     with SessionLocal() as db:
         db.execute(
-            text("DELETE FROM login_rate_limits WHERE rate_key LIKE :prefix OR rate_key LIKE :rate_key"),
-            {"prefix": "%:admin:ci-admin", "rate_key": "%:rate-limit-test"},
+            text(
+                "DELETE FROM login_rate_limits "
+                "WHERE rate_key LIKE :admin_key "
+                "OR rate_key LIKE :admin_prefixed_key "
+                "OR rate_key LIKE :rate_key"
+            ),
+            {
+                "admin_key": "%:ci-admin",
+                "admin_prefixed_key": "%:admin:ci-admin",
+                "rate_key": "%:rate-limit-test",
+            },
         )
         db.commit()
 
