@@ -16,7 +16,7 @@
         body {
             background-color: #0d0f12;
             color: #e2e8f0;
-            padding: 20px 0;
+            padding: 30px 0;
         }
 
         .container {
@@ -66,9 +66,11 @@
             margin-bottom: 15px;
         }
 
-        .main-image-container i {
-            font-size: 220px;
-            color: #f97316;
+        .main-image-container img {
+            max-width: 80%;
+            max-height: 80%;
+            object-fit: contain;
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
         }
 
         .thumbnail-list {
@@ -96,9 +98,10 @@
             border-color: #f97316;
         }
 
-        .thumb i {
-            font-size: 30px;
-            color: #94a3b8;
+        .thumb img {
+            max-width: 70%;
+            max-height: 70%;
+            object-fit: contain;
         }
 
         /* Product Info Section */
@@ -124,7 +127,7 @@
         }
 
         .price {
-            font-size: 24px;
+            font-size: 26px;
             font-weight: 700;
             color: #ffffff;
         }
@@ -332,14 +335,13 @@
             <!-- Left: Gallery -->
             <div>
                 <div class="main-image-container">
-                    <i class="fa-solid fa-mobile-screen-button"></i>
+                    <img src="https://store.storeimages.cdn-apple.com/4988/as-images.apple.com/is/iphone-15-pro-naturaltitanium-select?wid=512&hei=512&fmt=png-alpha" alt="{{ phone.name }}" id="mainImg">
                 </div>
                 <div class="thumbnail-list">
-                    <div class="thumb active"><i class="fa-solid fa-mobile-screen-button"></i></div>
-                    <div class="thumb"><i class="fa-solid fa-mobile-screen-button" style="color:#f97316;"></i></div>
-                    <div class="thumb"><i class="fa-solid fa-mobile-screen-button" style="color:#38bdf8;"></i></div>
-                    <div class="thumb"><i class="fa-solid fa-mobile-screen-button" style="color:#a855f7;"></i></div>
-                    <div class="thumb"><i class="fa-solid fa-mobile-screen-button" style="color:#eab308;"></i></div>
+                    <div class="thumb active"><img src="https://store.storeimages.cdn-apple.com/4988/as-images.apple.com/is/iphone-15-pro-naturaltitanium-select?wid=512&hei=512&fmt=png-alpha"></div>
+                    <div class="thumb"><img src="https://store.storeimages.cdn-apple.com/4988/as-images.apple.com/is/iphone-15-pro-bluetitanium-select?wid=512&hei=512&fmt=png-alpha"></div>
+                    <div class="thumb"><img src="https://store.storeimages.cdn-apple.com/4988/as-images.apple.com/is/iphone-15-pro-whitetitanium-select?wid=512&hei=512&fmt=png-alpha"></div>
+                    <div class="thumb"><img src="https://store.storeimages.cdn-apple.com/4988/as-images.apple.com/is/iphone-15-pro-blacktitanium-select?wid=512&hei=512&fmt=png-alpha"></div>
                 </div>
             </div>
 
@@ -349,7 +351,7 @@
                 <h1 class="product-title">{{ phone.name }}</h1>
 
                 <div class="price-row">
-                    <span class="price">৳{{ phone.price }}</span>
+                    <span class="price">৳{{ phone.price.replace(' BDT', '') }}</span>
                     <span class="price-type">(Cash Price)</span>
                 </div>
 
@@ -364,14 +366,14 @@
                     <div class="options-grid">
                         <div class="option-btn"><span class="color-dot" style="background:#000;"></span> Black</div>
                         <div class="option-btn"><span class="color-dot" style="background:#3b82f6;"></span> Blue</div>
-                        <div class="option-btn active"><span class="color-dot" style="background:#f97316;"></span> Orange</div>
-                        <div class="option-btn"><span class="color-dot" style="background:#a855f7;"></span> Purple</div>
+                        <div class="option-btn active"><span class="color-dot" style="background:#ea580c;"></span> Natural</div>
+                        <div class="option-btn"><span class="color-dot" style="background:#e2e8f0;"></span> White</div>
                     </div>
                 </div>
 
                 <!-- Model Selection -->
                 <div class="section-box">
-                    <div class="option-title">Model:</div>
+                    <div class="option-title">Storage:</div>
                     <div class="options-grid">
                         <div class="option-btn">128GB</div>
                         <div class="option-btn active">256GB</div>
