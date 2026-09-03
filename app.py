@@ -487,13 +487,6 @@ def login():
         username = request.form.get("username", "").strip()
         supplied_password = request.form.get("password", "")
         
-        # Test Case credential support (ci-admin / ci-password)
-        if username == "ci-admin" and supplied_password == "ci-password":
-            session.clear()
-            session.permanent = True
-            mark_admin_authenticated()
-            return redirect(url_for("admin"))
-
         if not allow_login(request.remote_addr, f"admin:{username}", limit=5, window_seconds=900):
             return "Too many admin login attempts. Try again in a few minutes.", 429
         configured_username = os.getenv("ADMIN_USERNAME", "")
