@@ -504,12 +504,6 @@ def login():
     return render_template("login.html")
 
 
-@app.route("/reset-password", methods=["POST"])
-def reset_password():
-    return redirect(url_for("login")), 302
-
-
-# ----------------------------------------------------------------------
 # Supplier Routes
 # ----------------------------------------------------------------------
 @app.route("/supplier/register", methods=["GET", "POST"])
