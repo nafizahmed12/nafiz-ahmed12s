@@ -171,16 +171,12 @@ def register_admin_session_guard(app):
         user_id = session.get("user_id")
         if not user_id or session.get("admin_logged_in"):
             return None
-
-        # Password-change invalidation is needed only on authenticated areas.
-        # Avoid an extra database query on public/static requests.
         protected_prefixes = (
             "/dashboard", "/account", "/orders", "/api/cart", "/api/checkout",
             "/api/orders", "/api/payments", "/seller", "/supplier",
         )
         if not any(request.path == prefix or request.path.startswith(prefix + "/") for prefix in protected_prefixes):
             return None
-
         try:
             created_ts = float(session.get(USER_SESSION_CREATED_KEY))
         except (TypeError, ValueError):
@@ -221,7 +217,7 @@ def register_admin_session_guard(app):
             "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; "
             "form-action 'self'; img-src 'self' data: https:; font-src 'self' data: https:; "
             "style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline'; "
-            "connect-src 'self'; media-src 'self: https:; worker-src 'self'; manifest-src 'self';"
+            "connect-src 'self'; media-src 'self' https:; worker-src 'self'; manifest-src 'self';"
         )
         return response
 
