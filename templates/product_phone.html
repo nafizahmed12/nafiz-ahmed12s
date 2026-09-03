@@ -16,7 +16,38 @@
         body {
             background-color: #0d0f12;
             color: #e2e8f0;
-            padding: 30px 0;
+            padding-bottom: 40px;
+        }
+
+        /* Navbar Header with Logo */
+        .header {
+            background-color: #161b22;
+            border-bottom: 1px solid #21262d;
+            padding: 15px 0;
+            margin-bottom: 25px;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 700;
+            color: #ffffff;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo span {
+            color: #ea580c;
         }
 
         .container {
@@ -67,10 +98,9 @@
         }
 
         .main-image-container img {
-            max-width: 80%;
-            max-height: 80%;
-            object-fit: contain;
-            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .thumbnail-list {
@@ -86,9 +116,7 @@
             background-color: #161b22;
             border: 1px solid #21262d;
             border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            overflow: hidden;
             cursor: pointer;
             transition: all 0.2s;
             flex-shrink: 0;
@@ -99,17 +127,20 @@
         }
 
         .thumb img {
-            max-width: 70%;
-            max-height: 70%;
-            object-fit: contain;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         /* Product Info Section */
         .brand-link {
             font-size: 13px;
-            color: #64748b;
+            color: #ea580c;
             margin-bottom: 5px;
             display: block;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
         }
 
         .product-title {
@@ -142,11 +173,23 @@
             gap: 20px;
             font-size: 13px;
             color: #94a3b8;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
 
         .meta-info span {
             color: #38bdf8;
+        }
+
+        /* Description Box */
+        .description-box {
+            font-size: 14px;
+            color: #94a3b8;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            padding: 12px 15px;
+            background-color: #12161f;
+            border-radius: 8px;
+            border-left: 3px solid #ea580c;
         }
 
         /* Option Boxes */
@@ -325,55 +368,70 @@
 </head>
 <body>
 
+    <!-- Header Logo Navbar -->
+    <header class="header">
+        <div class="nav-container">
+            <a href="/" class="logo">
+                <i class="fa-solid fa-store" style="color: #ea580c;"></i>
+                NAFIZ<span>STORE</span>
+            </a>
+            <div style="font-size: 14px; color: #94a3b8;">
+                <i class="fa-solid fa-shield-halved" style="color: #ea580c;"></i> 100% Genuine Products
+            </div>
+        </div>
+    </header>
+
     <div class="container">
         <!-- Breadcrumb -->
         <div class="breadcrumb">
-            <a href="/">Home</a> &gt; <a href="/shop">Phones</a> &gt; {{ phone.name }}
+            <a href="/">Home</a> &gt; <a href="/shop">Smartphones</a> &gt; {{ phone.name }}
         </div>
 
         <div class="product-grid">
-            <!-- Left: Gallery -->
+            <!-- Left: Gallery (Royalty Free Unsplash Images) -->
             <div>
                 <div class="main-image-container">
-                    <img src="https://store.storeimages.cdn-apple.com/4988/as-images.apple.com/is/iphone-15-pro-naturaltitanium-select?wid=512&hei=512&fmt=png-alpha" alt="{{ phone.name }}" id="mainImg">
+                    <img src="https://images.unsplash.com/photo-1592750475338-74b7b21085ab?q=80&w=800&auto=format&fit=crop" alt="{{ phone.name }}" id="mainImg">
                 </div>
                 <div class="thumbnail-list">
-                    <div class="thumb active"><img src="https://store.storeimages.cdn-apple.com/4988/as-images.apple.com/is/iphone-15-pro-naturaltitanium-select?wid=512&hei=512&fmt=png-alpha"></div>
-                    <div class="thumb"><img src="https://store.storeimages.cdn-apple.com/4988/as-images.apple.com/is/iphone-15-pro-bluetitanium-select?wid=512&hei=512&fmt=png-alpha"></div>
-                    <div class="thumb"><img src="https://store.storeimages.cdn-apple.com/4988/as-images.apple.com/is/iphone-15-pro-whitetitanium-select?wid=512&hei=512&fmt=png-alpha"></div>
-                    <div class="thumb"><img src="https://store.storeimages.cdn-apple.com/4988/as-images.apple.com/is/iphone-15-pro-blacktitanium-select?wid=512&hei=512&fmt=png-alpha"></div>
+                    <div class="thumb active"><img src="https://images.unsplash.com/photo-1592750475338-74b7b21085ab?q=80&w=200&auto=format&fit=crop"></div>
+                    <div class="thumb"><img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=200&auto=format&fit=crop"></div>
+                    <div class="thumb"><img src="https://images.unsplash.com/photo-1580910051074-3eb694886505?q=80&w=200&auto=format&fit=crop"></div>
                 </div>
             </div>
 
             <!-- Right: Details -->
             <div>
-                <a href="#" class="brand-link">Apple</a>
+                <span class="brand-link">Nafiz Official Store</span>
                 <h1 class="product-title">{{ phone.name }}</h1>
 
                 <div class="price-row">
                     <span class="price">৳{{ phone.price.replace(' BDT', '') }}</span>
-                    <span class="price-type">(Cash Price)</span>
+                    <span class="price-type">(Inclusive of all taxes)</span>
                 </div>
 
                 <div class="meta-info">
-                    <div>Availability: <span>Online Order</span></div>
-                    <div>Code: <span>AGL32471</span></div>
+                    <div>Availability: <span>In Stock</span></div>
+                    <div>Product Code: <span>NFZ-2026-PRO</span></div>
+                </div>
+
+                <div class="description-box">
+                    Experience top-tier performance with advanced display technology, premium durable build, long-lasting battery efficiency, and crystal-clear camera optics.
                 </div>
 
                 <!-- Color Selection -->
                 <div class="section-box">
-                    <div class="option-title">Color:</div>
+                    <div class="option-title">Color Edition:</div>
                     <div class="options-grid">
-                        <div class="option-btn"><span class="color-dot" style="background:#000;"></span> Black</div>
-                        <div class="option-btn"><span class="color-dot" style="background:#3b82f6;"></span> Blue</div>
-                        <div class="option-btn active"><span class="color-dot" style="background:#ea580c;"></span> Natural</div>
-                        <div class="option-btn"><span class="color-dot" style="background:#e2e8f0;"></span> White</div>
+                        <div class="option-btn active"><span class="color-dot" style="background:#ea580c;"></span> Titanium</div>
+                        <div class="option-btn"><span class="color-dot" style="background:#1e293b;"></span> Midnight</div>
+                        <div class="option-btn"><span class="color-dot" style="background:#e2e8f0;"></span> Silver</div>
                     </div>
                 </div>
 
-                <!-- Model Selection -->
+                <!-- Storage Selection -->
                 <div class="section-box">
-                    <div class="option-title">Storage:</div>
+                    <div class="option-title">Storage Capacity:</div>
                     <div class="options-grid">
                         <div class="option-btn">128GB</div>
                         <div class="option-btn active">256GB</div>
@@ -398,12 +456,12 @@
                 </div>
 
                 <div class="secondary-actions">
-                    <button class="btn-emi">% EMI Available View Plans</button>
-                    <button class="btn-whatsapp"><i class="fa-brands fa-whatsapp"></i> Whatsapp</button>
+                    <button class="btn-emi">% EMI Options Available</button>
+                    <button class="btn-whatsapp"><i class="fa-brands fa-whatsapp"></i> Chat on Whatsapp</button>
                 </div>
 
                 <div class="delivery-info">
-                    <i class="fa-solid fa-truck-fast"></i> Delivery Timescale: 3-5 Days
+                    <i class="fa-solid fa-truck-fast"></i> Standard Home Delivery: 2-4 Days
                 </div>
             </div>
         </div>
