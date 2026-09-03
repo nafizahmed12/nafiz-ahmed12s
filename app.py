@@ -230,6 +230,12 @@ def sitemap_xml():
         (site_url + "/privacy-policy", "yearly", "0.5"),
         (site_url + "/terms", "yearly", "0.5"),
         (site_url + "/refund-policy", "yearly", "0.5"),
+        # Clean SEO landing pages
+        (site_url + "/iphone-18", "weekly", "0.9"),
+        (site_url + "/iphone-18-pro", "weekly", "0.9"),
+        (site_url + "/iphone-18-pro-max", "weekly", "0.9"),
+        (site_url + "/iphone-18-series", "weekly", "0.9"),
+        (site_url + "/iphone-18-comparison", "weekly", "0.8"),
     ]
     for slug in products.keys():
         urls.append((f"{site_url}/phone-detail/{slug}", "daily", "0.9"))
