@@ -1,217 +1,424 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ phone.name }} Price in BD - Nafiz Ecommerce</title>
+    <title>{{ phone.name }} - Nafiz Ecommerce</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --accent-color: #20e382;
-            --text-main: #f8fafc;
-            --text-sub: #94a3b8;
-            --border-color: #334155;
-        }
-
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
 
         body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+            background-color: #0d0f12;
+            color: #e2e8f0;
+            padding: 20px 0;
         }
 
         .container {
-            max-width: 900px;
-            width: 100%;
-            background: var(--card-bg);
-            border-radius: 20px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-            overflow: hidden;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
         }
 
-        @media (max-width: 768px) {
-            .container {
+        /* Breadcrumb */
+        .breadcrumb {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 25px;
+        }
+        .breadcrumb a {
+            color: #64748b;
+            text-decoration: none;
+        }
+        .breadcrumb a:hover {
+            color: #f97316;
+        }
+
+        /* Main Product Layout */
+        .product-grid {
+            display: grid;
+            grid-template-columns: 480px 1fr;
+            gap: 40px;
+        }
+
+        @media (max-width: 900px) {
+            .product-grid {
                 grid-template-columns: 1fr;
             }
         }
 
-        .product-image-box {
-            background: radial-gradient(circle at center, #2a3749 0%, #151d2a 100%);
+        /* Gallery Section */
+        .main-image-container {
+            width: 100%;
+            height: 480px;
+            background-color: #161b22;
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 40px;
-            position: relative;
-        }
-
-        .product-icon {
-            font-size: 140px;
-            color: var(--accent-color);
-            filter: drop-shadow(0 10px 20px rgba(32, 227, 130, 0.2));
-        }
-
-        .badge {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(32, 227, 130, 0.15);
-            color: var(--accent-color);
-            padding: 6px 14px;
-            border-radius: 50px;
-            font-size: 12px;
-            font-weight: 600;
-            border: 1px solid var(--accent-color);
-            text-transform: uppercase;
-        }
-
-        .product-details {
-            padding: 40px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .back-link {
-            color: var(--text-sub);
-            text-decoration: none;
-            font-size: 14px;
-            margin-bottom: 20px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: color 0.3s;
-        }
-
-        .back-link:hover {
-            color: var(--accent-color);
-        }
-
-        h1 {
-            font-size: 32px;
-            font-weight: 700;
+            border: 1px solid #21262d;
+            overflow: hidden;
             margin-bottom: 15px;
-            color: var(--text-main);
         }
 
-        .price-tag {
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid var(--border-color);
+        .main-image-container i {
+            font-size: 220px;
+            color: #f97316;
+        }
+
+        .thumbnail-list {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+
+        .thumb {
+            width: 70px;
+            height: 70px;
+            background-color: #161b22;
+            border: 1px solid #21262d;
             border-radius: 12px;
-            padding: 15px 20px;
-            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .thumb.active, .thumb:hover {
+            border-color: #f97316;
+        }
+
+        .thumb i {
+            font-size: 30px;
+            color: #94a3b8;
+        }
+
+        /* Product Info Section */
+        .brand-link {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .product-title {
+            font-size: 26px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 15px;
+        }
+
+        .price-row {
             display: flex;
             align-items: baseline;
             gap: 10px;
+            margin-bottom: 15px;
         }
 
-        .price-label {
-            font-size: 14px;
-            color: var(--text-sub);
-        }
-
-        .price-value {
-            font-size: 28px;
+        .price {
+            font-size: 24px;
             font-weight: 700;
-            color: var(--accent-color);
+            color: #ffffff;
         }
 
-        .description {
-            color: var(--text-sub);
-            line-height: 1.7;
-            font-size: 15px;
-            margin-bottom: 30px;
+        .price-type {
+            font-size: 13px;
+            color: #64748b;
         }
 
-        .actions {
+        .meta-info {
             display: flex;
-            gap: 15px;
+            gap: 20px;
+            font-size: 13px;
+            color: #94a3b8;
+            margin-bottom: 25px;
         }
 
-        .btn {
-            flex: 1;
-            padding: 14px 20px;
+        .meta-info span {
+            color: #38bdf8;
+        }
+
+        /* Option Boxes */
+        .section-box {
+            background-color: #12161f;
+            border: 1px solid #1e2430;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 20px;
+        }
+
+        .option-title {
+            font-size: 13px;
+            color: #94a3b8;
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+        }
+
+        .option-btn {
+            background-color: #1a202c;
+            border: 1px solid #2d3748;
+            color: #e2e8f0;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .option-btn.active {
+            border-color: #f97316;
+            background-color: rgba(249, 115, 22, 0.1);
+            color: #ffffff;
+        }
+
+        .color-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        /* Quantity Controls */
+        .quantity-wrapper {
+            margin-bottom: 25px;
+        }
+
+        .quantity-control {
+            display: inline-flex;
+            align-items: center;
+            background-color: #161b22;
+            border: 1px solid #21262d;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .qty-btn {
+            background: none;
+            border: none;
+            color: #ffffff;
+            width: 38px;
+            height: 38px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .qty-btn:hover {
+            background-color: #21262d;
+        }
+
+        .qty-val {
+            width: 40px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .btn-shop-now {
+            background-color: #ea580c;
+            color: #ffffff;
+            border: none;
+            padding: 14px;
             border-radius: 10px;
             font-weight: 600;
             font-size: 15px;
             cursor: pointer;
-            border: none;
-            display: inline-flex;
+            transition: background 0.2s;
+        }
+
+        .btn-shop-now:hover {
+            background-color: #c2410c;
+        }
+
+        .btn-add-cart {
+            background-color: transparent;
+            border: 1px solid #ea580c;
+            color: #ffffff;
+            padding: 14px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            transition: all 0.3s ease;
-            text-decoration: none;
         }
 
-        .btn-primary {
-            background: var(--accent-color);
-            color: #000;
+        .btn-add-cart:hover {
+            background-color: rgba(234, 88, 12, 0.1);
         }
 
-        .btn-primary:hover {
-            background: #1bc46f;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(32, 227, 130, 0.3);
+        .secondary-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
         }
 
-        .btn-secondary {
-            background: transparent;
-            color: var(--text-main);
-            border: 1px solid var(--border-color);
+        .btn-emi {
+            background-color: #1e293b;
+            color: #f97316;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            text-align: center;
         }
 
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: var(--text-sub);
+        .btn-whatsapp {
+            background-color: #065f46;
+            color: #ffffff;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .delivery-info {
+            font-size: 13px;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-top: 10px;
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <!-- প্রোডাক্ট ইমেজ বক্স -->
-        <div class="product-image-box">
-            <span class="badge">In Stock</span>
-            <i class="fa-solid fa-mobile-screen-button product-icon"></i>
+        <!-- Breadcrumb -->
+        <div class="breadcrumb">
+            <a href="/">Home</a> &gt; <a href="/shop">Phones</a> &gt; {{ phone.name }}
         </div>
 
-        <!-- প্রোডাক্ট ডিটেইলস -->
-        <div class="product-details">
-            <a href="/shop" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Shop</a>
-            
-            <h1>{{ phone.name }}</h1>
-
-            <div class="price-tag">
-                <span class="price-label">Price:</span>
-                <span class="price-value">{{ phone.price }} BDT</span>
+        <div class="product-grid">
+            <!-- Left: Gallery -->
+            <div>
+                <div class="main-image-container">
+                    <i class="fa-solid fa-mobile-screen-button"></i>
+                </div>
+                <div class="thumbnail-list">
+                    <div class="thumb active"><i class="fa-solid fa-mobile-screen-button"></i></div>
+                    <div class="thumb"><i class="fa-solid fa-mobile-screen-button" style="color:#f97316;"></i></div>
+                    <div class="thumb"><i class="fa-solid fa-mobile-screen-button" style="color:#38bdf8;"></i></div>
+                    <div class="thumb"><i class="fa-solid fa-mobile-screen-button" style="color:#a855f7;"></i></div>
+                    <div class="thumb"><i class="fa-solid fa-mobile-screen-button" style="color:#eab308;"></i></div>
+                </div>
             </div>
 
-            <p class="description">
-                {{ phone.details }}
-            </p>
+            <!-- Right: Details -->
+            <div>
+                <a href="#" class="brand-link">Apple</a>
+                <h1 class="product-title">{{ phone.name }}</h1>
 
-            <div class="actions">
-                <a href="#" class="btn btn-primary"><i class="fa-solid fa-bag-shopping"></i> Buy Now</a>
-                <a href="/shop" class="btn btn-secondary"><i class="fa-solid fa-store"></i> Browse More</a>
+                <div class="price-row">
+                    <span class="price">৳{{ phone.price }}</span>
+                    <span class="price-type">(Cash Price)</span>
+                </div>
+
+                <div class="meta-info">
+                    <div>Availability: <span>Online Order</span></div>
+                    <div>Code: <span>AGL32471</span></div>
+                </div>
+
+                <!-- Color Selection -->
+                <div class="section-box">
+                    <div class="option-title">Color:</div>
+                    <div class="options-grid">
+                        <div class="option-btn"><span class="color-dot" style="background:#000;"></span> Black</div>
+                        <div class="option-btn"><span class="color-dot" style="background:#3b82f6;"></span> Blue</div>
+                        <div class="option-btn active"><span class="color-dot" style="background:#f97316;"></span> Orange</div>
+                        <div class="option-btn"><span class="color-dot" style="background:#a855f7;"></span> Purple</div>
+                    </div>
+                </div>
+
+                <!-- Model Selection -->
+                <div class="section-box">
+                    <div class="option-title">Model:</div>
+                    <div class="options-grid">
+                        <div class="option-btn">128GB</div>
+                        <div class="option-btn active">256GB</div>
+                        <div class="option-btn">512GB</div>
+                    </div>
+                </div>
+
+                <!-- Quantity -->
+                <div class="quantity-wrapper">
+                    <div class="option-title">Select Quantity:</div>
+                    <div class="quantity-control">
+                        <button class="qty-btn" onclick="decreaseQty()">-</button>
+                        <span class="qty-val" id="qty">1</span>
+                        <button class="qty-btn" onclick="increaseQty()">+</button>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button class="btn-shop-now">Shop Now</button>
+                    <button class="btn-add-cart"><i class="fa-solid fa-cart-shopping"></i> Add To Cart</button>
+                </div>
+
+                <div class="secondary-actions">
+                    <button class="btn-emi">% EMI Available View Plans</button>
+                    <button class="btn-whatsapp"><i class="fa-brands fa-whatsapp"></i> Whatsapp</button>
+                </div>
+
+                <div class="delivery-info">
+                    <i class="fa-solid fa-truck-fast"></i> Delivery Timescale: 3-5 Days
+                </div>
             </div>
         </div>
     </div>
 
+    <script>
+        let count = 1;
+        function increaseQty() {
+            count++;
+            document.getElementById('qty').innerText = count;
+        }
+        function decreaseQty() {
+            if (count > 1) {
+                count--;
+                document.getElementById('qty').innerText = count;
+            }
+        }
+    </script>
 </body>
 </html>
