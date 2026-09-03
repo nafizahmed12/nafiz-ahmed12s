@@ -1,0 +1,20 @@
+{
+  "iphone-15-pro": {
+    "name": "iPhone 15 Pro",
+    "price": "135,000 BDT",
+    "image_url": "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?q=80&w=800&auto=format&fit=crop",
+    "description": "Apple iPhone 15 Pro featuring A17 Pro chip, Titanium design, and Action button."
+  },
+  "iphone-15-pro-max": {
+    "name": "iPhone 15 Pro Max",
+    "price": "175,000 BDT",
+    "image_url": "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?q=80&w=800&auto=format&fit=crop",
+    "description": "Apple iPhone 15 Pro Max with A17 Pro Chip, 5x Telephoto Camera, and Titanium body."
+  },
+  "samsung-s24-ultra": {
+    "name": "Samsung Galaxy S24 Ultra",
+    "price": "150,000 BDT",
+    "image_url": "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?q=80&w=800&auto=format&fit=crop",
+    "description": "Welcome to the era of mobile AI with Galaxy S24 Ultra and Snapdragon 8 Gen 3."
+  }
+}
