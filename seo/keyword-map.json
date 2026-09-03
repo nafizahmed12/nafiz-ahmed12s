@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "strategy": "one-primary-intent-per-page",
+  "pages": [
+    {"slug":"iphone-18","primary":"iPhone 18 price in Bangladesh","secondary":["iPhone 18 specs Bangladesh","iPhone 18 release date Bangladesh","iPhone 18 expected price Bangladesh"],"intent":"model research and price intent"},
+    {"slug":"iphone-18-pro","primary":"iPhone 18 Pro price in Bangladesh","secondary":["iPhone 18 Pro specs Bangladesh","iPhone 18 Pro release date","iPhone 18 Pro expected price Bangladesh"],"intent":"pro model research and price intent"},
+    {"slug":"iphone-18-pro-max","primary":"iPhone 18 Pro Max price in Bangladesh","secondary":["iPhone 18 Pro Max specs Bangladesh","iPhone 18 Pro Max release date","iPhone 18 Pro Max expected price Bangladesh"],"intent":"premium model research and price intent"},
+    {"slug":"iphone-18-series","primary":"iPhone 18 series price in Bangladesh","secondary":["iPhone 18 series comparison","iPhone 18 models Bangladesh","iPhone 18 lineup"],"intent":"series discovery"},
+    {"slug":"iphone-18-comparison","primary":"iPhone 18 vs 18 Pro vs 18 Pro Max","secondary":["iPhone 18 comparison Bangladesh","which iPhone 18 should I buy","iPhone 18 models comparison"],"intent":"comparison and purchase decision"}
+  ],
+  "rules":["Keep one primary search intent per page.","Use secondary phrases naturally in headings and body copy; do not keyword-stuff.","Prefer Bangladesh-specific wording where it matches search intent.","Do not make unverified product claims just to target a keyword.","Do not create duplicate pages targeting the same primary intent."]
+}
