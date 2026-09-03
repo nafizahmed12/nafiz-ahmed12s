@@ -1,0 +1,84 @@
+name: SEO clean comparison URL
+
+on:
+  push:
+    branches:
+      - seo/clean-comparison-url
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.event.head_commit.message != 'SEO: apply clean comparison URL migration'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Apply clean comparison URL migration
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path('admin_security.py')
+          s = p.read_text()
+          old = '''    @app.route("/iphone-18-pro-max")\n    def clean_iphone_18_pro_max():\n        return app.send_static_file("iphone-18-pro-max.html")\n'''
+          new = old + '''\n    @app.route("/iphone-18-comparison")\n    def clean_iphone_18_comparison():\n        return app.send_static_file("iphone-18-comparison.html")\n'''
+          if '/iphone-18-comparison' not in s:
+              if old not in s:
+                  raise SystemExit('Expected clean Pro Max route block not found')
+              s = s.replace(old, new, 1)
+
+          old = '''            "/static/iphone-18-pro-max.html": "/iphone-18-pro-max",\n        }'''
+          new = '''            "/static/iphone-18-pro-max.html": "/iphone-18-pro-max",\n            "/static/iphone-18-comparison.html": "/iphone-18-comparison",\n        }'''
+          if '"/static/iphone-18-comparison.html": "/iphone-18-comparison"' not in s:
+              if old not in s:
+                  raise SystemExit('Expected legacy redirect map not found')
+              s = s.replace(old, new, 1)
+
+          old = '''                    (base + "/iphone-18-pro-max", "weekly", "0.9"),\n                    (base + "/iphone-18-series", "weekly", "0.9")]'''
+          new = '''                    (base + "/iphone-18-pro-max", "weekly", "0.9"),\n                    (base + "/iphone-18-series", "weekly", "0.9"),\n                    (base + "/iphone-18-comparison", "weekly", "0.8")]'''
+          if '(base + "/iphone-18-comparison", "weekly", "0.8")' not in s:
+              if old not in s:
+                  raise SystemExit('Expected dynamic sitemap list not found')
+              s = s.replace(old, new, 1)
+
+          old = '''    def rewrite_iphone_seo_urls(response):\n        if request.path in {"/iphone-18-series", "/iphone-18", "/iphone-18-pro", "/iphone-18-pro-max"}'''
+          new = '''    def rewrite_iphone_seo_urls(response):\n        if request.path in {"/iphone-18-series", "/iphone-18", "/iphone-18-pro", "/iphone-18-pro-max", "/iphone-18-comparison"}'''
+          if '"/iphone-18-comparison"} and response.status_code' not in s:
+              if old not in s:
+                  raise SystemExit('Expected after_request route condition not found')
+              s = s.replace(old, new, 1)
+
+          old = '''                "/static/iphone-18.html": "/iphone-18",\n            }'''
+          new = '''                "/static/iphone-18.html": "/iphone-18",\n                "/static/iphone-18-comparison.html": "/iphone-18-comparison",\n            }'''
+          if '"/static/iphone-18-comparison.html": "/iphone-18-comparison"' not in s[s.find('def rewrite_iphone_seo_urls'):]:
+              if old not in s:
+                  raise SystemExit('Expected after_request replacement map not found')
+              s = s.replace(old, new, 1)
+          p.write_text(s)
+
+          p = Path('static/sitemap.xml')
+          s = p.read_text()
+          s = s.replace('https://nafiz-ahmed12s.onrender.com/static/iphone-18-comparison.html', 'https://nafiz-ahmed12s.onrender.com/iphone-18-comparison')
+          p.write_text(s)
+
+          p = Path('seo/registry.json')
+          s = p.read_text()
+          s = s.replace('"canonical": "https://nafiz-ahmed12s.onrender.com/static/iphone-18-comparison.html"', '"canonical": "https://nafiz-ahmed12s.onrender.com/iphone-18-comparison"')
+          p.write_text(s)
+
+          p = Path('static/iphone-18-comparison.html')
+          s = p.read_text()
+          s = s.replace('/static/iphone-18-comparison.html', '/iphone-18-comparison')
+          p.write_text(s)
+          PY
+
+          rm .github/workflows/seo-clean-comparison.yml
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add admin_security.py static/sitemap.xml seo/registry.json static/iphone-18-comparison.html .github/workflows/seo-clean-comparison.yml
+          git commit -m "SEO: apply clean comparison URL migration"
+          git push
