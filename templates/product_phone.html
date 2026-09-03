@@ -3,7 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ phone.name }} - Nafiz Ecommerce</title>
+
+    <!-- Dynamic SEO Meta Tags -->
+    <title>{{ phone.name }} Price in Bangladesh | Nafiz Store</title>
+    <meta name="description" content="{{ phone.description if phone.description else 'Buy ' ~ phone.name ~ ' at best price in Bangladesh with official warranty from Nafiz Store.' }}">
+    <meta name="keywords" content="{{ phone.name }}, {{ phone.name }} price in BD, {{ phone.name }} Bangladesh, buy {{ phone.name }}, official warranty, Nafiz Store">
+    <link rel="canonical" href="{{ request.url }}">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="product">
+    <meta property="og:title" content="{{ phone.name }} Price in Bangladesh - Nafiz Store">
+    <meta property="og:description" content="{{ phone.description if phone.description else 'Buy ' ~ phone.name ~ ' at best price in Bangladesh from Nafiz Store.' }}">
+    <meta property="og:image" content="{{ phone.image_url if phone.image_url else 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?q=80&w=800&auto=format&fit=crop' }}">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta property="og:site_name" content="Nafiz Store">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ phone.name }} Price in BD">
+    <meta name="twitter:description" content="{{ phone.description if phone.description else 'Buy ' ~ phone.name ~ ' at best price in BD.' }}">
+    <meta name="twitter:image" content="{{ phone.image_url if phone.image_url else 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?q=80&w=800&auto=format&fit=crop' }}">
+
+    <!-- Structured Data (Schema.org JSON-LD for Google Rich Snippets) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org/",
+      "@type": "Product",
+      "name": "{{ phone.name }}",
+      "image": ["{{ phone.image_url if phone.image_url else 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?q=80&w=800&auto=format&fit=crop' }}"],
+      "description": "{{ phone.description if phone.description else 'Buy ' ~ phone.name ~ ' at best price in Bangladesh from Nafiz Store.' }}",
+      "sku": "{{ slug if slug else 'NFZ-2026-PRO' }}",
+      "offers": {
+        "@type": "Offer",
+        "url": "{{ request.url }}",
+        "priceCurrency": "BDT",
+        "price": "{{ phone.price.replace(' BDT', '').replace(',', '') if phone.price else '175000' }}",
+        "availability": "https://schema.org/InStock",
+        "itemCondition": "https://schema.org/NewCondition"
+      }
+    }
+    </script>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -297,6 +337,8 @@
             font-size: 15px;
             cursor: pointer;
             transition: background 0.2s;
+            text-decoration: none;
+            text-align: center;
         }
 
         .btn-shop-now:hover {
@@ -354,6 +396,7 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
+            text-decoration: none;
         }
 
         .delivery-info {
@@ -391,11 +434,11 @@
             <!-- Left: Interactive Gallery -->
             <div>
                 <div class="main-image-container">
-                    <img src="https://images.unsplash.com/photo-1592750475338-74b7b21085ab?q=80&w=800&auto=format&fit=crop" alt="{{ phone.name }}" id="mainImg">
+                    <img src="{{ phone.image_url if phone.image_url else 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?q=80&w=800&auto=format&fit=crop' }}" alt="{{ phone.name }}" id="mainImg">
                 </div>
                 <div class="thumbnail-list">
-                    <div class="thumb active" onclick="changeImage(this, 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?q=80&w=800&auto=format&fit=crop')">
-                        <img src="https://images.unsplash.com/photo-1592750475338-74b7b21085ab?q=80&w=200&auto=format&fit=crop">
+                    <div class="thumb active" onclick="changeImage(this, '{{ phone.image_url if phone.image_url else \'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?q=80&w=800&auto=format&fit=crop\' }}')">
+                        <img src="{{ phone.image_url if phone.image_url else 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?q=80&w=200&auto=format&fit=crop' }}">
                     </div>
                     <div class="thumb" onclick="changeImage(this, 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=800&auto=format&fit=crop')">
                         <img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=200&auto=format&fit=crop">
@@ -418,11 +461,11 @@
 
                 <div class="meta-info">
                     <div>Availability: <span>In Stock</span></div>
-                    <div>Product Code: <span>NFZ-2026-PRO</span></div>
+                    <div>Product Code: <span>{{ slug if slug else 'NFZ-2026-PRO' }}</span></div>
                 </div>
 
                 <div class="description-box">
-                    Experience top-tier performance with advanced display technology, premium durable build, long-lasting battery efficiency, and crystal-clear camera optics.
+                    {{ phone.description if phone.description else 'Experience top-tier performance with advanced display technology, premium durable build, long-lasting battery efficiency, and crystal-clear camera optics.' }}
                 </div>
 
                 <!-- Interactive Color Selection -->
@@ -463,13 +506,13 @@
 
                 <!-- Action Buttons -->
                 <div class="action-buttons">
-                    <button class="btn-shop-now">Shop Now</button>
+                    <a href="/contact" class="btn-shop-now">Shop Now</a>
                     <button class="btn-add-cart"><i class="fa-solid fa-cart-shopping"></i> Add To Cart</button>
                 </div>
 
                 <div class="secondary-actions">
                     <button class="btn-emi">% EMI Options Available</button>
-                    <button class="btn-whatsapp"><i class="fa-brands fa-whatsapp"></i> Chat on Whatsapp</button>
+                    <a href="https://wa.me/?text=I%20want%20to%20buy%20{{ phone.name }}" target="_blank" class="btn-whatsapp"><i class="fa-brands fa-whatsapp"></i> Chat on Whatsapp</a>
                 </div>
 
                 <div class="delivery-info">
