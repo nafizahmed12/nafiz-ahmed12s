@@ -153,11 +153,10 @@ def normalize_comparison_sitemap(response):
         new = "/iphone-18-comparison"
         if old in body:
             body = body.replace(old, new)
-        if new not in body:
-            close = "</urlset>"
-            entry = '<url><loc>' + current_app.config.get("PUBLIC_BASE_URL", "").rstrip("/") + new + '</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>'
-            if current_app.config.get("PUBLIC_BASE_URL") and close in body:
-                body = body.replace(close, "  " + entry + "\n" + close)
+        if new not in body and "</urlset>" in body:
+            base = request.host_url.rstrip("/")
+            entry = f'<url><loc>{base}{new}</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>'
+            body = body.replace("</urlset>", "  " + entry + "\n</urlset>")
         response.set_data(body)
     return response
 
