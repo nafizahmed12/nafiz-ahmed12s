@@ -1,4 +1,5 @@
 from decimal import Decimal
+from html import escape
 
 from flask import Blueprint, jsonify, request, session, current_app, redirect
 from sqlalchemy import text
@@ -143,6 +144,77 @@ def redirect_legacy_comparison_url():
     if request.method == "GET" and request.path == "/static/iphone-18-comparison.html":
         return redirect("/iphone-18-comparison", code=301)
     return None
+
+
+@home_bp.after_app_request
+def add_home_affiliate_products(response):
+    if request.path != "/" or response.status_code != 200 or "text/html" not in response.content_type:
+        return response
+
+    try:
+        with SessionLocal() as db:
+            rows = db.execute(text("""
+                SELECT id,name,description,amazon_url,image_url,display_price
+                FROM affiliate_products
+                WHERE status='published'
+                ORDER BY sort_order ASC,id DESC
+                LIMIT 4
+            """)).mappings().all()
+    except Exception:
+        current_app.logger.exception("Failed to load home affiliate products")
+        return response
+
+    if not rows:
+        return response
+
+    response.direct_passthrough = False
+    body = response.get_data(as_text=True)
+    cards = []
+    for row in rows:
+        name = escape(row["name"] or "Recommended product")
+        description = escape(row["description"] or "Check details and compatibility before purchase.")
+        amazon_url = escape(row["amazon_url"] or "#", quote=True)
+        image_url = escape(row["image_url"] or "", quote=True)
+        display_price = escape(row["display_price"] or "", quote=True)
+        image_html = f'<img src="{image_url}" alt="{name}" loading="lazy">' if image_url else '<div class="home-affiliate-no-image">Amazon</div>'
+        price_html = f'<span class="home-affiliate-price">{display_price}</span>' if display_price else ''
+        cards.append(
+            f'<article class="home-affiliate-card"><div class="home-affiliate-image">{image_html}</div>'
+            f'<div class="home-affiliate-body"><h3>{name}</h3><p>{description}</p>'
+            f'<div class="home-affiliate-bottom">{price_html}<a href="{amazon_url}" target="_blank" rel="noopener noreferrer sponsored">Check on Amazon →</a></div></div></article>'
+        )
+
+    section = f'''<section class="home-affiliate-section wrap" aria-labelledby="home-affiliate-title">
+<style>
+.home-affiliate-section{{margin-top:36px;padding:26px;border:1px solid #292f40;border-radius:23px;background:linear-gradient(135deg,#111722,#171222)}}
+.home-affiliate-head{{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:16px}}
+.home-affiliate-head h2{{margin:0;font-size:22px;letter-spacing:-.035em}}
+.home-affiliate-head p{{margin:5px 0 0;color:#858da2;font-size:11px}}
+.home-affiliate-grid{{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}}
+.home-affiliate-card{{background:#0e1119;border:1px solid #292f40;border-radius:18px;overflow:hidden}}
+.home-affiliate-image{{height:190px;background:#151a25;display:grid;place-items:center}}
+.home-affiliate-image img{{width:100%;height:100%;object-fit:contain;padding:14px}}
+.home-affiliate-no-image{{color:#858da2;font-size:12px}}
+.home-affiliate-body{{padding:13px}}
+.home-affiliate-body h3{{margin:0 0 6px;font-size:13px;line-height:1.4;color:#f5f6fb}}
+.home-affiliate-body p{{margin:0;color:#858da2;font-size:10px;line-height:1.55;min-height:32px}}
+.home-affiliate-bottom{{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:13px}}
+.home-affiliate-price{{font-weight:800;font-size:12px}}
+.home-affiliate-bottom a{{padding:9px 10px;border-radius:10px;background:linear-gradient(135deg,#35a7ff,#9a4cff);font-size:9px;font-weight:700;color:#fff;white-space:nowrap}}
+.home-affiliate-disclosure{{margin:13px 0 0;color:#70798e;font-size:9px}}
+@media(max-width:850px){{.home-affiliate-grid{{grid-template-columns:repeat(2,minmax(0,1fr))}}}}
+@media(max-width:600px){{.home-affiliate-section{{margin-top:28px;padding:20px 12px;border-radius:19px}}.home-affiliate-grid{{grid-template-columns:1fr 1fr;gap:10px}}.home-affiliate-image{{height:155px}}.home-affiliate-body{{padding:10px}}.home-affiliate-bottom a{{font-size:8px;padding:8px}}}}
+</style>
+<div class="home-affiliate-head"><div><h2 id="home-affiliate-title">Recommended Accessories</h2><p>Useful picks from Amazon</p></div><a href="/affiliate-picks" style="font-size:10px;color:#a765ff;font-weight:700">View all →</a></div>
+<div class="home-affiliate-grid">{"".join(cards)}</div>
+<p class="home-affiliate-disclosure">As an Amazon Associate, Nafiz -Ecommerce earns from qualifying purchases.</p>
+</section>'''
+
+    if "</main>" not in body:
+        return response
+    body = body.replace("</main>", section + "</main>", 1)
+    response.set_data(body)
+    return response
 
 
 @home_bp.after_app_request
