@@ -1,0 +1,1 @@
+Homepage redesign and product-image sizing changes are committed in the main codebase through this release PR.
