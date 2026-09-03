@@ -64,17 +64,16 @@ def register_admin_session_guard(app):
     def clean_iphone_18_pro_max():
         return app.send_static_file("iphone-18-pro-max.html")
 
-    @app.route("/static/iphone-18.html")
-    def legacy_iphone_18():
-        return redirect("/iphone-18", code=301)
-
-    @app.route("/static/iphone-18-pro.html")
-    def legacy_iphone_18_pro():
-        return redirect("/iphone-18-pro", code=301)
-
-    @app.route("/static/iphone-18-pro-max.html")
-    def legacy_iphone_18_pro_max():
-        return redirect("/iphone-18-pro-max", code=301)
+    @app.before_request
+    def handle_legacy_iphone_urls():
+        redirects = {
+            "/static/iphone-18.html": "/iphone-18",
+            "/static/iphone-18-pro.html": "/iphone-18-pro",
+            "/static/iphone-18-pro-max.html": "/iphone-18-pro-max",
+        }
+        if request.method == "GET" and request.path in redirects:
+            return redirect(redirects[request.path], code=301)
+        return None
 
     @app.before_request
     def handle_legacy_logout_get():
@@ -194,6 +193,20 @@ def register_admin_session_guard(app):
                 session.clear(); return redirect(url_for("user_login"))
 
     @app.after_request
+    def rewrite_iphone_seo_urls(response):
+        if request.path in {"/iphone-18", "/iphone-18-pro", "/iphone-18-pro-max"} and response.status_code == 200 and "text/html" in response.content_type:
+            body = response.get_data(as_text=True)
+            replacements = {
+                "/static/iphone-18-pro-max.html": "/iphone-18-pro-max",
+                "/static/iphone-18-pro.html": "/iphone-18-pro",
+                "/static/iphone-18.html": "/iphone-18",
+            }
+            for old, new in replacements.items():
+                body = body.replace(old, new)
+            response.set_data(body)
+        return response
+
+    @app.after_request
     def attach_home_javascript(response):
         if request.path == "/" and response.status_code == 200 and "text/html" in response.content_type:
             body = response.get_data(as_text=True)
@@ -208,7 +221,7 @@ def register_admin_session_guard(app):
             "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; "
             "form-action 'self'; img-src 'self' data: https:; font-src 'self' data: https:; "
             "style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline'; "
-            "connect-src 'self'; media-src 'self' https:; worker-src 'self'; manifest-src 'self';"
+            "connect-src 'self'; media-src 'self: https:; worker-src 'self'; manifest-src 'self';"
         )
         return response
 
@@ -228,7 +241,6 @@ def register_password_reset_routes(app):
                     app_module.send_password_reset_email(email, token)
                 except Exception:
                     app.logger.exception("Password reset email delivery failed")
-            # Always return the same response to prevent account enumeration.
             return render_template("forgot_password.html", sent=True, error=None), 200
 
     if "reset_password" not in app.view_functions:
