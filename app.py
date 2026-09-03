@@ -5,7 +5,10 @@ import secrets
 from datetime import timedelta
 from urllib.parse import urlparse
 
-from flask import Flask, render_template, request, redirect, session, abort, flash, url_for, Response
+from flask import (
+    Flask, render_template, request, redirect, session,
+    abort, flash, url_for, Response, make_response
+)
 from dotenv import load_dotenv
 from sqlalchemy import text
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -19,7 +22,9 @@ from seller_routes import register_seller_routes
 from digital_affiliate_routes import register_digital_affiliate_routes
 from shop_routes import register_shop_routes
 from admin_product_routes import register_admin_product_routes
-from admin_security import register_admin_session_guard, mark_admin_authenticated, clear_admin_session
+from admin_security import (
+    register_admin_session_guard, mark_admin_authenticated, clear_admin_session
+)
 from admin_auth import admin_required
 from csrf import register_csrf_protection
 from mail_utils import send_password_reset_email
@@ -36,10 +41,12 @@ load_dotenv()
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
 secret_key = os.getenv("SECRET_KEY")
+
 if not secret_key:
     if os.getenv("RENDER"):
         raise RuntimeError("SECRET_KEY environment variable is required in production.")
     secret_key = secrets.token_urlsafe(32)
+
 app.secret_key = secret_key
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
@@ -48,6 +55,7 @@ app.config.update(
     PERMANENT_SESSION_LIFETIME=timedelta(days=7),
     MAX_CONTENT_LENGTH=int(os.getenv("MAX_CONTENT_LENGTH", str(1 * 1024 * 1024))),
 )
+
 register_error_handlers(app)
 register_commerce_routes(app)
 register_payment_routes(app)
@@ -59,25 +67,60 @@ register_admin_product_routes(app)
 register_admin_session_guard(app)
 register_csrf_protection(app)
 
+# Dynamic Product Database for SEO Routing
+products = {
+    'iphone-18-pro-max': {
+        'name': 'iPhone 18 Pro Max',
+        'price': '175,000 BDT',
+        'image_url': 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?q=80&w=800&auto=format&fit=crop',
+        'description': (
+            'The upcoming iPhone 18 Pro Max features Apple\'s next-generation'
+            ' A19 Bionic chip, under-display Face ID, and advanced camera'
+            ' features. Pre-order at Nafiz Store.'
+        )
+    },
+    'iphone15pro': {
+        'name': 'iPhone 15 Pro',
+        'price': '135,000 BDT',
+        'image_url': 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?q=80&w=800&auto=format&fit=crop',
+        'description': 'Official iPhone 15 Pro with Titanium design and A17 Pro chip.'
+    }
+}
+
+
 @app.after_request
 def add_security_headers(response):
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("X-Frame-Options", "DENY")
     response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
-    response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()")
-    response.headers.setdefault("Content-Security-Policy", "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data: https:; font-src 'self' data: https:; style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline' https:; connect-src 'self' https:; media-src 'self' https:;")
+    response.headers.setdefault(
+        "Permissions-Policy",
+        "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
+    )
+    response.headers.setdefault(
+        "Content-Security-Policy",
+        "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; "
+        "form-action 'self'; img-src 'self' data: https:; font-src 'self' data: https:; "
+        "style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline' https:; "
+        "connect-src 'self' https:; media-src 'self' https:;"
+    )
     if request.is_secure:
         response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
     return response
 
+
 @app.after_request
 def prevent_sensitive_page_caching(response):
-    sensitive_paths = ("/dashboard", "/account", "/admin", "/login", "/user-login", "/forgot-password", "/reset-password")
+    sensitive_paths = (
+        "/dashboard", "/account", "/admin", "/login",
+        "/user-login", "/forgot-password", "/reset-password"
+    )
     if any(request.path == path or request.path.startswith(f"{path}/") for path in sensitive_paths):
         response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
         response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "0"
     return response
+
 
 @app.before_request
 def protect_state_changing_requests():
@@ -96,6 +139,7 @@ def protect_state_changing_requests():
             abort(403, description="Cross-site request blocked.")
     return None
 
+
 def get_host_site_slug():
     base_domain = os.getenv("BASE_DOMAIN", "").strip().lower().rstrip(".")
     host = request.host.split(":", 1)[0].lower().rstrip(".")
@@ -108,9 +152,11 @@ def get_host_site_slug():
             return slug
     return None
 
+
 def current_user():
     user_id = session.get("user_id")
     return get_user(user_id) if user_id else None
+
 
 def require_user():
     user = current_user()
@@ -120,6 +166,7 @@ def require_user():
         return None
     return user
 
+
 def valid_email(email):
     email = (email or "").strip()
     if len(email) > 255 or email.count("@") != 1:
@@ -127,9 +174,11 @@ def valid_email(email):
     local, domain = email.rsplit("@", 1)
     return bool(local and domain and "." in domain and not any(c.isspace() for c in email))
 
+
 @app.route("/health")
 def health():
     return {"status": "ok"}, 200
+
 
 @app.route("/health/ready")
 def readiness():
@@ -141,9 +190,11 @@ def readiness():
         app.logger.exception("Readiness check failed")
         return {"status": "not_ready", "database": "unavailable"}, 503
 
+
 @app.route("/favicon.ico")
 def favicon_ico():
     return redirect(url_for("static", filename="favicon.svg"), code=301)
+
 
 @app.route("/robots.txt")
 def robots_txt():
@@ -167,6 +218,7 @@ Sitemap: {site_url}/sitemap.xml
 """
     return Response(content, mimetype="text/plain")
 
+
 @app.route("/sitemap.xml")
 def sitemap_xml():
     site_url = url_for("home", _external=True).rstrip("/")
@@ -179,12 +231,21 @@ def sitemap_xml():
         (site_url + "/terms", "yearly", "0.5"),
         (site_url + "/refund-policy", "yearly", "0.5"),
     ]
+    for slug in products.keys():
+        urls.append((f"{site_url}/phone-detail/{slug}", "daily", "0.9"))
+
     entries = "\n".join(
         f"  <url><loc>{loc}</loc><changefreq>{freq}</changefreq><priority>{priority}</priority></url>"
         for loc, freq, priority in urls
     )
-    content = f'''<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{entries}\n</urlset>\n'''
+    content = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        f'{entries}\n'
+        '</urlset>\n'
+    )
     return Response(content, mimetype="application/xml")
+
 
 @app.route("/")
 def home():
@@ -196,34 +257,44 @@ def home():
         abort(404)
     return render_template("index.html")
 
+
 @app.route("/phone-detail/<name>")
 def product_page(name):
-    phone_info = {
-        'name': 'iPhone 15 Pro',
-        'price': '135,000 BDT',
-        'details': 'Original Apple iPhone 15 Pro with official warranty in Bangladesh.'
-    }
-    return render_template('product_phone.html', phone=phone_info)
+    phone_info = products.get(name)
+    if not phone_info:
+        phone_info = {
+            'name': name.replace('-', ' ').title(),
+            'price': '175,000 BDT',
+            'image_url': 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?q=80&w=800&auto=format&fit=crop',
+            'description': f'Buy or Pre-Order {name.replace("-", " ").title()} at best price in BD from Nafiz Store.'
+        }
+    return render_template('product_phone.html', phone=phone_info, slug=name)
+
 
 @app.route("/affiliate-picks")
 def affiliate_picks_page():
     return render_template("affiliate_picks.html")
 
+
 @app.route("/about")
 def about():
     return render_template("about.html")
+
 
 @app.route("/privacy-policy")
 def privacy_policy():
     return render_template("privacy_policy.html")
 
+
 @app.route("/terms")
 def terms():
     return render_template("terms.html")
 
+
 @app.route("/refund-policy")
 def refund_policy():
     return render_template("refund_policy.html")
+
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -231,7 +302,7 @@ def register():
         return redirect(url_for("dashboard"))
     if request.method == "POST":
         if not allow_registration(request.remote_addr, limit=10, window_seconds=3600):
-            return render_template("register.html", error="Too many registration attempts from this network. Please try again later."), 429
+            return render_template("register.html", error="Too many registration attempts. Please try again later."), 429
         username = request.form.get("username", "").strip()
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
@@ -255,6 +326,7 @@ def register():
         return redirect(url_for("dashboard"))
     return render_template("register.html")
 
+
 @app.route("/user-login", methods=["GET", "POST"])
 def user_login():
     if session.get("user_id"):
@@ -263,7 +335,7 @@ def user_login():
         identifier = request.form.get("username", "").strip()
         password = request.form.get("password", "")
         if not allow_login(request.remote_addr, identifier, limit=10, window_seconds=900):
-            return render_template("user_login.html", error="Too many login attempts. Please try again in a few minutes."), 429
+            return render_template("user_login.html", error="Too many login attempts. Try again in a few minutes."), 429
         user = authenticate_user(identifier, password)
         if user is None:
             return render_template("user_login.html", error="Invalid username/email or password."), 401
@@ -276,12 +348,14 @@ def user_login():
         return redirect(url_for("dashboard"))
     return render_template("user_login.html")
 
+
 @app.route("/dashboard")
 def dashboard():
     user = require_user()
     if user is None:
         return redirect(url_for("user_login"))
     return render_template("dashboard.html", user=user, websites=get_user_websites(user.id))
+
 
 @app.route("/dashboard/websites", methods=["POST"])
 def create_website_route():
@@ -301,14 +375,16 @@ def create_website_route():
     flash("Website created successfully." if website else "Could not create website.", "success" if website else "error")
     return redirect(url_for("dashboard"))
 
+
 @app.route("/dashboard/websites/<int:website_id>/delete", methods=["POST"])
 def delete_website_route(website_id):
     user = require_user()
     if user is None:
         return redirect(url_for("user_login"))
     deleted = delete_website(user.id, website_id)
-    flash("Website deleted successfully." if deleted else "Website not found or you do not have permission to delete it.", "success" if deleted else "error")
+    flash("Website deleted successfully." if deleted else "Website not found or no permission.", "success" if deleted else "error")
     return redirect(url_for("dashboard"))
+
 
 @app.route("/account", methods=["GET", "POST"])
 def account():
@@ -343,6 +419,7 @@ def account():
             return redirect(url_for("account"))
     return render_template("account.html", user=get_user(user.id))
 
+
 @app.route("/orders")
 def orders_page():
     user = require_user()
@@ -350,11 +427,13 @@ def orders_page():
         return redirect(url_for("user_login"))
     return render_template("orders.html", user=user)
 
+
 @app.route("/payment/<result>")
 def payment_result_page(result):
     if result not in {"success", "fail", "cancel"}:
         abort(404)
     return render_template("payment_result.html", result=result, order_id=request.args.get("order_id"))
+
 
 @app.route("/site/<slug>")
 def published_site(slug):
@@ -363,11 +442,13 @@ def published_site(slug):
         abort(404)
     return render_template("published_site.html", website=website)
 
+
 @app.route("/user-logout", methods=["POST"])
 def user_logout():
     session.clear()
     flash("You have been logged out.", "success")
     return redirect(url_for("user_login"))
+
 
 @app.route("/contact", methods=["GET", "POST"])
 def contact():
@@ -387,6 +468,7 @@ def contact():
     create_message(name, email, message)
     return "Message saved successfully!"
 
+
 @app.route("/subscribe", methods=["POST"])
 def subscribe():
     if not allow_subscription(request.remote_addr, limit=10, window_seconds=3600):
@@ -398,22 +480,28 @@ def subscribe():
         return "Subscribed successfully!"
     return "This email is already subscribed!", 409
 
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         if not allow_login(request.remote_addr, f"admin:{username}", limit=5, window_seconds=900):
-            return "Too many admin login attempts. Please try again in a few minutes.", 429
+            return "Too many admin login attempts. Try again in a few minutes.", 429
         configured_username = os.getenv("ADMIN_USERNAME", "")
         configured_password = os.getenv("ADMIN_PASSWORD", "")
         supplied_password = request.form.get("password", "")
-        if configured_username and configured_password and hmac.compare_digest(username, configured_username) and hmac.compare_digest(supplied_password, configured_password):
+        if (
+            configured_username and configured_password and
+            hmac.compare_digest(username, configured_username) and
+            hmac.compare_digest(supplied_password, configured_password)
+        ):
             session.clear()
             session.permanent = True
             mark_admin_authenticated()
             return redirect(url_for("admin"))
         return "Invalid username or password.", 401
     return render_template("login.html")
+
 
 @app.route("/admin")
 @admin_required
@@ -426,12 +514,22 @@ def admin():
     stats = get_admin_stats()
     messages, total = get_messages(page=page, per_page=per_page)
     subscribers, total_subscribers = get_subscribers(page=page, per_page=per_page)
-    return render_template("admin.html", stats=stats, messages=messages, subscribers=subscribers, page=page, total_pages=max(1, (total + per_page - 1) // per_page), subscriber_pages=max(1, (total_subscribers + per_page - 1) // per_page))
+    return render_template(
+        "admin.html",
+        stats=stats,
+        messages=messages,
+        subscribers=subscribers,
+        page=page,
+        total_pages=max(1, (total + per_page - 1) // per_page),
+        subscriber_pages=max(1, (total_subscribers + per_page - 1) // per_page)
+    )
+
 
 @app.route("/logout")
 def logout():
     clear_admin_session()
     return redirect(url_for("login"))
+
 
 if __name__ == "__main__":
     from database import init_db
