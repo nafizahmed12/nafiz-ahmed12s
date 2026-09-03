@@ -87,7 +87,10 @@ def register_admin_session_guard(app):
             urls = [(base + "/", "weekly", "1.0"), (base + "/shop", "daily", "0.9"),
                     (base + "/about", "monthly", "0.7"), (base + "/contact", "monthly", "0.7"),
                     (base + "/privacy-policy", "yearly", "0.5"), (base + "/terms", "yearly", "0.5"),
-                    (base + "/refund-policy", "yearly", "0.5")]
+                    (base + "/refund-policy", "yearly", "0.5"),
+                    (base + "/static/iphone-18.html", "weekly", "0.9"),
+                    (base + "/static/iphone-18-pro.html", "weekly", "0.9"),
+                    (base + "/static/iphone-18-pro-max.html", "weekly", "0.9")]
             entries = "\n".join(f"  <url><loc>{loc}</loc><changefreq>{freq}</changefreq><priority>{priority}</priority></url>"
                                   for loc, freq, priority in urls)
             return Response('<?xml version="1.0" encoding="UTF-8"?>\n'
