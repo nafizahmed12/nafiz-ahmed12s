@@ -218,20 +218,27 @@ def init_db():
         )
 
         if connection.dialect.name == "sqlite":
-            connection.execute(
+            payments_table_exists = connection.execute(
                 text(
-                    """
-                    CREATE TRIGGER IF NOT EXISTS prevent_paid_payment_downgrade
-                    BEFORE UPDATE OF status ON payments
-                    FOR EACH ROW
-                    WHEN OLD.status = 'paid'
-                         AND NEW.status IN ('pending', 'initiated', 'failed', 'cancelled')
-                    BEGIN
-                        SELECT RAISE(ABORT, 'paid payment cannot be downgraded');
-                    END
-                    """
+                    "SELECT 1 FROM sqlite_master "
+                    "WHERE type = 'table' AND name = 'payments'"
                 )
-            )
+            ).scalar() is not None
+            if payments_table_exists:
+                connection.execute(
+                    text(
+                        """
+                        CREATE TRIGGER IF NOT EXISTS prevent_paid_payment_downgrade
+                        BEFORE UPDATE OF status ON payments
+                        FOR EACH ROW
+                        WHEN OLD.status = 'paid'
+                             AND NEW.status IN ('pending', 'initiated', 'failed', 'cancelled')
+                        BEGIN
+                            SELECT RAISE(ABORT, 'paid payment cannot be downgraded');
+                        END
+                        """
+                    )
+                )
 
         _cleanup_rate_limit_records(connection)
         connection.execute(text("SELECT 1"))
