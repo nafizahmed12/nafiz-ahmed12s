@@ -196,11 +196,11 @@ def home():
         abort(404)
     return render_template("index.html")
 
-@app.route("/product/<name>")
+@app.route("/phone-detail/<name>")
 def product_page(name):
     phone_info = {
         'name': 'iPhone 15 Pro',
-        'price': '135,000',
+        'price': '135,000 BDT',
         'details': 'Original Apple iPhone 15 Pro with official warranty in Bangladesh.'
     }
     return render_template('product.html', phone=phone_info)
