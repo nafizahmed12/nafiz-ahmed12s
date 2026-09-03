@@ -203,7 +203,7 @@ def product_page(name):
         'price': '135,000 BDT',
         'details': 'Original Apple iPhone 15 Pro with official warranty in Bangladesh.'
     }
-    return render_template('product.html', phone=phone_info)
+    return render_template('product_phone.html', phone=phone_info)
 
 @app.route("/affiliate-picks")
 def affiliate_picks_page():
