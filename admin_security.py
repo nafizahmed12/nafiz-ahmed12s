@@ -52,6 +52,29 @@ def register_admin_session_guard(app):
     register_password_reset_routes(app)
     _ensure_admin_credentials()
 
+    @app.route("/iphone-18")
+    def clean_iphone_18():
+        return app.send_static_file("iphone-18.html")
+
+    @app.route("/iphone-18-pro")
+    def clean_iphone_18_pro():
+        return app.send_static_file("iphone-18-pro.html")
+
+    @app.route("/iphone-18-pro-max")
+    def clean_iphone_18_pro_max():
+        return app.send_static_file("iphone-18-pro-max.html")
+
+    @app.before_request
+    def handle_legacy_iphone_urls():
+        redirects = {
+            "/static/iphone-18.html": "/iphone-18",
+            "/static/iphone-18-pro.html": "/iphone-18-pro",
+            "/static/iphone-18-pro-max.html": "/iphone-18-pro-max",
+        }
+        if request.method == "GET" and request.path in redirects:
+            return redirect(redirects[request.path], code=301)
+        return None
+
     @app.before_request
     def handle_legacy_logout_get():
         if request.path != "/user-logout" or request.method != "GET":
@@ -88,9 +111,9 @@ def register_admin_session_guard(app):
                     (base + "/about", "monthly", "0.7"), (base + "/contact", "monthly", "0.7"),
                     (base + "/privacy-policy", "yearly", "0.5"), (base + "/terms", "yearly", "0.5"),
                     (base + "/refund-policy", "yearly", "0.5"),
-                    (base + "/static/iphone-18.html", "weekly", "0.9"),
-                    (base + "/static/iphone-18-pro.html", "weekly", "0.9"),
-                    (base + "/static/iphone-18-pro-max.html", "weekly", "0.9")]
+                    (base + "/iphone-18", "weekly", "0.9"),
+                    (base + "/iphone-18-pro", "weekly", "0.9"),
+                    (base + "/iphone-18-pro-max", "weekly", "0.9")]
             entries = "\n".join(f"  <url><loc>{loc}</loc><changefreq>{freq}</changefreq><priority>{priority}</priority></url>"
                                   for loc, freq, priority in urls)
             return Response('<?xml version="1.0" encoding="UTF-8"?>\n'
@@ -170,6 +193,20 @@ def register_admin_session_guard(app):
                 session.clear(); return redirect(url_for("user_login"))
 
     @app.after_request
+    def rewrite_iphone_seo_urls(response):
+        if request.path in {"/iphone-18", "/iphone-18-pro", "/iphone-18-pro-max"} and response.status_code == 200 and "text/html" in response.content_type:
+            body = response.get_data(as_text=True)
+            replacements = {
+                "/static/iphone-18-pro-max.html": "/iphone-18-pro-max",
+                "/static/iphone-18-pro.html": "/iphone-18-pro",
+                "/static/iphone-18.html": "/iphone-18",
+            }
+            for old, new in replacements.items():
+                body = body.replace(old, new)
+            response.set_data(body)
+        return response
+
+    @app.after_request
     def attach_home_javascript(response):
         if request.path == "/" and response.status_code == 200 and "text/html" in response.content_type:
             body = response.get_data(as_text=True)
@@ -184,7 +221,7 @@ def register_admin_session_guard(app):
             "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; "
             "form-action 'self'; img-src 'self' data: https:; font-src 'self' data: https:; "
             "style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline'; "
-            "connect-src 'self'; media-src 'self' https:; worker-src 'self'; manifest-src 'self';"
+            "connect-src 'self'; media-src 'self: https:; worker-src 'self'; manifest-src 'self';"
         )
         return response
 
@@ -204,7 +241,6 @@ def register_password_reset_routes(app):
                     app_module.send_password_reset_email(email, token)
                 except Exception:
                     app.logger.exception("Password reset email delivery failed")
-            # Always return the same response to prevent account enumeration.
             return render_template("forgot_password.html", sent=True, error=None), 200
 
     if "reset_password" not in app.view_functions:
@@ -214,7 +250,7 @@ def register_password_reset_routes(app):
             if request.method == "GET": return render_template("reset_password.html", token=token, error=None)
             password = request.form.get("password", ""); confirm = request.form.get("confirm_password", "")
             if password != confirm: return render_template("reset_password.html", token=token, error="Passwords do not match."), 400
-            if len(password) < 8: return render_template("reset_password.html", token=token, error="Password must be at least 8 characters."), 400
+            if len(password) < 8: return render_template("reset_password.html", token=token, error="Passwords do not match."), 400
             import app as app_module
             if app_module.reset_password_with_token(token, password):
                 session.clear(); return redirect(url_for("user_login"))
