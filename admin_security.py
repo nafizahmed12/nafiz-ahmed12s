@@ -52,6 +52,10 @@ def register_admin_session_guard(app):
     register_password_reset_routes(app)
     _ensure_admin_credentials()
 
+    @app.route("/iphone-18-series")
+    def clean_iphone_18_series():
+        return app.send_static_file("iphone-18-series.html")
+
     @app.route("/iphone-18")
     def clean_iphone_18():
         return app.send_static_file("iphone-18.html")
@@ -67,6 +71,7 @@ def register_admin_session_guard(app):
     @app.before_request
     def handle_legacy_iphone_urls():
         redirects = {
+            "/static/iphone-18-series.html": "/iphone-18-series",
             "/static/iphone-18.html": "/iphone-18",
             "/static/iphone-18-pro.html": "/iphone-18-pro",
             "/static/iphone-18-pro-max.html": "/iphone-18-pro-max",
@@ -113,7 +118,8 @@ def register_admin_session_guard(app):
                     (base + "/refund-policy", "yearly", "0.5"),
                     (base + "/iphone-18", "weekly", "0.9"),
                     (base + "/iphone-18-pro", "weekly", "0.9"),
-                    (base + "/iphone-18-pro-max", "weekly", "0.9")]
+                    (base + "/iphone-18-pro-max", "weekly", "0.9"),
+                    (base + "/iphone-18-series", "weekly", "0.9")]
             entries = "\n".join(f"  <url><loc>{loc}</loc><changefreq>{freq}</changefreq><priority>{priority}</priority></url>"
                                   for loc, freq, priority in urls)
             return Response('<?xml version="1.0" encoding="UTF-8"?>\n'
@@ -190,10 +196,11 @@ def register_admin_session_guard(app):
 
     @app.after_request
     def rewrite_iphone_seo_urls(response):
-        if request.path in {"/iphone-18", "/iphone-18-pro", "/iphone-18-pro-max"} and response.status_code == 200 and "text/html" in response.content_type:
+        if request.path in {"/iphone-18-series", "/iphone-18", "/iphone-18-pro", "/iphone-18-pro-max"} and response.status_code == 200 and "text/html" in response.content_type:
             response.direct_passthrough = False
             body = response.get_data(as_text=True)
             replacements = {
+                "/static/iphone-18-series.html": "/iphone-18-series",
                 "/static/iphone-18-pro-max.html": "/iphone-18-pro-max",
                 "/static/iphone-18-pro.html": "/iphone-18-pro",
                 "/static/iphone-18.html": "/iphone-18",
