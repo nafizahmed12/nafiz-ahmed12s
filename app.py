@@ -200,11 +200,9 @@ def home():
 def product_page(product_id):
     return render_template("product.html", product_id=product_id)
 
-
 @app.route("/affiliate-picks")
 def affiliate_picks_page():
     return render_template("affiliate_picks.html")
-
 
 @app.route("/about")
 def about():
@@ -429,6 +427,15 @@ def admin():
 def logout():
     clear_admin_session()
     return redirect(url_for("login"))
+
+@app.route('/phone/<name>')
+def phone_details(name):
+    phone_info = {
+        'name': 'iPhone 15 Pro',
+        'price': '135000',
+        'details': 'Original Apple iPhone 15 Pro with official warranty.'
+    }
+    return render_template('product.html', phone=phone_info)
 
 if __name__ == "__main__":
     from database import init_db
