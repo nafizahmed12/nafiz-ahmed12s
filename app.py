@@ -274,7 +274,17 @@ def product_page(name):
             'image_url': 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?q=80&w=800&auto=format&fit=crop',
             'description': f'Buy or Pre-Order {name.replace("-", " ").title()} at best price in BD from Nafiz Store.'
         }
-    return render_template('product_phone.html', phone=phone_info, slug=name)
+    affiliate_products = []
+    try:
+        with SessionLocal() as db:
+            affiliate_products = db.execute(text("""SELECT id,name,description,amazon_url,image_url,display_price
+                FROM affiliate_products
+                WHERE status='published'
+                ORDER BY sort_order ASC, id DESC
+                LIMIT 4""")).mappings().all()
+    except Exception:
+        app.logger.exception("Affiliate picks unavailable for phone page")
+    return render_template('product_phone.html', phone=phone_info, slug=name, affiliate_products=affiliate_products)
 
 
 @app.route("/affiliate-picks")

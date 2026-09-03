@@ -399,6 +399,21 @@
             text-decoration: none;
         }
 
+        .affiliate-section { margin: 42px 0 20px; padding: 26px; background:#12161f; border:1px solid #1e2430; border-radius:16px; }
+        .affiliate-heading h2 { color:#fff; font-size:24px; margin:8px 0; }
+        .affiliate-heading p { color:#94a3b8; font-size:13px; line-height:1.6; margin-bottom:20px; }
+        .affiliate-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; }
+        .affiliate-card { background:#161b22; border:1px solid #21262d; border-radius:12px; overflow:hidden; }
+        .affiliate-card img { width:100%; height:150px; object-fit:contain; background:#fff; padding:10px; }
+        .affiliate-card-body { padding:14px; }
+        .affiliate-card h3 { color:#fff; font-size:14px; margin-bottom:7px; }
+        .affiliate-card p { color:#94a3b8; font-size:11px; line-height:1.5; min-height:32px; margin-bottom:8px; }
+        .affiliate-card strong { display:block; color:#fff; margin-bottom:10px; }
+        .affiliate-btn { display:block; text-align:center; background:#ea580c; color:#fff; padding:10px; border-radius:8px; font-size:12px; font-weight:700; }
+        .affiliate-more { display:inline-block; margin-top:18px; color:#f97316; font-size:13px; font-weight:700; }
+        @media (max-width:900px) { .affiliate-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+        @media (max-width:500px) { .affiliate-section { padding:18px; } .affiliate-grid { grid-template-columns:1fr 1fr; gap:10px; } .affiliate-card img { height:110px; } }
+
         .delivery-info {
             font-size: 13px;
             color: #94a3b8;
@@ -521,6 +536,30 @@
             </div>
         </div>
     </div>
+
+    {% if affiliate_products %}
+    <section class="affiliate-section" aria-labelledby="affiliate-picks-title">
+        <div class="affiliate-heading">
+            <span class="brand-link">Recommended accessories</span>
+            <h2 id="affiliate-picks-title">Useful picks for your {{ phone.name }}</h2>
+            <p>We may earn a commission if you purchase through these links, at no extra cost to you.</p>
+        </div>
+        <div class="affiliate-grid">
+            {% for item in affiliate_products %}
+            <article class="affiliate-card">
+                {% if item.image_url %}<img src="{{ item.image_url }}" alt="{{ item.name }}" loading="lazy">{% endif %}
+                <div class="affiliate-card-body">
+                    <h3>{{ item.name }}</h3>
+                    {% if item.description %}<p>{{ item.description }}</p>{% endif %}
+                    {% if item.display_price %}<strong>{{ item.display_price }}</strong>{% endif %}
+                    <a href="{{ item.amazon_url }}" target="_blank" rel="noopener noreferrer sponsored" class="affiliate-btn">Check on Amazon →</a>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+        <a class="affiliate-more" href="/affiliate-picks">See all affiliate picks →</a>
+    </section>
+    {% endif %}
 
     <script>
         // Image Switcher
