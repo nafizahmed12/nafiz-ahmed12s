@@ -32,6 +32,7 @@ def test_paid_payment_cannot_be_downgraded_by_later_webhook():
     """A terminal paid state must not be overwritten by a stale failure/cancel event."""
     from database import SessionLocal
     from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
     from payment_routes import _apply_payment_status
 
     with SessionLocal() as db:
