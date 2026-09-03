@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from flask import Blueprint, jsonify, request, session
+from flask import Blueprint, jsonify, request, session, current_app, redirect
 from sqlalchemy import text
 
 from database import SessionLocal
@@ -131,6 +131,34 @@ def category_products():
         "listing_id": r["listing_id"], "listing_price": _money(r["listing_price"]) if r["listing_price"] is not None else None,
     } for r in rows]
     return jsonify({"items": items, "page": page, "per_page": per_page, "total": total, "total_pages": max(1, (total + per_page - 1) // per_page)})
+
+
+@home_bp.get("/iphone-18-comparison")
+def clean_iphone_18_comparison():
+    return current_app.send_static_file("iphone-18-comparison.html")
+
+
+@home_bp.before_app_request
+def redirect_legacy_comparison_url():
+    if request.method == "GET" and request.path == "/static/iphone-18-comparison.html":
+        return redirect("/iphone-18-comparison", code=301)
+    return None
+
+
+@home_bp.after_app_request
+def normalize_comparison_sitemap(response):
+    if request.path == "/sitemap.xml" and response.status_code == 200 and "xml" in response.content_type:
+        body = response.get_data(as_text=True)
+        old = "/static/iphone-18-comparison.html"
+        new = "/iphone-18-comparison"
+        if old in body:
+            body = body.replace(old, new)
+        if new not in body and "</urlset>" in body:
+            base = request.host_url.rstrip("/")
+            entry = f'<url><loc>{base}{new}</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>'
+            body = body.replace("</urlset>", "  " + entry + "\n</urlset>")
+        response.set_data(body)
+    return response
 
 
 def register_home_routes(app):
