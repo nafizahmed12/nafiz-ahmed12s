@@ -28,7 +28,7 @@
 
     grid.innerHTML = products.slice(0, 10).map((p, index) => {
       const image = p.image_url
-        ? `<img src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy" decoding="async">`
+        ? `<img src="${esc(p.image_url)}" alt="${esc(p.name)}" width="240" height="205" loading="lazy" decoding="async">`
         : '<span style="font-size:48px">🛍️</span>';
       const sale = p.compare_at_price && Number(p.compare_at_price) > Number(p.price);
       const badge = p.featured ? 'FEATURED' : (sale ? 'SALE' : (index < 2 ? 'NEW' : 'POPULAR'));
