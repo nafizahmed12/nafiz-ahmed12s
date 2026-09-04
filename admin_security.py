@@ -3,6 +3,7 @@ import hmac
 import os
 import secrets
 from datetime import datetime, timedelta, timezone
+from html import escape
 
 from flask import Response, jsonify, redirect, session, url_for, request, render_template
 from sqlalchemy import text
@@ -130,19 +131,41 @@ def register_admin_session_guard(app):
             return Response(content, mimetype="text/plain")
         if request.path == "/sitemap.xml" and request.method == "GET":
             base = _seo_base_url()
-            urls = [(base + "/", "weekly", "1.0"), (base + "/shop", "daily", "0.9"),
-                    (base + "/about", "monthly", "0.7"), (base + "/contact", "monthly", "0.7"),
-                    (base + "/privacy-policy", "yearly", "0.5"), (base + "/terms", "yearly", "0.5"),
-                    (base + "/refund-policy", "yearly", "0.5"),
-                    (base + "/iphone-18", "weekly", "0.9"),
-                    (base + "/iphone-18-pro", "weekly", "0.9"),
-                    (base + "/iphone-18-pro-max", "weekly", "0.9"),
-                    (base + "/iphone-18-series", "weekly", "0.9")]
-            entries = "\n".join(f"  <url><loc>{loc}</loc><changefreq>{freq}</changefreq><priority>{priority}</priority></url>"
-                                  for loc, freq, priority in urls)
-            return Response('<?xml version="1.0" encoding="UTF-8"?>\n'
-                            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-                            f"{entries}\n</urlset>\n", mimetype="application/xml")
+            urls = [
+                (base + "/", "weekly", "1.0", None),
+                (base + "/shop", "daily", "0.9", None),
+                (base + "/about", "monthly", "0.7", None),
+                (base + "/contact", "monthly", "0.7", None),
+                (base + "/privacy-policy", "yearly", "0.5", None),
+                (base + "/terms", "yearly", "0.5", None),
+                (base + "/refund-policy", "yearly", "0.5", None),
+                (base + "/iphone-18", "weekly", "0.9", "2026-09-03"),
+                (base + "/iphone-18-pro", "weekly", "0.9", "2026-09-03"),
+                (base + "/iphone-18-pro-max", "weekly", "0.9", "2026-09-03"),
+                (base + "/iphone-18-series", "weekly", "0.9", "2026-09-04"),
+                (base + "/iphone-18-comparison", "weekly", "0.8", "2026-09-04"),
+            ]
+            entries = []
+            for loc, freq, priority, lastmod in urls:
+                entry = [
+                    "  <url>",
+                    f"    <loc>{escape(loc)}</loc>",
+                ]
+                if lastmod:
+                    entry.append(f"    <lastmod>{lastmod}</lastmod>")
+                entry.extend([
+                    f"    <changefreq>{freq}</changefreq>",
+                    f"    <priority>{priority}</priority>",
+                    "  </url>",
+                ])
+                entries.append("\n".join(entry))
+            xml = (
+                '<?xml version="1.0" encoding="UTF-8"?>\n'
+                '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+                + "\n".join(entries)
+                + "\n</urlset>\n"
+            )
+            return Response(xml, mimetype="application/xml")
         return None
 
     @app.before_request
