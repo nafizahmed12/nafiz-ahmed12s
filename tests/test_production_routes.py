@@ -11,6 +11,28 @@ import app
 client = app.app.test_client()
 
 
+def _reset_admin_login_rate_limits():
+    """Keep admin route tests isolated from previous runs of the SQLite test DB."""
+    from database import SessionLocal
+    from sqlalchemy import text
+
+    with SessionLocal() as db:
+        db.execute(
+            text(
+                "DELETE FROM login_rate_limits "
+                "WHERE rate_key LIKE :admin_key "
+                "OR rate_key LIKE :admin_prefixed_key "
+                "OR rate_key LIKE :rate_key"
+            ),
+            {
+                "admin_key": "%:ci-admin",
+                "admin_prefixed_key": "%:admin:ci-admin",
+                "rate_key": "%:rate-limit-test",
+            },
+        )
+        db.commit()
+
+
 def _admin_post(path, data):
     """Submit an admin form with a session-bound CSRF token, matching production forms."""
     token = "ci-csrf-token"
@@ -39,6 +61,7 @@ def test_sensitive_routes_require_authentication():
 
 
 def test_admin_login_initializes_privileged_session():
+    _reset_admin_login_rate_limits()
     response = _admin_post(
         "/login",
         {"username": "ci-admin", "password": "ci-password"},
@@ -55,6 +78,7 @@ def test_admin_login_initializes_privileged_session():
 
 
 def test_admin_login_rejects_invalid_credentials():
+    _reset_admin_login_rate_limits()
     response = _admin_post(
         "/login",
         {"username": "ci-admin", "password": "wrong-password"},
@@ -66,6 +90,7 @@ def test_admin_login_rejects_invalid_credentials():
 
 
 def test_admin_logout_clears_privileged_session():
+    _reset_admin_login_rate_limits()
     response = _admin_post(
         "/login",
         {"username": "ci-admin", "password": "ci-password"},
@@ -83,6 +108,7 @@ def test_admin_logout_clears_privileged_session():
 
 
 def test_admin_login_rate_limit_is_enforced():
+    _reset_admin_login_rate_limits()
     for _ in range(5):
         response = _admin_post(
             "/login",
