@@ -5,6 +5,13 @@ from xml.etree import ElementTree
 from app import app
 
 SITEMAP_NS = "http://www.sitemaps.org/schemas/sitemap/0.9"
+PUBLIC_SEO_PATHS = (
+    "/iphone-18-series",
+    "/iphone-18",
+    "/iphone-18-pro",
+    "/iphone-18-pro-max",
+    "/iphone-18-comparison",
+)
 
 
 def test_sitemap_is_valid_xml_with_absolute_public_urls_without_query_strings():
@@ -48,14 +55,31 @@ def test_sitemap_contains_primary_seo_landing_pages():
     with app.test_client() as client:
         body = client.get("/sitemap.xml").get_data(as_text=True)
 
-    for path in (
-        "/iphone-18-series",
-        "/iphone-18",
-        "/iphone-18-pro",
-        "/iphone-18-pro-max",
-        "/iphone-18-comparison",
-    ):
+    for path in PUBLIC_SEO_PATHS:
         assert path in body
+
+
+def test_public_seo_pages_return_indexable_html_with_self_canonicals():
+    app.config.update(TESTING=True)
+    with app.test_client() as client:
+        for path in PUBLIC_SEO_PATHS:
+            response = client.get(path)
+            assert response.status_code == 200, path
+            assert response.mimetype == "text/html", path
+            body = response.get_data(as_text=True)
+            assert 'name="robots" content="index,follow' in body, path
+            assert '<link rel="canonical" href="https://nafiz-ahmed12s.onrender.com' in body, path
+            assert 'noindex' not in body.lower(), path
+            assert 'nofollow' not in body.lower(), path
+
+
+def test_public_seo_pages_are_linked_from_the_cluster_hub():
+    app.config.update(TESTING=True)
+    with app.test_client() as client:
+        body = client.get("/iphone-18-series").get_data(as_text=True)
+
+    for path in PUBLIC_SEO_PATHS[1:]:
+        assert f'href="{path}"' in body
 
 
 def test_robots_explicitly_allows_public_seo_pages():
@@ -67,13 +91,7 @@ def test_robots_explicitly_allows_public_seo_pages():
 
     assert "User-agent: *" in body
     assert "Allow: /" in body
-    for path in (
-        "/iphone-18-series",
-        "/iphone-18",
-        "/iphone-18-pro",
-        "/iphone-18-pro-max",
-        "/iphone-18-comparison",
-    ):
+    for path in PUBLIC_SEO_PATHS:
         assert f"Allow: {path}" in body
 
 
