@@ -135,6 +135,9 @@ def register_admin_session_guard(app):
         password = request.form.get("password", "")
         if not username or not password:
             return None
+        from csrf import _valid_csrf_token
+        if not _valid_csrf_token(request.form.get("csrf_token")):
+            return "Invalid or missing CSRF token. Please refresh the page and try again.", 400
         from schema import allow_login
         if not allow_login(request.remote_addr, username, limit=5, window_seconds=900):
             return "Too many login attempts. Please try again in a few minutes.", 429
