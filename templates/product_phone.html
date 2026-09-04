@@ -59,7 +59,6 @@
             padding-bottom: 40px;
         }
 
-        /* Header / Navbar */
         .header {
             background-color: #161b22;
             border-bottom: 1px solid #21262d;
@@ -86,9 +85,7 @@
             gap: 10px;
         }
 
-        .logo span {
-            color: #ea580c;
-        }
+        .logo span { color: #ea580c; }
 
         .container {
             max-width: 1200px;
@@ -96,21 +93,14 @@
             padding: 0 20px;
         }
 
-        /* Breadcrumb */
         .breadcrumb {
             font-size: 13px;
             color: #64748b;
             margin-bottom: 25px;
         }
-        .breadcrumb a {
-            color: #64748b;
-            text-decoration: none;
-        }
-        .breadcrumb a:hover {
-            color: #f97316;
-        }
+        .breadcrumb a { color: #64748b; text-decoration: none; }
+        .breadcrumb a:hover { color: #f97316; }
 
-        /* Product Grid */
         .product-grid {
             display: grid;
             grid-template-columns: 480px 1fr;
@@ -118,12 +108,9 @@
         }
 
         @media (max-width: 900px) {
-            .product-grid {
-                grid-template-columns: 1fr;
-            }
+            .product-grid { grid-template-columns: 1fr; }
         }
 
-        /* Gallery */
         .main-image-container {
             width: 100%;
             height: 480px;
@@ -163,17 +150,9 @@
             flex-shrink: 0;
         }
 
-        .thumb.active, .thumb:hover {
-            border-color: #ea580c;
-        }
+        .thumb.active, .thumb:hover { border-color: #ea580c; }
+        .thumb img { width: 100%; height: 100%; object-fit: cover; }
 
-        .thumb img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        /* Product Info */
         .brand-link {
             font-size: 13px;
             color: #ea580c;
@@ -198,16 +177,8 @@
             margin-bottom: 15px;
         }
 
-        .price {
-            font-size: 26px;
-            font-weight: 700;
-            color: #ffffff;
-        }
-
-        .price-type {
-            font-size: 13px;
-            color: #64748b;
-        }
+        .price { font-size: 26px; font-weight: 700; color: #ffffff; }
+        .price-type { font-size: 13px; color: #64748b; }
 
         .meta-info {
             display: flex;
@@ -217,9 +188,7 @@
             margin-bottom: 20px;
         }
 
-        .meta-info span {
-            color: #38bdf8;
-        }
+        .meta-info span { color: #38bdf8; }
 
         .description-box {
             font-size: 14px;
@@ -232,7 +201,6 @@
             border-left: 3px solid #ea580c;
         }
 
-        /* Option Boxes */
         .section-box {
             background-color: #12161f;
             border: 1px solid #1e2430;
@@ -283,10 +251,7 @@
             display: inline-block;
         }
 
-        /* Quantity */
-        .quantity-wrapper {
-            margin-bottom: 25px;
-        }
+        .quantity-wrapper { margin-bottom: 25px; }
 
         .quantity-control {
             display: inline-flex;
@@ -308,18 +273,9 @@
             font-size: 16px;
         }
 
-        .qty-btn:hover {
-            background-color: #21262d;
-        }
+        .qty-btn:hover { background-color: #21262d; }
+        .qty-val { width: 40px; text-align: center; font-size: 14px; font-weight: 600; }
 
-        .qty-val {
-            width: 40px;
-            text-align: center;
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        /* Actions */
         .action-buttons {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -341,9 +297,7 @@
             text-align: center;
         }
 
-        .btn-shop-now:hover {
-            background-color: #c2410c;
-        }
+        .btn-shop-now:hover { background-color: #c2410c; }
 
         .btn-add-cart {
             background-color: transparent;
@@ -360,9 +314,7 @@
             gap: 8px;
         }
 
-        .btn-add-cart:hover {
-            background-color: rgba(234, 88, 12, 0.1);
-        }
+        .btn-add-cart:hover { background-color: rgba(234, 88, 12, 0.1); }
 
         .secondary-actions {
             display: grid;
@@ -422,11 +374,66 @@
             gap: 10px;
             padding-top: 10px;
         }
+
+        .product-content-section {
+            margin: 42px 0 20px;
+            padding: 28px;
+            background: #12161f;
+            border: 1px solid #1e2430;
+            border-radius: 16px;
+        }
+
+        .product-content-section h2 {
+            color: #ffffff;
+            font-size: 24px;
+            margin-bottom: 12px;
+        }
+
+        .product-content-section h3 {
+            color: #ffffff;
+            font-size: 18px;
+            margin: 24px 0 10px;
+        }
+
+        .product-content-section p,
+        .product-content-section li {
+            color: #94a3b8;
+            font-size: 14px;
+            line-height: 1.75;
+        }
+
+        .product-content-section ul {
+            margin: 10px 0 0 20px;
+        }
+
+        .faq-list {
+            display: grid;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .faq-item {
+            background: #161b22;
+            border: 1px solid #21262d;
+            border-radius: 10px;
+            padding: 16px;
+        }
+
+        .faq-item summary {
+            color: #ffffff;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .faq-item p { margin-top: 10px; }
+
+        @media (max-width: 700px) {
+            .product-content-section { padding: 20px; }
+        }
     </style>
 </head>
 <body>
 
-    <!-- Header -->
     <header class="header">
         <div class="nav-container">
             <a href="/" class="logo">
@@ -440,31 +447,28 @@
     </header>
 
     <div class="container">
-        <!-- Breadcrumb -->
         <div class="breadcrumb">
             <a href="/">Home</a> &gt; <a href="/shop">Smartphones</a> &gt; {{ phone.name }}
         </div>
 
         <div class="product-grid">
-            <!-- Left: Interactive Gallery -->
             <div>
                 <div class="main-image-container">
                     <img src="{{ phone.image_url if phone.image_url else 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?q=80&w=800&auto=format&fit=crop' }}" alt="{{ phone.name }}" id="mainImg">
                 </div>
                 <div class="thumbnail-list">
                     <div class="thumb active" onclick="changeImage(this, '{{ phone.image_url if phone.image_url else \'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?q=80&w=800&auto=format&fit=crop\' }}')">
-                        <img src="{{ phone.image_url if phone.image_url else 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?q=80&w=200&auto=format&fit=crop' }}">
+                        <img src="{{ phone.image_url if phone.image_url else 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?q=80&w=200&auto=format&fit=crop' }}" alt="{{ phone.name }} main view">
                     </div>
                     <div class="thumb" onclick="changeImage(this, 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=800&auto=format&fit=crop')">
-                        <img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=200&auto=format&fit=crop">
+                        <img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=200&auto=format&fit=crop" alt="{{ phone.name }} alternate view">
                     </div>
                     <div class="thumb" onclick="changeImage(this, 'https://images.unsplash.com/photo-1580910051074-3eb694886505?q=80&w=800&auto=format&fit=crop')">
-                        <img src="https://images.unsplash.com/photo-1580910051074-3eb694886505?q=80&w=200&auto=format&fit=crop">
+                        <img src="https://images.unsplash.com/photo-1580910051074-3eb694886505?q=80&w=200&auto=format&fit=crop" alt="{{ phone.name }} detail view">
                     </div>
                 </div>
             </div>
 
-            <!-- Right: Product Details -->
             <div>
                 <span class="brand-link">Nafiz Official Store</span>
                 <h1 class="product-title">{{ phone.name }}</h1>
@@ -483,23 +487,15 @@
                     {{ phone.description if phone.description else 'Experience top-tier performance with advanced display technology, premium durable build, long-lasting battery efficiency, and crystal-clear camera optics.' }}
                 </div>
 
-                <!-- Interactive Color Selection -->
                 <div class="section-box">
                     <div class="option-title">Color Edition:</div>
                     <div class="options-grid">
-                        <div class="option-btn active" onclick="selectOption(this)">
-                            <span class="color-dot" style="background:#ea580c;"></span> Titanium
-                        </div>
-                        <div class="option-btn" onclick="selectOption(this)">
-                            <span class="color-dot" style="background:#1e293b;"></span> Midnight
-                        </div>
-                        <div class="option-btn" onclick="selectOption(this)">
-                            <span class="color-dot" style="background:#e2e8f0;"></span> Silver
-                        </div>
+                        <div class="option-btn active" onclick="selectOption(this)"><span class="color-dot" style="background:#ea580c;"></span> Titanium</div>
+                        <div class="option-btn" onclick="selectOption(this)"><span class="color-dot" style="background:#1e293b;"></span> Midnight</div>
+                        <div class="option-btn" onclick="selectOption(this)"><span class="color-dot" style="background:#e2e8f0;"></span> Silver</div>
                     </div>
                 </div>
 
-                <!-- Interactive Storage Selection -->
                 <div class="section-box">
                     <div class="option-title">Storage Capacity:</div>
                     <div class="options-grid">
@@ -509,7 +505,6 @@
                     </div>
                 </div>
 
-                <!-- Quantity Control -->
                 <div class="quantity-wrapper">
                     <div class="option-title">Select Quantity:</div>
                     <div class="quantity-control">
@@ -519,7 +514,6 @@
                     </div>
                 </div>
 
-                <!-- Action Buttons -->
                 <div class="action-buttons">
                     <a href="/contact" class="btn-shop-now">Shop Now</a>
                     <button class="btn-add-cart"><i class="fa-solid fa-cart-shopping"></i> Add To Cart</button>
@@ -527,7 +521,7 @@
 
                 <div class="secondary-actions">
                     <button class="btn-emi">% EMI Options Available</button>
-                    <a href="https://wa.me/?text=I%20want%20to%20buy%20{{ phone.name }}" target="_blank" class="btn-whatsapp"><i class="fa-brands fa-whatsapp"></i> Chat on Whatsapp</a>
+                    <a href="https://wa.me/?text=I%20want%20to%20buy%20{{ phone.name }}" target="_blank" rel="noopener noreferrer" class="btn-whatsapp"><i class="fa-brands fa-whatsapp"></i> Chat on Whatsapp</a>
                 </div>
 
                 <div class="delivery-info">
@@ -535,6 +529,50 @@
                 </div>
             </div>
         </div>
+
+        <section class="product-content-section" aria-labelledby="product-overview-title">
+            <span class="brand-link">Product information</span>
+            <h2 id="product-overview-title">About {{ phone.name }}</h2>
+            <p>
+                This product page is designed to give shoppers a clear view of {{ phone.name }}, including the current listed price,
+                available options, product description, delivery information, and purchase-support options. Review the information
+                above before ordering and contact Nafiz Store if you need clarification about availability, warranty, or an order.
+            </p>
+
+            <h3>What to check before buying</h3>
+            <ul>
+                <li>Confirm the displayed price and stock status before placing an order.</li>
+                <li>Choose the storage capacity and color that match your requirements.</li>
+                <li>Review the product description and available delivery information carefully.</li>
+                <li>For warranty, payment, or order questions, use the store support channel before completing your purchase.</li>
+            </ul>
+
+            <h3>Price and availability information</h3>
+            <p>
+                Prices and inventory can change as products are updated. The price and availability shown on this page represent
+                the current information supplied to the store page and should be confirmed at the time of purchase.
+            </p>
+
+            <h3 id="product-faq-title">Frequently asked questions</h3>
+            <div class="faq-list">
+                <details class="faq-item">
+                    <summary>What is the current price of {{ phone.name }}?</summary>
+                    <p>The current listed price is shown near the product title in Bangladeshi Taka (BDT). Please confirm the displayed price before ordering.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>Is {{ phone.name }} available now?</summary>
+                    <p>This page currently shows the product as in stock. Availability can change, so confirm stock status when you place the order.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>Can I ask about warranty or delivery before buying?</summary>
+                    <p>Yes. Use the store contact/support option to ask about warranty, delivery, payment, or order details before purchasing.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>Are the storage and color choices guaranteed to be available?</summary>
+                    <p>The options displayed on the page are selectable product options. Final availability should be confirmed before purchase because inventory can change.</p>
+                </details>
+            </div>
+        </section>
     </div>
 
     {% if affiliate_products %}
@@ -562,28 +600,20 @@
     {% endif %}
 
     <script>
-        // Image Switcher
         function changeImage(element, src) {
             document.getElementById('mainImg').src = src;
-            
-            // Remove active class from all thumbs
             let thumbs = document.querySelectorAll('.thumb');
             thumbs.forEach(thumb => thumb.classList.remove('active'));
-            
-            // Add active class to clicked thumb
             element.classList.add('active');
         }
 
-        // Color and Storage Option Selector
         function selectOption(element) {
             let parentGrid = element.parentElement;
             let options = parentGrid.querySelectorAll('.option-btn');
-            
             options.forEach(option => option.classList.remove('active'));
             element.classList.add('active');
         }
 
-        // Quantity Counter
         let count = 1;
         function increaseQty() {
             count++;
