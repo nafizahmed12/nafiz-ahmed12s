@@ -39,6 +39,25 @@ def test_sitemap_contains_primary_seo_landing_pages():
         assert path in body
 
 
+def test_robots_explicitly_allows_public_seo_pages():
+    app.config.update(TESTING=True)
+    with app.test_client() as client:
+        response = client.get("/robots.txt")
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+
+    assert "User-agent: *" in body
+    assert "Allow: /" in body
+    for path in (
+        "/iphone-18-series",
+        "/iphone-18",
+        "/iphone-18-pro",
+        "/iphone-18-pro-max",
+        "/iphone-18-comparison",
+    ):
+        assert f"Allow: {path}" in body
+
+
 def test_robots_disallows_private_paths_and_references_sitemap():
     app.config.update(TESTING=True)
     with app.test_client() as client:
@@ -55,8 +74,12 @@ def test_robots_disallows_private_paths_and_references_sitemap():
         "/user-login",
         "/forgot-password",
         "/reset-password",
+        "/checkout",
+        "/orders",
+        "/api/",
     ):
         assert f"Disallow: {path}" in body
 
+    assert "Disallow: /\n" not in body
     assert "Sitemap: " in body
     assert "/sitemap.xml" in body

@@ -104,11 +104,29 @@ def register_admin_session_guard(app):
     def serve_dynamic_seo_files():
         if request.path == "/robots.txt" and request.method == "GET":
             base = _seo_base_url()
-            content = ("User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /login\n"
-                       "Disallow: /logout\nDisallow: /dashboard\nDisallow: /account\n"
-                       "Disallow: /register\nDisallow: /user-login\nDisallow: /user-logout\n"
-                       "Disallow: /forgot-password\nDisallow: /reset-password\n\n"
-                       f"Sitemap: {base}/sitemap.xml\n")
+            content = (
+                "User-agent: *\n"
+                "Allow: /\n"
+                "Allow: /iphone-18-series\n"
+                "Allow: /iphone-18\n"
+                "Allow: /iphone-18-pro\n"
+                "Allow: /iphone-18-pro-max\n"
+                "Allow: /iphone-18-comparison\n"
+                "Disallow: /admin\n"
+                "Disallow: /login\n"
+                "Disallow: /logout\n"
+                "Disallow: /dashboard\n"
+                "Disallow: /account\n"
+                "Disallow: /register\n"
+                "Disallow: /user-login\n"
+                "Disallow: /user-logout\n"
+                "Disallow: /forgot-password\n"
+                "Disallow: /reset-password\n"
+                "Disallow: /checkout\n"
+                "Disallow: /orders\n"
+                "Disallow: /api/\n\n"
+                f"Sitemap: {base}/sitemap.xml\n"
+            )
             return Response(content, mimetype="text/plain")
         if request.path == "/sitemap.xml" and request.method == "GET":
             base = _seo_base_url()
