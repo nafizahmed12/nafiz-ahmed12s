@@ -52,8 +52,9 @@ def test_paid_payment_cannot_be_downgraded_by_later_webhook():
         ).scalar_one()
         db.commit()
 
+        lock_clause = "" if db.bind.dialect.name == "sqlite" else " FOR UPDATE"
         payment = db.execute(
-            text("SELECT id FROM payments WHERE id=:payment_id FOR UPDATE"),
+            text(f"SELECT id FROM payments WHERE id=:payment_id{lock_clause}"),
             {"payment_id": payment_id},
         ).mappings().one()
 
