@@ -1,8 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://nafiz-ahmed12s.onrender.com/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
-  <url><loc>https://nafiz-ahmed12s.onrender.com/iphone-18</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
-  <url><loc>https://nafiz-ahmed12s.onrender.com/iphone-18-pro</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
-  <url><loc>https://nafiz-ahmed12s.onrender.com/iphone-18-pro-max</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://nafiz-ahmed12s.onrender.com/shop</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://nafiz-ahmed12s.onrender.com/about</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://nafiz-ahmed12s.onrender.com/contact</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://nafiz-ahmed12s.onrender.com/privacy-policy</loc><changefreq>yearly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://nafiz-ahmed12s.onrender.com/terms</loc><changefreq>yearly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://nafiz-ahmed12s.onrender.com/refund-policy</loc><changefreq>yearly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://nafiz-ahmed12s.onrender.com/iphone-18</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://nafiz-ahmed12s.onrender.com/iphone-18-pro</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://nafiz-ahmed12s.onrender.com/iphone-18-pro-max</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://nafiz-ahmed12s.onrender.com/iphone-18-series</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
   <url><loc>https://nafiz-ahmed12s.onrender.com/iphone-18-comparison</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
 </urlset>
