@@ -85,6 +85,57 @@ def register_error_handlers(app):
         return response
 
     @app.after_request
+    def add_product_page_seo(response):
+        """Normalize product canonicals and add breadcrumb structured data without changing product data."""
+        if request.path.startswith("/phone-detail/") and response.status_code == 200 and response.mimetype == "text/html":
+            try:
+                html = response.get_data(as_text=True)
+                canonical_url = request.base_url
+                html = html.replace(
+                    '<link rel="canonical" href="{{ request.url }}">',
+                    f'<link rel="canonical" href="{canonical_url}">',
+                    1,
+                )
+
+                # Prevent duplicate query-string URLs from becoming separate indexable product URLs.
+                robots_tag = '<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">'
+                if 'name="robots"' not in html:
+                    html = html.replace("</head>", robots_tag + "\n</head>", 1)
+
+                # Add descriptive alt text to the primary product image if the template does not provide one.
+                if '<div class="main-image-container">' in html:
+                    marker = '<div class="main-image-container">'
+                    image_start = html.find("<img", html.find(marker))
+                    image_end = html.find(">", image_start)
+                    if image_start >= 0 and image_end >= 0:
+                        image_tag = html[image_start:image_end + 1]
+                        if " alt=" not in image_tag:
+                            title_marker = '<h1 class="product-title">'
+                            title_start = html.find(title_marker)
+                            title_end = html.find("</h1>", title_start)
+                            product_name = html[title_start + len(title_marker):title_end].strip() if title_start >= 0 and title_end >= 0 else "Product"
+                            image_tag_with_alt = image_tag[:-1] + f' alt="{product_name} - Nafiz Store">'
+                            html = html[:image_start] + image_tag_with_alt + html[image_end + 1:]
+
+                breadcrumb = {
+                    "@context": "https://schema.org",
+                    "@type": "BreadcrumbList",
+                    "itemListElement": [
+                        {"@type": "ListItem", "position": 1, "name": "Home", "item": url_for("home", _external=True)},
+                        {"@type": "ListItem", "position": 2, "name": "Smartphones", "item": url_for("shop", _external=True)},
+                    ],
+                }
+                html = html.replace(
+                    "</head>",
+                    '<script type="application/ld+json">' + json.dumps(breadcrumb, ensure_ascii=False) + '</script>\n</head>',
+                    1,
+                )
+                response.set_data(html)
+            except Exception:
+                app.logger.exception("Product page SEO optimization failed")
+        return response
+
+    @app.after_request
     def attach_shop_design(response):
         """Load the marketplace-style product card enhancement on the shop page."""
         if request.path == "/shop" and response.status_code == 200 and "text/html" in response.content_type:
