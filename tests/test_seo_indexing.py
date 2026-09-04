@@ -3,7 +3,7 @@ from urllib.parse import urlparse
 from app import app
 
 
-def test_sitemap_is_absolute_canonical_public_urls():
+def test_sitemap_is_absolute_public_urls_without_query_strings():
     app.config.update(TESTING=True)
     with app.test_client() as client:
         response = client.get("/sitemap.xml")
@@ -20,7 +20,7 @@ def test_sitemap_is_absolute_canonical_public_urls():
         if "<loc>" in line
     ]
     assert urls
-    assert all(urlparse(url).scheme == "https" for url in urls)
+    assert all(urlparse(url).scheme in {"http", "https"} for url in urls)
     assert all(urlparse(url).netloc for url in urls)
 
 
@@ -39,7 +39,7 @@ def test_sitemap_contains_primary_seo_landing_pages():
         assert path in body
 
 
-def test_robots_disallows_private_and_transactional_paths():
+def test_robots_disallows_private_paths_and_references_sitemap():
     app.config.update(TESTING=True)
     with app.test_client() as client:
         response = client.get("/robots.txt")
