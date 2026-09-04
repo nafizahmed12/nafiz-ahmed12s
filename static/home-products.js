@@ -28,7 +28,7 @@
 
     grid.innerHTML = products.slice(0, 10).map((p, index) => {
       const image = p.image_url
-        ? `<img src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy">`
+        ? `<img src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy" decoding="async">`
         : '<span style="font-size:48px">🛍️</span>';
       const sale = p.compare_at_price && Number(p.compare_at_price) > Number(p.price);
       const badge = p.featured ? 'FEATURED' : (sale ? 'SALE' : (index < 2 ? 'NEW' : 'POPULAR'));
@@ -113,6 +113,7 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     addTrustLinks();
-    loadProducts();
+    const schedule = window.requestIdleCallback || ((callback) => setTimeout(callback, 1));
+    schedule(loadProducts, { timeout: 1500 });
   });
 })();
