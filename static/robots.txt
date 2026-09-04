@@ -8,5 +8,10 @@ Disallow: /account
 Disallow: /register
 Disallow: /user-login
 Disallow: /user-logout
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /checkout
+Disallow: /orders
+Disallow: /api/
 
 Sitemap: https://nafiz-ahmed12s.onrender.com/sitemap.xml
