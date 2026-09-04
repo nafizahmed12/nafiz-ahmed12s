@@ -34,23 +34,52 @@ def register_error_handlers(app):
 
     @app.after_request
     def add_homepage_seo(response):
-        """Add canonical/social metadata to the public homepage without changing its UI."""
+        """Add accurate search/social metadata and ecommerce structured data to the homepage."""
         if request.path == "/" and response.mimetype == "text/html":
             try:
                 html = response.get_data(as_text=True)
-                if 'rel="canonical"' not in html and 'property="og:title"' not in html:
-                    canonical_url = url_for("home", _external=True)
-                    structured_data = {
+                canonical_url = url_for("home", _external=True).rstrip("/")
+                old_title = "<title>Nafiz Ecommerce — Shop Phones, Electronics & More</title>"
+                new_title = "<title>Nafiz Ecommerce — Phones, Electronics & More in Bangladesh</title>"
+                if old_title in html:
+                    html = html.replace(old_title, new_title, 1)
+                seo_tags = f'''\n<meta name="description" content="Shop phones, laptops, electronics, accessories and more online in Bangladesh with Nafiz Ecommerce.">\n<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">\n<link rel="canonical" href="{canonical_url}/">\n<meta property="og:type" content="website">\n<meta property="og:title" content="Nafiz Ecommerce — Phones, Electronics & More in Bangladesh">\n<meta property="og:description" content="Shop phones, laptops, electronics, accessories and more online in Bangladesh with Nafiz Ecommerce.">\n<meta property="og:url" content="{canonical_url}/">\n<meta property="og:site_name" content="Nafiz Ecommerce">\n<meta name="twitter:card" content="summary">\n<meta name="twitter:title" content="Nafiz Ecommerce — Phones, Electronics & More in Bangladesh">\n<meta name="twitter:description" content="Shop phones, laptops, electronics, accessories and more online in Bangladesh with Nafiz Ecommerce.">\n'''
+                structured_data = [
+                    {
                         "@context": "https://schema.org",
-                        "@type": "Person",
-                        "name": "Nafiz Ahmed",
-                        "url": canonical_url,
-                        "jobTitle": "Python Developer",
-                        "description": "Nafiz Ahmed — Python developer focused on web development, APIs and digital solutions.",
-                    }
-                    seo_tags = f'''\n    <link rel="canonical" href="{canonical_url}">\n    <meta property="og:type" content="website">\n    <meta property="og:title" content="Nafiz Ahmed — Python Developer">\n    <meta property="og:description" content="Python developer focused on web development, APIs and digital solutions.">\n    <meta property="og:url" content="{canonical_url}">\n    <meta property="og:image" content="{url_for('static', filename='profile.jpg', _external=True)}">\n    <meta name="twitter:card" content="summary">\n    <meta name="twitter:title" content="Nafiz Ahmed — Python Developer">\n    <meta name="twitter:description" content="Python developer focused on web development, APIs and digital solutions.">\n    <meta name="twitter:image" content="{url_for('static', filename='profile.jpg', _external=True)}">\n    <script type="application/ld+json">{json.dumps(structured_data, ensure_ascii=False)}</script>'''
-                    html = html.replace("</head>", seo_tags + "\n</head>", 1)
-                    response.set_data(html)
+                        "@type": "WebSite",
+                        "name": "Nafiz Ecommerce",
+                        "url": f"{canonical_url}/",
+                        "potentialAction": {
+                            "@type": "SearchAction",
+                            "target": f"{canonical_url}/shop?q={{search_term_string}}",
+                            "query-input": "required name=search_term_string",
+                        },
+                    },
+                    {
+                        "@context": "https://schema.org",
+                        "@type": "Organization",
+                        "name": "Nafiz Ecommerce",
+                        "url": f"{canonical_url}/",
+                    },
+                ]
+                # Replace the old personal-profile SEO block if it exists; otherwise add the ecommerce block.
+                old_seo_start = '<link rel="canonical" href="'
+                if old_seo_start in html and 'Nafiz Ahmed — Python Developer' in html:
+                    head_end = html.find("</head>")
+                    head_start = html.rfind("<head", 0, head_end)
+                    if head_start >= 0:
+                        head = html[head_start:head_end]
+                        marker = '<link rel="canonical" href="'
+                        block_start = head.find(marker)
+                        if block_start >= 0:
+                            block_end = head.find("</script>", block_start)
+                            if block_end >= 0:
+                                block_end += len("</script>")
+                                html = html[:head_start] + head[:block_start] + seo_tags + "<script type=\"application/ld+json\">" + json.dumps(structured_data, ensure_ascii=False) + "</script>" + head[block_end:] + html[head_end:]
+                elif 'name="description"' not in html:
+                    html = html.replace("</head>", seo_tags + "<script type=\"application/ld+json\">" + json.dumps(structured_data, ensure_ascii=False) + "</script>\n</head>", 1)
+                response.set_data(html)
             except Exception:
                 app.logger.exception("Homepage SEO metadata injection failed")
         return response
