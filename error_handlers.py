@@ -45,25 +45,9 @@ def register_error_handlers(app):
                     html = html.replace(old_title, new_title, 1)
                 seo_tags = f'''\n<meta name="description" content="Shop phones, laptops, electronics, accessories and more online in Bangladesh with Nafiz Ecommerce.">\n<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">\n<link rel="canonical" href="{canonical_url}/">\n<meta property="og:type" content="website">\n<meta property="og:title" content="Nafiz Ecommerce — Phones, Electronics & More in Bangladesh">\n<meta property="og:description" content="Shop phones, laptops, electronics, accessories and more online in Bangladesh with Nafiz Ecommerce.">\n<meta property="og:url" content="{canonical_url}/">\n<meta property="og:site_name" content="Nafiz Ecommerce">\n<meta name="twitter:card" content="summary">\n<meta name="twitter:title" content="Nafiz Ecommerce — Phones, Electronics & More in Bangladesh">\n<meta name="twitter:description" content="Shop phones, laptops, electronics, accessories and more online in Bangladesh with Nafiz Ecommerce.">\n'''
                 structured_data = [
-                    {
-                        "@context": "https://schema.org",
-                        "@type": "WebSite",
-                        "name": "Nafiz Ecommerce",
-                        "url": f"{canonical_url}/",
-                        "potentialAction": {
-                            "@type": "SearchAction",
-                            "target": f"{canonical_url}/shop?q={{search_term_string}}",
-                            "query-input": "required name=search_term_string",
-                        },
-                    },
-                    {
-                        "@context": "https://schema.org",
-                        "@type": "Organization",
-                        "name": "Nafiz Ecommerce",
-                        "url": f"{canonical_url}/",
-                    },
+                    {"@context": "https://schema.org", "@type": "WebSite", "name": "Nafiz Ecommerce", "url": f"{canonical_url}/", "potentialAction": {"@type": "SearchAction", "target": f"{canonical_url}/shop?q={{search_term_string}}", "query-input": "required name=search_term_string"}},
+                    {"@context": "https://schema.org", "@type": "Organization", "name": "Nafiz Ecommerce", "url": f"{canonical_url}/"},
                 ]
-                # Replace the old personal-profile SEO block if it exists; otherwise add the ecommerce block.
                 old_seo_start = '<link rel="canonical" href="'
                 if old_seo_start in html and 'Nafiz Ahmed — Python Developer' in html:
                     head_end = html.find("</head>")
@@ -86,16 +70,12 @@ def register_error_handlers(app):
 
     @app.after_request
     def add_product_page_seo(response):
-        """Normalize product canonicals and add breadcrumb structured data without changing product data."""
+        """Normalize product canonicals, add breadcrumbs and contextual internal links to product pages."""
         if request.path.startswith("/phone-detail/") and response.status_code == 200 and response.mimetype == "text/html":
             try:
                 html = response.get_data(as_text=True)
                 canonical_url = request.base_url
-                html = html.replace(
-                    '<link rel="canonical" href="{{ request.url }}">',
-                    f'<link rel="canonical" href="{canonical_url}">',
-                    1,
-                )
+                html = html.replace('<link rel="canonical" href="{{ request.url }}">', f'<link rel="canonical" href="{canonical_url}">', 1)
                 robots_tag = '<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">'
                 if 'name="robots"' not in html:
                     html = html.replace("</head>", robots_tag + "\n</head>", 1)
@@ -112,6 +92,7 @@ def register_error_handlers(app):
                             product_name = html[title_start + len(title_marker):title_end].strip() if title_start >= 0 and title_end >= 0 else "Product"
                             image_tag_with_alt = image_tag[:-1] + f' alt="{product_name} - Nafiz Store">'
                             html = html[:image_start] + image_tag_with_alt + html[image_end + 1:]
+
                 breadcrumb = {
                     "@context": "https://schema.org",
                     "@type": "BreadcrumbList",
@@ -120,11 +101,30 @@ def register_error_handlers(app):
                         {"@type": "ListItem", "position": 2, "name": "Smartphones", "item": url_for("shop", _external=True)},
                     ],
                 }
-                html = html.replace(
-                    "</head>",
-                    '<script type="application/ld+json">' + json.dumps(breadcrumb, ensure_ascii=False) + '</script>\n</head>',
-                    1,
+                html = html.replace("</head>", '<script type="application/ld+json">' + json.dumps(breadcrumb, ensure_ascii=False) + '</script>\n</head>', 1)
+
+                slug = request.path.rsplit("/", 1)[-1].lower()
+                cluster_links = [
+                    ("iPhone 18 Series Guide", "/iphone-18-series"),
+                    ("iPhone 18", "/iphone-18"),
+                    ("iPhone 18 Pro", "/iphone-18-pro"),
+                    ("iPhone 18 Pro Max", "/iphone-18-pro-max"),
+                    ("iPhone 18 Comparison", "/iphone-18-comparison"),
+                ]
+                if slug.startswith("iphone-18"):
+                    cluster_links = [item for item in cluster_links if item[1].rsplit("/", 1)[-1] != slug]
+                links_html = ''.join(f'<a href="{path}">{label}</a>' for label, path in cluster_links)
+                internal_nav = (
+                    '<section class="seo-internal-links" aria-labelledby="seo-links-title">'
+                    '<span class="brand-link">Explore more</span>'
+                    '<h2 id="seo-links-title">Related iPhone guides</h2>'
+                    '<p>Explore related model guides, comparisons and the mobile product category before buying.</p>'
+                    '<div class="seo-link-grid">'
+                    f'<a href="/shop?category=mobile">Mobile Phones</a>{links_html}'
+                    '</div></section>'
                 )
+                if 'class="seo-internal-links"' not in html and "</body>" in html:
+                    html = html.replace("</body>", internal_nav + "</body>", 1)
                 response.set_data(html)
             except Exception:
                 app.logger.exception("Product page SEO optimization failed")
@@ -150,29 +150,16 @@ def register_error_handlers(app):
                 canonical_url = f"{canonical_url}?category={category}"
                 old_title = "<title>Nafiz -Ecommerce — Shop</title>"
                 html = html.replace(old_title, f"<title>{title}</title>", 1)
-                tags = (
-                    f'\n<meta name="description" content="{description}">'
-                    f'\n<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">'
-                    f'\n<link rel="canonical" href="{canonical_url}">'
-                    f'\n<meta property="og:type" content="website">'
-                    f'\n<meta property="og:title" content="{title}">'
-                    f'\n<meta property="og:description" content="{description}">'
-                    f'\n<meta property="og:url" content="{canonical_url}">'
-                    f'\n<meta property="og:site_name" content="Nafiz Ecommerce">\n'
-                )
-                schema = {
-                    "@context": "https://schema.org",
-                    "@type": "CollectionPage",
-                    "name": name,
-                    "url": canonical_url,
-                    "description": description,
-                    "isPartOf": {"@type": "WebSite", "name": "Nafiz Ecommerce", "url": url_for("home", _external=True)},
-                }
-                html = html.replace(
-                    "</head>",
-                    tags + '<script type="application/ld+json">' + json.dumps(schema, ensure_ascii=False) + '</script>\n</head>',
-                    1,
-                )
+                tags = (f'\n<meta name="description" content="{description}">'
+                        f'\n<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">'
+                        f'\n<link rel="canonical" href="{canonical_url}">'
+                        f'\n<meta property="og:type" content="website">'
+                        f'\n<meta property="og:title" content="{title}">'
+                        f'\n<meta property="og:description" content="{description}">'
+                        f'\n<meta property="og:url" content="{canonical_url}">'
+                        f'\n<meta property="og:site_name" content="Nafiz Ecommerce">\n')
+                schema = {"@context": "https://schema.org", "@type": "CollectionPage", "name": name, "url": canonical_url, "description": description, "isPartOf": {"@type": "WebSite", "name": "Nafiz Ecommerce", "url": url_for("home", _external=True)}}
+                html = html.replace("</head>", tags + '<script type="application/ld+json">' + json.dumps(schema, ensure_ascii=False) + '</script>\n</head>', 1)
                 response.set_data(html)
             except Exception:
                 app.logger.exception("Category SEO metadata injection failed")
@@ -191,14 +178,7 @@ def register_error_handlers(app):
     @app.after_request
     def finalize_security_headers(response):
         """Apply the strictest CSP compatible with the current application."""
-        response.headers["Content-Security-Policy"] = (
-            "default-src 'self'; base-uri 'self'; object-src 'none'; "
-            "frame-ancestors 'none'; form-action 'self'; "
-            "img-src 'self' data: https:; font-src 'self' data: https:; "
-            "style-src 'self' 'unsafe-inline' https:; "
-            "script-src 'self' 'unsafe-inline'; connect-src 'self'; "
-            "media-src 'self' https:; worker-src 'self'; manifest-src 'self';"
-        )
+        response.headers["Content-Security-Policy"] = ("default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data: https:; font-src 'self' data: https:; style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline'; connect-src 'self'; media-src 'self' https:; worker-src 'self'; manifest-src 'self';")
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
@@ -239,21 +219,12 @@ def register_error_handlers(app):
 
 
 def _log_client_error(code, error):
-    logging.getLogger("app").warning(
-        "%s request_id=%s path=%s method=%s remote=%s error=%s",
-        code, getattr(g, "request_id", "-"), request.path,
-        request.method, request.remote_addr, error,
-    )
+    logging.getLogger("app").warning("%s request_id=%s path=%s method=%s remote=%s error=%s", code, getattr(g, "request_id", "-"), request.path, request.method, request.remote_addr, error)
 
 
 def _response(code, message):
     """Return JSON for API-style requests and plain text otherwise."""
-    wants_json = (
-        request.path.startswith("/api/")
-        or request.path.startswith("/health/")
-        or request.path == "/health"
-        or request.accept_mimetypes.best == "application/json"
-    )
+    wants_json = (request.path.startswith("/api/") or request.path.startswith("/health/") or request.path == "/health" or request.accept_mimetypes.best == "application/json")
     if wants_json:
         payload = {"error": code, "message": message}
         if getattr(g, "request_id", None):
