@@ -167,6 +167,38 @@ def register_admin_session_guard(app):
                 session.clear(); return redirect(url_for("user_login"))
 
     @app.after_request
+    def canonicalize_robots_response(response):
+        if request.path == "/robots.txt" and request.method == "GET":
+            site_url = os.getenv("PUBLIC_BASE_URL", "").strip().rstrip("/") or request.url_root.rstrip("/")
+            content = (
+                "User-agent: *\n"
+                "Allow: /\n"
+                "Allow: /iphone-18\n"
+                "Allow: /iphone-18-pro\n"
+                "Allow: /iphone-18-pro-max\n"
+                "Allow: /iphone-18-series\n"
+                "Allow: /iphone-18-comparison\n"
+                "Disallow: /admin\n"
+                "Disallow: /login\n"
+                "Disallow: /logout\n"
+                "Disallow: /dashboard\n"
+                "Disallow: /account\n"
+                "Disallow: /register\n"
+                "Disallow: /user-login\n"
+                "Disallow: /user-logout\n"
+                "Disallow: /forgot-password\n"
+                "Disallow: /reset-password\n"
+                "Disallow: /checkout\n"
+                "Disallow: /orders\n"
+                "Disallow: /api/\n\n"
+                f"Sitemap: {site_url}/sitemap.xml\n"
+            )
+            response = Response(content, status=200, mimetype="text/plain")
+            response.headers["Cache-Control"] = "no-cache, max-age=0, must-revalidate"
+            return response
+        return response
+
+    @app.after_request
     def rewrite_iphone_seo_urls(response):
         if request.path in {"/iphone-18-series", "/iphone-18", "/iphone-18-pro", "/iphone-18-pro-max"} and response.status_code == 200 and "text/html" in response.content_type:
             response.direct_passthrough = False
@@ -197,7 +229,7 @@ def register_admin_session_guard(app):
             "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; "
             "form-action 'self'; img-src 'self' data: https:; font-src 'self' data: https:; "
             "style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline'; "
-            "connect-src 'self'; media-src 'self' https:; worker-src 'self'; manifest-src 'self';"
+            "connect-src 'self'; media-src 'self'; worker-src 'self'; manifest-src 'self';"
         )
         return response
 
