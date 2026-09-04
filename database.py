@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timezone
 
-from sqlalchemy import create_engine, text, event
+from sqlalchemy import create_engine, event, text
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 
@@ -58,10 +58,16 @@ engine = create_database_engine()
 
 @event.listens_for(engine, "connect")
 def _register_sqlite_compatibility_functions(dbapi_connection, connection_record):
-    """Provide PostgreSQL-compatible NOW() for local SQLite development/tests."""
+    """Provide a PostgreSQL-compatible NOW() for local SQLite dev/tests.
+
+    Production always runs on PostgreSQL, where NOW() is built in. Raw SQL
+    written against that assumption (see e.g. tests/test_payment_integrity.py)
+    would otherwise fail with 'no such function: NOW' under the lightweight
+    SQLite path used for local development and CI.
+    """
     if engine.dialect.name == "sqlite":
         dbapi_connection.create_function(
-            "NOW", 0, lambda: datetime.now(timezone.utc).isoformat()
+            "NOW", 0, lambda: datetime.now(timezone.utc).isoformat(" ")
         )
 
 
@@ -216,6 +222,70 @@ def init_db():
                 "ON password_reset_tokens (expires_at)"
             )
         )
+        connection.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS commerce_orders (
+                    id INTEGER PRIMARY KEY,
+                    order_number VARCHAR(40) NOT NULL,
+                    user_id INTEGER NOT NULL REFERENCES users(id),
+                    shipping_address_id INTEGER REFERENCES addresses(id),
+                    status VARCHAR(30) NOT NULL DEFAULT 'pending',
+                    payment_status VARCHAR(30) NOT NULL DEFAULT 'pending',
+                    fulfillment_status VARCHAR(30) NOT NULL DEFAULT 'unfulfilled',
+                    currency VARCHAR(3) NOT NULL DEFAULT 'BDT',
+                    subtotal NUMERIC(12, 2) NOT NULL DEFAULT 0,
+                    shipping_amount NUMERIC(12, 2) NOT NULL DEFAULT 0,
+                    discount_amount NUMERIC(12, 2) NOT NULL DEFAULT 0,
+                    total_amount NUMERIC(12, 2) NOT NULL DEFAULT 0,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+                """
+            )
+        )
+        connection.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_commerce_orders_user_id "
+                "ON commerce_orders (user_id)"
+            )
+        )
+        connection.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_commerce_orders_status "
+                "ON commerce_orders (status)"
+            )
+        )
+        connection.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_commerce_orders_payment_status "
+                "ON commerce_orders (payment_status)"
+            )
+        )
+        connection.execute(
+            text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS ix_commerce_orders_order_number "
+                "ON commerce_orders (order_number)"
+            )
+        )
+        connection.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS payments (
+                    id INTEGER PRIMARY KEY,
+                    order_id INTEGER NOT NULL REFERENCES commerce_orders(id) ON DELETE CASCADE,
+                    provider VARCHAR(40) NOT NULL,
+                    transaction_id VARCHAR(160),
+                    status VARCHAR(30) NOT NULL DEFAULT 'pending',
+                    amount NUMERIC(12, 2) NOT NULL DEFAULT 0,
+                    currency VARCHAR(3) NOT NULL DEFAULT 'BDT',
+                    provider_reference VARCHAR(180),
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+                """
+            )
+        )
 
         if connection.dialect.name == "sqlite":
             payments_table_exists = connection.execute(
@@ -225,16 +295,26 @@ def init_db():
                 )
             ).scalar() is not None
             if payments_table_exists:
+                # Mirrors alembic/versions/0014_payment_state_machine.py's
+                # enforce_payment_status_transition() trigger. Keep the two in
+                # sync: this is the full state machine (not just a paid-guard),
+                # so pending/initiated transitions and paid->refunded must all
+                # keep working, matching what production's real Postgres trigger
+                # allows and rejects.
                 connection.execute(
                     text(
                         """
-                        CREATE TRIGGER IF NOT EXISTS prevent_paid_payment_downgrade
+                        CREATE TRIGGER IF NOT EXISTS trg_payment_status_transition
                         BEFORE UPDATE OF status ON payments
                         FOR EACH ROW
-                        WHEN OLD.status = 'paid'
-                             AND NEW.status IN ('pending', 'initiated', 'failed', 'cancelled')
+                        WHEN NEW.status != OLD.status
+                             AND NOT (
+                                 (OLD.status = 'pending' AND NEW.status IN ('initiated', 'paid', 'failed', 'cancelled'))
+                                 OR (OLD.status = 'initiated' AND NEW.status IN ('paid', 'failed', 'cancelled'))
+                                 OR (OLD.status = 'paid' AND NEW.status = 'refunded')
+                             )
                         BEGIN
-                            SELECT RAISE(ABORT, 'paid payment cannot be downgraded');
+                            SELECT RAISE(ABORT, 'Invalid payment status transition');
                         END
                         """
                     )
