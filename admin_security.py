@@ -42,11 +42,6 @@ def _ensure_admin_credentials():
         db.commit()
 
 
-def _seo_base_url():
-    configured = os.getenv("PUBLIC_BASE_URL", "").strip().rstrip("/")
-    return configured or url_for("home", _external=True).rstrip("/")
-
-
 def register_admin_session_guard(app):
     register_supplier_auth_routes(app)
     register_home_routes(app)
@@ -100,73 +95,6 @@ def register_admin_session_guard(app):
             "<button type='submit'>Sign out</button></form></main></body></html>",
             status=200, mimetype="text/html",
         )
-
-    @app.before_request
-    def serve_dynamic_seo_files():
-        if request.path == "/robots.txt" and request.method == "GET":
-            base = _seo_base_url()
-            content = (
-                "User-agent: *\n"
-                "Allow: /\n"
-                "Allow: /iphone-18-series\n"
-                "Allow: /iphone-18\n"
-                "Allow: /iphone-18-pro\n"
-                "Allow: /iphone-18-pro-max\n"
-                "Allow: /iphone-18-comparison\n"
-                "Disallow: /admin\n"
-                "Disallow: /login\n"
-                "Disallow: /logout\n"
-                "Disallow: /dashboard\n"
-                "Disallow: /account\n"
-                "Disallow: /register\n"
-                "Disallow: /user-login\n"
-                "Disallow: /user-logout\n"
-                "Disallow: /forgot-password\n"
-                "Disallow: /reset-password\n"
-                "Disallow: /checkout\n"
-                "Disallow: /orders\n"
-                "Disallow: /api/\n\n"
-                f"Sitemap: {base}/sitemap.xml\n"
-            )
-            return Response(content, mimetype="text/plain")
-        if request.path == "/sitemap.xml" and request.method == "GET":
-            base = _seo_base_url()
-            urls = [
-                (base + "/", "weekly", "1.0", None),
-                (base + "/shop", "daily", "0.9", None),
-                (base + "/about", "monthly", "0.7", None),
-                (base + "/contact", "monthly", "0.7", None),
-                (base + "/privacy-policy", "yearly", "0.5", None),
-                (base + "/terms", "yearly", "0.5", None),
-                (base + "/refund-policy", "yearly", "0.5", None),
-                (base + "/iphone-18", "weekly", "0.9", "2026-09-03"),
-                (base + "/iphone-18-pro", "weekly", "0.9", "2026-09-03"),
-                (base + "/iphone-18-pro-max", "weekly", "0.9", "2026-09-03"),
-                (base + "/iphone-18-series", "weekly", "0.9", "2026-09-04"),
-                (base + "/iphone-18-comparison", "weekly", "0.8", "2026-09-04"),
-            ]
-            entries = []
-            for loc, freq, priority, lastmod in urls:
-                entry = [
-                    "  <url>",
-                    f"    <loc>{escape(loc)}</loc>",
-                ]
-                if lastmod:
-                    entry.append(f"    <lastmod>{lastmod}</lastmod>")
-                entry.extend([
-                    f"    <changefreq>{freq}</changefreq>",
-                    f"    <priority>{priority}</priority>",
-                    "  </url>",
-                ])
-                entries.append("\n".join(entry))
-            xml = (
-                '<?xml version="1.0" encoding="UTF-8"?>\n'
-                '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-                + "\n".join(entries)
-                + "\n</urlset>\n"
-            )
-            return Response(xml, mimetype="application/xml")
-        return None
 
     @app.before_request
     def handle_admin_login_from_db():
@@ -237,6 +165,38 @@ def register_admin_session_guard(app):
             if changed_at.tzinfo is None: changed_at = changed_at.replace(tzinfo=timezone.utc)
             if created_ts < changed_at.timestamp():
                 session.clear(); return redirect(url_for("user_login"))
+
+    @app.after_request
+    def canonicalize_robots_response(response):
+        if request.path == "/robots.txt" and request.method == "GET":
+            site_url = os.getenv("PUBLIC_BASE_URL", "").strip().rstrip("/") or request.url_root.rstrip("/")
+            content = (
+                "User-agent: *\n"
+                "Allow: /\n"
+                "Allow: /iphone-18\n"
+                "Allow: /iphone-18-pro\n"
+                "Allow: /iphone-18-pro-max\n"
+                "Allow: /iphone-18-series\n"
+                "Allow: /iphone-18-comparison\n"
+                "Disallow: /admin\n"
+                "Disallow: /login\n"
+                "Disallow: /logout\n"
+                "Disallow: /dashboard\n"
+                "Disallow: /account\n"
+                "Disallow: /register\n"
+                "Disallow: /user-login\n"
+                "Disallow: /user-logout\n"
+                "Disallow: /forgot-password\n"
+                "Disallow: /reset-password\n"
+                "Disallow: /checkout\n"
+                "Disallow: /orders\n"
+                "Disallow: /api/\n\n"
+                f"Sitemap: {site_url}/sitemap.xml\n"
+            )
+            response = Response(content, status=200, mimetype="text/plain")
+            response.headers["Cache-Control"] = "no-cache, max-age=0, must-revalidate"
+            return response
+        return response
 
     @app.after_request
     def rewrite_iphone_seo_urls(response):
