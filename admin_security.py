@@ -229,7 +229,7 @@ def register_admin_session_guard(app):
             "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; "
             "form-action 'self'; img-src 'self' data: https:; font-src 'self' data: https:; "
             "style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline'; "
-            "connect-src 'self'; media-src 'self'; worker-src 'self'; manifest-src 'self';"
+            "connect-src 'self'; media-src 'self' https:; worker-src 'self'; manifest-src 'self';"
         )
         return response
 
