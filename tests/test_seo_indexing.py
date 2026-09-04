@@ -11,7 +11,6 @@ def test_sitemap_is_absolute_public_urls_without_query_strings():
         body = response.get_data(as_text=True)
 
     assert "<urlset" in body
-    assert "?" not in body
     assert "/static/" not in body
 
     urls = [
@@ -22,6 +21,7 @@ def test_sitemap_is_absolute_public_urls_without_query_strings():
     assert urls
     assert all(urlparse(url).scheme in {"http", "https"} for url in urls)
     assert all(urlparse(url).netloc for url in urls)
+    assert all(urlparse(url).query == "" for url in urls)
 
 
 def test_sitemap_contains_primary_seo_landing_pages():
