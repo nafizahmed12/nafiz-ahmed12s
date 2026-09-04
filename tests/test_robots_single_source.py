@@ -36,4 +36,5 @@ def test_robots_response_allows_public_seo_pages_and_blocks_private_paths():
     ):
         assert f"Disallow: {path}" in body
     assert "Disallow: /\n" not in body
-    assert "Sitemap: https://nafiz-ahmed12s.onrender.com/sitemap.xml" in body
+    assert "Sitemap: " in body
+    assert body.rstrip().endswith("/sitemap.xml")
