@@ -1,0 +1,14 @@
+{
+  "product_detail": {
+    "category": {"label": "Mobile Phones", "url": "/shop?category=mobile"},
+    "hub": {"label": "iPhone 18 Series Guide", "url": "/iphone-18-series"},
+    "comparison": {"label": "iPhone 18 Comparison", "url": "/iphone-18-comparison"}
+  },
+  "iphone_18_cluster": [
+    {"label": "iPhone 18", "url": "/iphone-18"},
+    {"label": "iPhone 18 Pro", "url": "/iphone-18-pro"},
+    {"label": "iPhone 18 Pro Max", "url": "/iphone-18-pro-max"},
+    {"label": "iPhone 18 Series", "url": "/iphone-18-series"},
+    {"label": "iPhone 18 Comparison", "url": "/iphone-18-comparison"}
+  ]
+}
