@@ -4,7 +4,7 @@
 - `/iphone-18-series` — iPhone 18 series hub
 - `/iphone-18` — standard model research intent
 - `/iphone-18-pro` — Pro model research intent
-- `/iphone-18-pro-max` — Pro Max research intent
+- `/iphone-18-pro-max` — Pro Max model research intent
 - `/iphone-18-comparison` — comparison intent
 
 ## Supporting commercial destinations
