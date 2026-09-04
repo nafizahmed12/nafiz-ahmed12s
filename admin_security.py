@@ -3,7 +3,7 @@ import hmac
 import os
 import secrets
 from datetime import datetime, timedelta, timezone
-from xml.sax.saxutils import escape
+from html import escape
 
 from flask import Response, jsonify, redirect, session, url_for, request, render_template
 from sqlalchemy import text
