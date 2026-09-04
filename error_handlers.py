@@ -96,13 +96,9 @@ def register_error_handlers(app):
                     f'<link rel="canonical" href="{canonical_url}">',
                     1,
                 )
-
-                # Prevent duplicate query-string URLs from becoming separate indexable product URLs.
                 robots_tag = '<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">'
                 if 'name="robots"' not in html:
                     html = html.replace("</head>", robots_tag + "\n</head>", 1)
-
-                # Add descriptive alt text to the primary product image if the template does not provide one.
                 if '<div class="main-image-container">' in html:
                     marker = '<div class="main-image-container">'
                     image_start = html.find("<img", html.find(marker))
@@ -116,7 +112,6 @@ def register_error_handlers(app):
                             product_name = html[title_start + len(title_marker):title_end].strip() if title_start >= 0 and title_end >= 0 else "Product"
                             image_tag_with_alt = image_tag[:-1] + f' alt="{product_name} - Nafiz Store">'
                             html = html[:image_start] + image_tag_with_alt + html[image_end + 1:]
-
                 breadcrumb = {
                     "@context": "https://schema.org",
                     "@type": "BreadcrumbList",
@@ -133,6 +128,54 @@ def register_error_handlers(app):
                 response.set_data(html)
             except Exception:
                 app.logger.exception("Product page SEO optimization failed")
+        return response
+
+    @app.after_request
+    def add_category_seo(response):
+        """Add category-specific metadata and structured data to crawlable shop filters."""
+        if request.path == "/shop" and request.args.get("category") and response.status_code == 200 and response.mimetype == "text/html":
+            try:
+                category = request.args.get("category", "").strip().lower()
+                category_data = {
+                    "fashion": ("Fashion", "Shop Fashion Products in Bangladesh | Nafiz Ecommerce", "Browse fashion products online in Bangladesh at Nafiz Ecommerce. Discover clothing, accessories and more."),
+                    "clothing": ("Clothing", "Clothing Online in Bangladesh | Nafiz Ecommerce", "Shop clothing online in Bangladesh at Nafiz Ecommerce. Browse quality clothing and everyday essentials."),
+                    "beauty": ("Beauty", "Beauty Products in Bangladesh | Nafiz Ecommerce", "Shop beauty products online in Bangladesh at Nafiz Ecommerce. Browse beauty essentials and more."),
+                    "accessories": ("Accessories", "Accessories Online in Bangladesh | Nafiz Ecommerce", "Shop accessories online in Bangladesh at Nafiz Ecommerce. Browse useful and stylish accessories."),
+                }.get(category)
+                if not category_data:
+                    return response
+                name, title, description = category_data
+                html = response.get_data(as_text=True)
+                canonical_url = url_for("shop", _external=True)
+                canonical_url = f"{canonical_url}?category={category}"
+                old_title = "<title>Nafiz -Ecommerce — Shop</title>"
+                html = html.replace(old_title, f"<title>{title}</title>", 1)
+                tags = (
+                    f'\n<meta name="description" content="{description}">'
+                    f'\n<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">'
+                    f'\n<link rel="canonical" href="{canonical_url}">'
+                    f'\n<meta property="og:type" content="website">'
+                    f'\n<meta property="og:title" content="{title}">'
+                    f'\n<meta property="og:description" content="{description}">'
+                    f'\n<meta property="og:url" content="{canonical_url}">'
+                    f'\n<meta property="og:site_name" content="Nafiz Ecommerce">\n'
+                )
+                schema = {
+                    "@context": "https://schema.org",
+                    "@type": "CollectionPage",
+                    "name": name,
+                    "url": canonical_url,
+                    "description": description,
+                    "isPartOf": {"@type": "WebSite", "name": "Nafiz Ecommerce", "url": url_for("home", _external=True)},
+                }
+                html = html.replace(
+                    "</head>",
+                    tags + '<script type="application/ld+json">' + json.dumps(schema, ensure_ascii=False) + '</script>\n</head>',
+                    1,
+                )
+                response.set_data(html)
+            except Exception:
+                app.logger.exception("Category SEO metadata injection failed")
         return response
 
     @app.after_request
