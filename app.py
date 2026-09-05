@@ -273,6 +273,11 @@ def product_page(name):
     return render_template('product_phone.html', phone=phone_info, slug=name, affiliate_products=affiliate_products)
 
 
+@app.route("/product/<int:product_id>")
+def product_detail_page(product_id):
+    return render_template('product.html', product_id=product_id)
+
+
 @app.route("/affiliate-picks")
 def affiliate_picks_page():
     return render_template("affiliate_picks.html")
