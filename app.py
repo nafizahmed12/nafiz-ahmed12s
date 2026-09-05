@@ -1,539 +1,349 @@
+import hashlib
 import hmac
-import logging
 import os
 import secrets
-from datetime import timedelta
-from urllib.parse import urlparse
+from datetime import datetime, timedelta, timezone
+from html import escape
 
-from flask import (
-    Flask, render_template, request, redirect, session,
-    abort, flash, url_for, Response, make_response
-)
-from dotenv import load_dotenv
+from flask import Response, jsonify, redirect, session, url_for, request, render_template
 from sqlalchemy import text
-from werkzeug.middleware.proxy_fix import ProxyFix
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from database import SessionLocal
-from error_handlers import register_error_handlers
-from commerce_routes import register_commerce_routes
-from payment_routes import register_payment_routes
-from bkash_routes import register_bkash_routes
-from seller_routes import register_seller_routes
-from digital_affiliate_routes import register_digital_affiliate_routes
-from shop_routes import register_shop_routes
-from admin_product_routes import register_admin_product_routes
-from admin_security import (
-    register_admin_session_guard, mark_admin_authenticated, clear_admin_session
-)
-from admin_auth import admin_required
-from csrf import register_csrf_protection
-from mail_utils import send_password_reset_email
-from schema import (
-    allow_contact, allow_login, allow_registration, allow_subscription,
-    allow_password_reset, authenticate_user, change_password, create_message,
-    create_password_reset_token, create_subscriber, create_user, create_website,
-    delete_website, get_admin_stats, get_messages, get_subscribers, get_user,
-    get_user_websites, get_website_by_slug, reset_password_with_token,
-    update_user_profile,
-)
+from supplier_auth_routes import register_supplier_auth_routes
+from home_routes import register_home_routes
+from admin_auth import ADMIN_ROLE
 
-load_dotenv()
-app = Flask(__name__)
-app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
-secret_key = os.getenv("SECRET_KEY")
+ADMIN_IDLE_TIMEOUT_SECONDS = int(os.getenv("ADMIN_IDLE_TIMEOUT_SECONDS", "1800"))
+ADMIN_ABSOLUTE_TIMEOUT_SECONDS = int(os.getenv("ADMIN_ABSOLUTE_TIMEOUT_SECONDS", "43200"))
+USER_SESSION_CREATED_KEY = "user_session_created_at"
 
-if not secret_key:
-    if os.getenv("RENDER"):
-        raise RuntimeError("SECRET_KEY environment variable is required in production.")
-    secret_key = secrets.token_urlsafe(32)
 
-app.secret_key = secret_key
-app.config.update(
-    SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE="Lax",
-    SESSION_COOKIE_SECURE=os.getenv("SESSION_COOKIE_SECURE", "1" if os.getenv("RENDER") else "0") == "1",
-    PERMANENT_SESSION_LIFETIME=timedelta(days=7),
-    MAX_CONTENT_LENGTH=int(os.getenv("MAX_CONTENT_LENGTH", str(1 * 1024 * 1024))),
-)
+def _ensure_admin_credentials():
+    """Create/sync the bootstrap admin from environment variables."""
+    username = os.getenv("ADMIN_USERNAME", "").strip()
+    password = os.getenv("ADMIN_PASSWORD", "")
+    email = os.getenv("ADMIN_EMAIL", "").strip().lower() or None
+    if not username or not password:
+        return
+    with SessionLocal() as db:
+        db.execute(text("""CREATE TABLE IF NOT EXISTS admin_credentials (
+            id INTEGER PRIMARY KEY, username VARCHAR(80) UNIQUE NOT NULL,
+            email VARCHAR(255) UNIQUE, password_hash VARCHAR(255) NOT NULL,
+            password_changed_at TIMESTAMP WITH TIME ZONE NULL)"""))
+        row = db.execute(text("SELECT id, username, email FROM admin_credentials ORDER BY id LIMIT 1")).mappings().first()
+        if row is None:
+            db.execute(text("""INSERT INTO admin_credentials
+                (id, username, email, password_hash) VALUES (1, :username, :email, :password_hash)"""),
+                {"username": username, "email": email, "password_hash": generate_password_hash(password)})
+        elif row["username"] != username or (email and row["email"] != email):
+            db.execute(text("""UPDATE admin_credentials SET username=:username, email=:email WHERE id=:id"""),
+                {"username": username, "email": email if email else row["email"], "id": row["id"]})
+        db.commit()
 
-register_error_handlers(app)
-register_commerce_routes(app)
-register_payment_routes(app)
-register_bkash_routes(app)
-register_seller_routes(app)
-register_digital_affiliate_routes(app)
-register_shop_routes(app)
-register_admin_product_routes(app)
-register_admin_session_guard(app)
-register_csrf_protection(app)
 
-# Dynamic Product Database for SEO Routing
-products = {
-    'iphone-18-pro-max': {
-        'name': 'iPhone 18 Pro Max',
-        'price': '175,000 BDT',
-        'image_url': 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?q=80&w=800&auto=format&fit=crop',
-        'description': (
-            'The upcoming iPhone 18 Pro Max features Apple\'s next-generation'
-            ' A19 Bionic chip, under-display Face ID, and advanced camera'
-            ' features. Pre-order at Nafiz Store.'
+def register_admin_session_guard(app):
+    register_supplier_auth_routes(app)
+    register_home_routes(app)
+    register_password_reset_routes(app)
+    _ensure_admin_credentials()
+
+    # ----------------------------------------------------
+    # PROPER ROBOTS.TXT ROUTE (গুগল সার্চ কনসোল ফিক্স)
+    # ----------------------------------------------------
+    @app.route("/robots.txt", methods=["GET"])
+    def robots_txt():
+        site_url = os.getenv("PUBLIC_BASE_URL", "").strip().rstrip("/") or request.url_root.rstrip("/")
+        content = (
+            "User-agent: *\n"
+            "Allow: /\n"
+            "Allow: /iphone-18\n"
+            "Allow: /iphone-18-pro\n"
+            "Allow: /iphone-18-pro-max\n"
+            "Allow: /iphone-18-series\n"
+            "Allow: /iphone-18-comparison\n\n"
+            "Disallow: /admin\n"
+            "Disallow: /login\n"
+            "Disallow: /logout\n"
+            "Disallow: /dashboard\n"
+            "Disallow: /account\n"
+            "Disallow: /register\n"
+            "Disallow: /user-login\n"
+            "Disallow: /user-logout\n"
+            "Disallow: /forgot-password\n"
+            "Disallow: /reset-password\n"
+            "Disallow: /admin-forgot-password\n"
+            "Disallow: /admin-reset-password\n"
+            "Disallow: /checkout\n"
+            "Disallow: /orders\n"
+            "Disallow: /api/\n\n"
+            f"Sitemap: {site_url}/sitemap.xml\n"
         )
-    },
-    'iphone15pro': {
-        'name': 'iPhone 15 Pro',
-        'price': '135,000 BDT',
-        'image_url': 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?q=80&w=800&auto=format&fit=crop',
-        'description': 'Official iPhone 15 Pro with Titanium design and A17 Pro chip.'
-    }
-}
+        resp = Response(content, status=200, mimetype="text/plain")
+        resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        return resp
 
+    @app.route("/iphone-18-series")
+    def clean_iphone_18_series():
+        return app.send_static_file("iphone-18-series.html")
 
-@app.after_request
-def add_security_headers(response):
-    response.headers.setdefault("X-Content-Type-Options", "nosniff")
-    response.headers.setdefault("X-Frame-Options", "DENY")
-    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
-    response.headers.setdefault(
-        "Permissions-Policy",
-        "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
-    )
-    response.headers.setdefault(
-        "Content-Security-Policy",
-        "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; "
-        "form-action 'self'; img-src 'self' data: https:; font-src 'self' data: https:; "
-        "style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline' https:; "
-        "connect-src 'self' https:; media-src 'self' https:;"
-    )
-    if request.is_secure:
-        response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
-    return response
+    @app.route("/iphone-18")
+    def clean_iphone_18():
+        return app.send_static_file("iphone-18.html")
 
+    @app.route("/iphone-18-pro")
+    def clean_iphone_18_pro():
+        return app.send_static_file("iphone-18-pro.html")
 
-@app.after_request
-def prevent_sensitive_page_caching(response):
-    sensitive_paths = (
-        "/dashboard", "/account", "/admin", "/login",
-        "/user-login", "/forgot-password", "/reset-password"
-    )
-    if any(request.path == path or request.path.startswith(f"{path}/") for path in sensitive_paths):
-        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-        response.headers["Pragma"] = "no-cache"
-        response.headers["Expires"] = "0"
-    return response
+    @app.route("/iphone-18-pro-max")
+    def clean_iphone_18_pro_max():
+        return app.send_static_file("iphone-18-pro-max.html")
 
-
-@app.before_request
-def protect_state_changing_requests():
-    if request.method != "POST":
-        return None
-    if request.path.startswith("/api/payments/sslcommerz/"):
-        return None
-    origin = request.headers.get("Origin")
-    referer = request.headers.get("Referer")
-    expected = f"{request.scheme}://{request.host}"
-    source = origin or referer
-    if source:
-        parsed = urlparse(source)
-        actual = f"{parsed.scheme}://{parsed.netloc}"
-        if actual != expected:
-            abort(403, description="Cross-site request blocked.")
-    return None
-
-
-def get_host_site_slug():
-    base_domain = os.getenv("BASE_DOMAIN", "").strip().lower().rstrip(".")
-    host = request.host.split(":", 1)[0].lower().rstrip(".")
-    if not base_domain or host in {base_domain, f"www.{base_domain}"}:
-        return None
-    suffix = f".{base_domain}"
-    if host.endswith(suffix):
-        slug = host[:-len(suffix)]
-        if slug and "." not in slug:
-            return slug
-    return None
-
-
-def current_user():
-    user_id = session.get("user_id")
-    return get_user(user_id) if user_id else None
-
-
-def require_user():
-    user = current_user()
-    if user is None:
-        session.pop("user_id", None)
-        session.pop("username", None)
-        return None
-    return user
-
-
-def valid_email(email):
-    email = (email or "").strip()
-    if len(email) > 255 or email.count("@") != 1:
-        return False
-    local, domain = email.rsplit("@", 1)
-    return bool(local and domain and "." in domain and not any(c.isspace() for c in email))
-
-
-@app.route("/health")
-def health():
-    return {"status": "ok"}, 200
-
-
-@app.route("/health/ready")
-def readiness():
-    try:
-        with SessionLocal() as db:
-            db.execute(text("SELECT 1"))
-        return {"status": "ready", "database": "ok"}, 200
-    except Exception:
-        app.logger.exception("Readiness check failed")
-        return {"status": "not_ready", "database": "unavailable"}, 503
-
-
-@app.route("/favicon.ico")
-def favicon_ico():
-    return redirect(url_for("static", filename="favicon.svg"), code=301)
-
-
-@app.route("/robots.txt")
-def robots_txt():
-    # NOTE: this route's return value is intentionally overridden by the
-    # canonicalize_robots_response() after_request hook in admin_security.py,
-    # which is the single source of truth for the live robots.txt content.
-    # This route only needs to exist so Flask has something to override.
-    return Response("", mimetype="text/plain")
-
-
-@app.route("/sitemap.xml")
-def sitemap_xml():
-    site_url = url_for("home", _external=True).rstrip("/")
-    urls = [
-        (site_url + "/", "weekly", "1.0"),
-        (site_url + "/shop", "daily", "0.9"),
-        (site_url + "/about", "monthly", "0.7"),
-        (site_url + "/contact", "monthly", "0.7"),
-        (site_url + "/privacy-policy", "yearly", "0.5"),
-        (site_url + "/terms", "yearly", "0.5"),
-        (site_url + "/refund-policy", "yearly", "0.5"),
-        # Clean SEO landing pages
-        (site_url + "/iphone-18", "weekly", "0.9"),
-        (site_url + "/iphone-18-pro", "weekly", "0.9"),
-        (site_url + "/iphone-18-pro-max", "weekly", "0.9"),
-        (site_url + "/iphone-18-series", "weekly", "0.9"),
-        (site_url + "/iphone-18-comparison", "weekly", "0.8"),
-    ]
-    for slug in products.keys():
-        urls.append((f"{site_url}/phone-detail/{slug}", "daily", "0.9"))
-
-    entries = "\n".join(
-        f"  <url><loc>{loc}</loc><changefreq>{freq}</changefreq><priority>{priority}</priority></url>"
-        for loc, freq, priority in urls
-    )
-    content = (
-        '<?xml version="1.0" encoding="UTF-8"?>\n'
-        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-        f'{entries}\n'
-        '</urlset>\n'
-    )
-    return Response(content, mimetype="application/xml")
-
-
-@app.route("/")
-def home():
-    host_slug = get_host_site_slug()
-    if host_slug:
-        website = get_website_by_slug(host_slug)
-        if website:
-            return render_template("published_site.html", website=website)
-        abort(404)
-    return render_template("index.html")
-
-
-@app.route("/phone-detail/<name>")
-def product_page(name):
-    phone_info = products.get(name)
-    if not phone_info:
-        phone_info = {
-            'name': name.replace('-', ' ').title(),
-            'price': '175,000 BDT',
-            'image_url': 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?q=80&w=800&auto=format&fit=crop',
-            'description': f'Buy or Pre-Order {name.replace("-", " ").title()} at best price in BD from Nafiz Store.'
+    @app.before_request
+    def handle_legacy_iphone_urls():
+        redirects = {
+            "/static/iphone-18-series.html": "/iphone-18-series",
+            "/static/iphone-18.html": "/iphone-18",
+            "/static/iphone-18-pro.html": "/iphone-18-pro",
+            "/static/iphone-18-pro-max.html": "/iphone-18-pro-max",
         }
-    affiliate_products = []
-    try:
-        with SessionLocal() as db:
-            affiliate_products = db.execute(text("""SELECT id,name,description,amazon_url,image_url,display_price
-                FROM affiliate_products
-                WHERE status='published'
-                ORDER BY sort_order ASC, id DESC
-                LIMIT 4""")).mappings().all()
-    except Exception:
-        app.logger.exception("Affiliate picks unavailable for phone page")
-    return render_template('product_phone.html', phone=phone_info, slug=name, affiliate_products=affiliate_products)
+        if request.method == "GET" and request.path in redirects:
+            return redirect(redirects[request.path], code=301)
+        return None
 
+    @app.before_request
+    def handle_legacy_logout_get():
+        if request.path != "/user-logout" or request.method != "GET":
+            return None
+        token = session.get("_csrf_secret")
+        if not token:
+            token = secrets.token_hex(32)
+            session["_csrf_secret"] = token
+        return Response(
+            "<!doctype html><html lang='en'><head><meta charset='utf-8'>"
+            "<meta name='viewport' content='width=device-width,initial-scale=1'>"
+            "<title>Confirm logout — Nafiz</title></head><body>"
+            "<main style='max-width:520px;margin:12vh auto;padding:24px;font-family:system-ui,sans-serif'>"
+            "<h1>Confirm logout</h1><p>Are you sure you want to sign out?</p>"
+            "<form method='post' action='/user-logout'>"
+            f"<input type='hidden' name='csrf_token' value='{token}'>"
+            "<button type='submit'>Sign out</button></form></main></body></html>",
+            status=200, mimetype="text/html",
+        )
 
-@app.route("/affiliate-picks")
-def affiliate_picks_page():
-    return render_template("affiliate_picks.html")
-
-
-@app.route("/about")
-def about():
-    return render_template("about.html")
-
-
-@app.route("/privacy-policy")
-def privacy_policy():
-    return render_template("privacy_policy.html")
-
-
-@app.route("/terms")
-def terms():
-    return render_template("terms.html")
-
-
-@app.route("/refund-policy")
-def refund_policy():
-    return render_template("refund_policy.html")
-
-
-@app.route("/register", methods=["GET", "POST"])
-def register():
-    if session.get("user_id"):
-        return redirect(url_for("dashboard"))
-    if request.method == "POST":
-        if not allow_registration(request.remote_addr, limit=10, window_seconds=3600):
-            return render_template("register.html", error="Too many registration attempts. Please try again later."), 429
+    @app.before_request
+    def handle_admin_login_from_db():
+        if request.path != "/login" or request.method != "POST":
+            return None
         username = request.form.get("username", "").strip()
-        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+        if not username or not password:
+            return None
+        from csrf import _valid_csrf_token
+        if not _valid_csrf_token(request.form.get("csrf_token")):
+            return "Invalid or missing CSRF token. Please refresh the page and try again.", 400
+        from schema import allow_login
+        if not allow_login(request.remote_addr, username, limit=5, window_seconds=900):
+            return "Too many login attempts. Please try again in a few minutes.", 429
+        with SessionLocal() as db:
+            row = db.execute(text("SELECT username, password_hash FROM admin_credentials WHERE username=:username LIMIT 1"),
+                             {"username": username}).mappings().first()
+        if row is None or not check_password_hash(row["password_hash"], password):
+            return "Invalid username or password.", 401
+        session.clear()
+        session.permanent = True
+        mark_admin_authenticated(row["username"])
+        return redirect(url_for("admin"))
+
+    @app.before_request
+    def guard_admin_session():
+        if not session.get("admin_logged_in"):
+            return None
+        def reject_admin_session():
+            _clear_admin_session()
+            if request.path.startswith("/api/"):
+                return jsonify({"error": "Admin authentication required."}), 401
+            return redirect(url_for("login"))
+        if session.get("admin_role") != ADMIN_ROLE:
+            return reject_admin_session()
+        configured_username = os.getenv("ADMIN_USERNAME", "").strip()
+        session_username = str(session.get("admin_username", "")).strip()
+        if not configured_username or not session_username or not hmac.compare_digest(session_username, configured_username):
+            return reject_admin_session()
+        now = datetime.now(timezone.utc).timestamp()
+        try:
+            authenticated_at = float(session.get("admin_authenticated_at"))
+            last_activity = float(session.get("admin_last_activity"))
+        except (TypeError, ValueError):
+            return reject_admin_session()
+        if now - authenticated_at > ADMIN_ABSOLUTE_TIMEOUT_SECONDS or now - last_activity > ADMIN_IDLE_TIMEOUT_SECONDS:
+            return reject_admin_session()
+        session["admin_last_activity"] = now
+
+    @app.before_request
+    def guard_user_session():
+        user_id = session.get("user_id")
+        if not user_id or session.get("admin_logged_in"):
+            return None
+        protected_prefixes = (
+            "/dashboard", "/account", "/orders", "/api/cart", "/api/checkout",
+            "/api/orders", "/api/payments", "/seller", "/supplier",
+        )
+        if not any(request.path == prefix or request.path.startswith(prefix + "/") for prefix in protected_prefixes):
+            return None
+        try:
+            created_ts = float(session.get(USER_SESSION_CREATED_KEY))
+        except (TypeError, ValueError):
+            session.clear()
+            return redirect(url_for("user_login"))
+        with SessionLocal() as db:
+            changed_at = db.execute(text("SELECT password_changed_at FROM users WHERE id=:uid"), {"uid": user_id}).scalar_one_or_none()
+        if changed_at is not None:
+            if changed_at.tzinfo is None:
+                changed_at = changed_at.replace(tzinfo=timezone.utc)
+            if created_ts < changed_at.timestamp():
+                session.clear()
+                return redirect(url_for("user_login"))
+
+    @app.after_request
+    def rewrite_iphone_seo_urls(response):
+        if request.path in {"/iphone-18-series", "/iphone-18", "/iphone-18-pro", "/iphone-18-pro-max"} and response.status_code == 200 and "text/html" in response.content_type:
+            response.direct_passthrough = False
+            body = response.get_data(as_text=True)
+            replacements = {
+                "/static/iphone-18-series.html": "/iphone-18-series",
+                "/static/iphone-18-pro-max.html": "/iphone-18-pro-max",
+                "/static/iphone-18-pro.html": "/iphone-18-pro",
+                "/static/iphone-18.html": "/iphone-18",
+            }
+            for old, new in replacements.items():
+                body = body.replace(old, new)
+            response.set_data(body)
+        return response
+
+    @app.after_request
+    def attach_home_javascript(response):
+        if request.path == "/" and response.status_code == 200 and "text/html" in response.content_type:
+            body = response.get_data(as_text=True)
+            marker = '<script src="/static/home.js" defer></script>'
+            if marker not in body and "</body>" in body:
+                response.set_data(body.replace("</body>", marker + "</body>"))
+        return response
+
+    @app.after_request
+    def harden_content_security_policy(response):
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; "
+            "form-action 'self'; img-src 'self' data: https:; font-src 'self' data: https:; "
+            "style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline'; "
+            "connect-src 'self'; media-src 'self' https:; worker-src 'self'; manifest-src 'self';"
+        )
+        return response
+
+
+def register_password_reset_routes(app):
+    @app.route("/forgot-password", methods=["GET", "POST"])
+    def forgot_password():
+        if request.method == "GET":
+            return render_template("forgot_password.html", sent=False)
+        identifier = request.form.get("identifier", "").strip()
+        import app as app_module
+        if not getattr(app_module, "allow_password_reset", lambda *a, **kw: True)(request.remote_addr, identifier, limit=5, window_seconds=900):
+            return render_template("forgot_password.html", sent=False, error="Too many reset attempts. Please try again later."), 429
+        token, email = app_module.create_password_reset_token(identifier)
+        if token and email:
+            try:
+                app_module.send_password_reset_email(email, token)
+            except Exception:
+                app.logger.exception("Password reset email delivery failed")
+        return render_template("forgot_password.html", sent=True, error=None), 200
+
+    @app.route("/reset-password", methods=["GET", "POST"])
+    def reset_password():
+        token = request.args.get("token", "").strip() if request.method == "GET" else request.form.get("token", "").strip()
+        if request.method == "GET":
+            return render_template("reset_password.html", token=token, error=None)
         password = request.form.get("password", "")
         confirm = request.form.get("confirm_password", "")
-        if len(username) < 3 or len(username) > 80:
-            return render_template("register.html", error="Username must be 3-80 characters."), 400
-        if not valid_email(email):
-            return render_template("register.html", error="Enter a valid email address."), 400
-        if len(password) < 8:
-            return render_template("register.html", error="Password must be at least 8 characters."), 400
         if password != confirm:
-            return render_template("register.html", error="Passwords do not match."), 400
-        user = create_user(username, email, password)
-        if user is None:
-            return render_template("register.html", error="Username or email is already in use."), 409
-        session.clear()
-        session.permanent = True
-        session["user_id"] = user.id
-        session["username"] = user.username
-        flash("Account created successfully. Welcome!", "success")
-        return redirect(url_for("dashboard"))
-    return render_template("register.html")
-
-
-@app.route("/user-login", methods=["GET", "POST"])
-def user_login():
-    if session.get("user_id"):
-        return redirect(url_for("dashboard"))
-    if request.method == "POST":
-        identifier = request.form.get("username", "").strip()
-        password = request.form.get("password", "")
-        if not allow_login(request.remote_addr, identifier, limit=10, window_seconds=900):
-            return render_template("user_login.html", error="Too many login attempts. Try again in a few minutes."), 429
-        user = authenticate_user(identifier, password)
-        if user is None:
-            return render_template("user_login.html", error="Invalid username/email or password."), 401
-        session.clear()
-        session.permanent = True
-        session["user_id"] = user.id
-        session["username"] = user.username
-        session["user_session_created_at"] = __import__("datetime").datetime.now(__import__("datetime").timezone.utc).timestamp()
-        flash("Logged in successfully.", "success")
-        return redirect(url_for("dashboard"))
-    return render_template("user_login.html")
-
-
-@app.route("/dashboard")
-def dashboard():
-    user = require_user()
-    if user is None:
-        return redirect(url_for("user_login"))
-    return render_template("dashboard.html", user=user, websites=get_user_websites(user.id))
-
-
-@app.route("/dashboard/websites", methods=["POST"])
-def create_website_route():
-    user = require_user()
-    if user is None:
-        return redirect(url_for("user_login"))
-    name = request.form.get("name", "").strip()
-    slug = request.form.get("slug", "").strip().lower()
-    description = request.form.get("description", "").strip()
-    if not name or not slug:
-        flash("Website name and slug are required.", "error")
-        return redirect(url_for("dashboard"))
-    if len(name) > 120 or len(slug) > 80 or not all(c.isalnum() or c == "-" for c in slug):
-        flash("Invalid website name or slug.", "error")
-        return redirect(url_for("dashboard"))
-    website = create_website(user.id, name, slug, description)
-    flash("Website created successfully." if website else "Could not create website.", "success" if website else "error")
-    return redirect(url_for("dashboard"))
-
-
-@app.route("/dashboard/websites/<int:website_id>/delete", methods=["POST"])
-def delete_website_route(website_id):
-    user = require_user()
-    if user is None:
-        return redirect(url_for("user_login"))
-    deleted = delete_website(user.id, website_id)
-    flash("Website deleted successfully." if deleted else "Website not found or no permission.", "success" if deleted else "error")
-    return redirect(url_for("dashboard"))
-
-
-@app.route("/account", methods=["GET", "POST"])
-def account():
-    user = require_user()
-    if user is None:
-        return redirect(url_for("user_login"))
-    if request.method == "POST":
-        action = request.form.get("action", "")
-        if action == "profile":
-            username = request.form.get("username", "").strip()
-            email = request.form.get("email", "").strip().lower()
-            if len(username) < 3 or len(username) > 80:
-                flash("Username must be 3-80 characters.", "error")
-                return redirect(url_for("account"))
-            if not valid_email(email):
-                flash("Enter a valid email address.", "error")
-                return redirect(url_for("account"))
-            ok, msg = update_user_profile(user.id, username, email)
-            if ok:
-                session["username"] = username
-            flash(msg, "success" if ok else "error")
-            return redirect(url_for("account"))
-        if action == "password":
-            cur = request.form.get("current_password", "")
-            new = request.form.get("new_password", "")
-            confirm = request.form.get("confirm_password", "")
-            if new != confirm:
-                flash("New passwords do not match.", "error")
-                return redirect(url_for("account"))
-            ok, msg = change_password(user.id, cur, new)
-            flash(msg, "success" if ok else "error")
-            return redirect(url_for("account"))
-    return render_template("account.html", user=get_user(user.id))
-
-
-@app.route("/orders")
-def orders_page():
-    user = require_user()
-    if user is None:
-        return redirect(url_for("user_login"))
-    return render_template("orders.html", user=user)
-
-
-@app.route("/payment/<result>")
-def payment_result_page(result):
-    if result not in {"success", "fail", "cancel"}:
-        abort(404)
-    return render_template("payment_result.html", result=result, order_id=request.args.get("order_id"))
-
-
-@app.route("/site/<slug>")
-def published_site(slug):
-    website = get_website_by_slug(slug)
-    if website is None:
-        abort(404)
-    return render_template("published_site.html", website=website)
-
-
-@app.route("/user-logout", methods=["POST"])
-def user_logout():
-    session.clear()
-    flash("You have been logged out.", "success")
-    return redirect(url_for("user_login"))
-
-
-@app.route("/contact", methods=["GET", "POST"])
-def contact():
-    if request.method == "GET":
-        return render_template("contact.html")
-    if not allow_contact(request.remote_addr, limit=5, window_seconds=900):
-        return "Too many messages from this network. Please try again later.", 429
-    name = request.form.get("name", "").strip()
-    email = request.form.get("email", "").strip().lower()
-    message = request.form.get("message", "").strip()
-    if len(name) < 2 or len(name) > 120:
-        return "Name must be between 2 and 120 characters.", 400
-    if not valid_email(email):
-        return "Enter a valid email address.", 400
-    if len(message) < 5 or len(message) > 5000:
-        return "Message must be between 5 and 5000 characters.", 400
-    create_message(name, email, message)
-    return "Message saved successfully!"
-
-
-@app.route("/subscribe", methods=["POST"])
-def subscribe():
-    if not allow_subscription(request.remote_addr, limit=10, window_seconds=3600):
-        return "Too many subscription attempts. Please try again later.", 429
-    email = request.form.get("subscriber_email", "").strip().lower()
-    if not valid_email(email):
-        return "Enter a valid email address.", 400
-    if create_subscriber(email):
-        return "Subscribed successfully!"
-    return "This email is already subscribed!", 409
-
-
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    if request.method == "POST":
-        username = request.form.get("username", "").strip()
-        if not allow_login(request.remote_addr, f"admin:{username}", limit=5, window_seconds=900):
-            return "Too many admin login attempts. Try again in a few minutes.", 429
-        configured_username = os.getenv("ADMIN_USERNAME", "")
-        configured_password = os.getenv("ADMIN_PASSWORD", "")
-        supplied_password = request.form.get("password", "")
-        if (
-            configured_username and configured_password and
-            hmac.compare_digest(username, configured_username) and
-            hmac.compare_digest(supplied_password, configured_password)
-        ):
+            return render_template("reset_password.html", token=token, error="Passwords do not match."), 400
+        if len(password) < 8:
+            return render_template("reset_password.html", token=token, error="Password must be at least 8 characters long."), 400
+        import app as app_module
+        if app_module.reset_password_with_token(token, password):
             session.clear()
-            session.permanent = True
-            mark_admin_authenticated()
-            return redirect(url_for("admin"))
-        return "Invalid username or password.", 401
-    return render_template("login.html")
+            return redirect(url_for("user_login"))
+        return render_template("reset_password.html", token=token, error="This reset link is invalid or expired."), 400
+
+    @app.route("/admin-forgot-password", methods=["GET", "POST"])
+    def admin_forgot_password():
+        if request.method == "GET":
+            return render_template("admin_forgot_password.html", sent=False)
+        identifier = request.form.get("identifier", "").strip().lower()
+        allowed = os.getenv("ADMIN_EMAIL", "").strip().lower()
+        if not allowed or not hmac.compare_digest(identifier, allowed):
+            return render_template("admin_forgot_password.html", sent=False, error="If that email is registered, a reset link will be sent."), 200
+        now = datetime.now(timezone.utc)
+        token = secrets.token_urlsafe(32)
+        token_hash = hashlib.sha256(token.encode()).hexdigest()
+        with SessionLocal() as db:
+            db.execute(text("""CREATE TABLE IF NOT EXISTS admin_password_reset_tokens (
+                token_hash VARCHAR(64) PRIMARY KEY, expires_at TIMESTAMP WITH TIME ZONE NOT NULL, used_at TIMESTAMP WITH TIME ZONE NULL)"""))
+            db.execute(text("DELETE FROM admin_password_reset_tokens WHERE expires_at <= :now OR used_at IS NOT NULL"), {"now": now})
+            db.execute(text("INSERT INTO admin_password_reset_tokens (token_hash, expires_at) VALUES (:hash, :expires)"), {"hash": token_hash, "expires": now + timedelta(minutes=30)})
+            db.commit()
+        try:
+            from mail_utils import send_admin_password_reset_email
+            send_admin_password_reset_email(allowed, token)
+        except Exception:
+            app.logger.exception("Admin password reset email delivery failed")
+            return render_template("admin_forgot_password.html", sent=False, error="We could not send the reset email. Please check the email configuration."), 200
+        return render_template("admin_forgot_password.html", sent=True, error=None), 200
+
+    @app.route("/admin-reset-password", methods=["GET", "POST"])
+    def admin_reset_password():
+        token = request.args.get("token", "").strip() if request.method == "GET" else request.form.get("token", "").strip()
+        if request.method == "GET":
+            return render_template("admin_reset_password.html", token=token, error=None)
+        password = request.form.get("password", "")
+        confirm = request.form.get("confirm_password", "")
+        if len(password) < 8:
+            return render_template("admin_reset_password.html", token=token, error="Password must be at least 8 characters long."), 400
+        if password != confirm:
+            return render_template("admin_reset_password.html", token=token, error="Passwords do not match."), 400
+        token_hash = hashlib.sha256(token.encode()).hexdigest()
+        now = datetime.now(timezone.utc)
+        with SessionLocal() as db:
+            claimed = db.execute(text("UPDATE admin_password_reset_tokens SET used_at=:now WHERE token_hash=:hash AND used_at IS NULL AND expires_at > :now"), {"hash": token_hash, "now": now}).rowcount
+            if claimed != 1:
+                db.rollback()
+                return render_template("admin_reset_password.html", token=token, error="This reset link is invalid or expired."), 400
+            db.execute(text("UPDATE admin_credentials SET password_hash=:password_hash, password_changed_at=:now WHERE id=1"), {"password_hash": generate_password_hash(password), "now": now})
+            db.commit()
+        session.clear()
+        return redirect(url_for("login"))
 
 
-@app.route("/admin")
-@admin_required
-def admin():
-    try:
-        page = max(1, int(request.args.get("page", "1")))
-    except ValueError:
-        page = 1
-    per_page = 50
-    stats = get_admin_stats()
-    messages, total = get_messages(page=page, per_page=per_page)
-    subscribers, total_subscribers = get_subscribers(page=page, per_page=per_page)
-    return render_template(
-        "admin.html",
-        stats=stats,
-        messages=messages,
-        subscribers=subscribers,
-        page=page,
-        total_pages=max(1, (total + per_page - 1) // per_page),
-        subscriber_pages=max(1, (total_subscribers + per_page - 1) // per_page)
-    )
+def mark_admin_authenticated(username):
+    configured_username = os.getenv("ADMIN_USERNAME", "").strip()
+    if not configured_username or not username or not hmac.compare_digest(str(username).strip(), configured_username):
+        raise ValueError("Configured admin identity mismatch.")
+    now = datetime.now(timezone.utc).timestamp()
+    session["admin_logged_in"] = True
+    session["admin_role"] = ADMIN_ROLE
+    session["admin_username"] = configured_username
+    session["admin_authenticated_at"] = now
+    session["admin_last_activity"] = now
 
 
-@app.route("/logout")
-def logout():
-    clear_admin_session()
-    return redirect(url_for("login"))
+def clear_admin_session():
+    _clear_admin_session()
 
 
-if __name__ == "__main__":
-    from database import init_db
-    init_db()
-    app.run(host="0.0.0.0", port=int(os.getenv("PORT", "5000")))
+def _clear_admin_session():
+    session.pop("admin_logged_in", None)
+    session.pop("admin_role", None)
+    session.pop("admin_username", None)
+    session.pop("admin_authenticated_at", None)
+    session.pop("admin_last_activity", None)
+    session.pop("_permanent", None)
