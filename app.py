@@ -198,25 +198,11 @@ def favicon_ico():
 
 @app.route("/robots.txt")
 def robots_txt():
-    site_url = os.getenv("PUBLIC_BASE_URL", "").strip().rstrip("/")
-    if not site_url:
-        site_url = request.url_root.rstrip("/")
-    content = f"""User-agent: *
-Allow: /
-Disallow: /admin
-Disallow: /login
-Disallow: /logout
-Disallow: /dashboard
-Disallow: /account
-Disallow: /register
-Disallow: /user-login
-Disallow: /user-logout
-Disallow: /forgot-password
-Disallow: /reset-password
-
-Sitemap: {site_url}/sitemap.xml
-"""
-    return Response(content, mimetype="text/plain")
+    # NOTE: this route's return value is intentionally overridden by the
+    # canonicalize_robots_response() after_request hook in admin_security.py,
+    # which is the single source of truth for the live robots.txt content.
+    # This route only needs to exist so Flask has something to override.
+    return Response("", mimetype="text/plain")
 
 
 @app.route("/sitemap.xml")

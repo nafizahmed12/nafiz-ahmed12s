@@ -188,6 +188,8 @@ def register_admin_session_guard(app):
                 "Disallow: /user-logout\n"
                 "Disallow: /forgot-password\n"
                 "Disallow: /reset-password\n"
+                "Disallow: /admin-forgot-password\n"
+                "Disallow: /admin-reset-password\n"
                 "Disallow: /checkout\n"
                 "Disallow: /orders\n"
                 "Disallow: /api/\n\n"
