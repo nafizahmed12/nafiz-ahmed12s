@@ -215,7 +215,7 @@ def affiliate_click():
         except (TypeError, ValueError):
             return jsonify({"error": "Invalid product_id."}), 400
         visitor = str(body.get("visitor_key", "")).strip()[:128] or None
-        ip = request.headers.get("X-Forwarded-For", request.remote_addr or "")
+        ip = request.remote_addr or ""
         ip_hash = sha256(ip.encode()).hexdigest()
         db.execute(text("INSERT INTO affiliate_clicks (affiliate_id,product_id,visitor_key,ip_hash,user_agent,created_at) VALUES (:aid,:pid,:visitor,:ip,:ua,NOW())"), {"aid": affiliate, "pid": product_id, "visitor": visitor, "ip": ip_hash, "ua": request.headers.get("User-Agent", "")[:500]})
         db.commit()
