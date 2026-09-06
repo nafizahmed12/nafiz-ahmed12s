@@ -98,7 +98,7 @@ def register_error_handlers(app):
                     "@type": "BreadcrumbList",
                     "itemListElement": [
                         {"@type": "ListItem", "position": 1, "name": "Home", "item": url_for("home", _external=True)},
-                        {"@type": "ListItem", "position": 2, "name": "Smartphones", "item": url_for("shop", _external=True)},
+                        {"@type": "ListItem", "position": 2, "name": "Smartphones", "item": url_for("shop_ui.shop", _external=True)},
                     ],
                 }
                 html = html.replace("</head>", '<script type="application/ld+json">' + json.dumps(breadcrumb, ensure_ascii=False) + '</script>\n</head>', 1)
@@ -146,7 +146,7 @@ def register_error_handlers(app):
                     return response
                 name, title, description = category_data
                 html = response.get_data(as_text=True)
-                canonical_url = url_for("shop", _external=True)
+                canonical_url = url_for("shop_ui.shop", _external=True)
                 canonical_url = f"{canonical_url}?category={category}"
                 old_title = "<title>Nafiz -Ecommerce — Shop</title>"
                 html = html.replace(old_title, f"<title>{title}</title>", 1)
