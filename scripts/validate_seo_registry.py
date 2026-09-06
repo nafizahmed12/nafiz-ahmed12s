@@ -13,9 +13,17 @@ SITEMAP = ROOT / "static" / "sitemap.xml"
 
 
 def check_sitemap_drift(pages: list[dict]) -> None:
-    """Every /static/<slug>.html-style URL present in sitemap.xml must have a
-    matching registry entry, and vice versa. Catches routes (like a page added
-    straight to app.py + sitemap) that were never registered."""
+    """Every content URL present in sitemap.xml must have a matching
+    registry entry, and vice versa. Catches routes (like a page added
+    straight to app.py + sitemap) that were never registered.
+
+    Two shapes are registry-tracked:
+    - static pages: canonical URL matches exactly (e.g. .../iphone-18)
+    - dynamic pages (route_kind: "dynamic", e.g. /phone-detail/<slug>):
+      canonical is a URL *prefix* -- app.py appends one sitemap entry per
+      product slug at .../phone-detail/<slug>, so a registry entry for the
+      route as a whole (not one entry per product) is what's expected.
+    """
     if not SITEMAP.exists():
         print(f"Skipping sitemap drift check: {SITEMAP} not found")
         return
@@ -23,15 +31,16 @@ def check_sitemap_drift(pages: list[dict]) -> None:
     sitemap_text = SITEMAP.read_text(encoding="utf-8")
     sitemap_locs = re.findall(r"<loc>(.*?)</loc>", sitemap_text)
 
+    static_pages = [page for page in pages if page.get("route_kind") != "dynamic"]
+    dynamic_pages = [page for page in pages if page.get("route_kind") == "dynamic"]
+
     # Only compare against registry-managed static content pages; sitemap
     # entries for the homepage, /shop, /about, legal pages, etc. are not
     # registry-tracked topics and are intentionally out of scope here.
-    registry_slugs = {page["slug"].strip().lower() for page in pages}
-    registry_canonicals = {page["canonical"].strip().lower() for page in pages}
+    registry_slugs = {page["slug"].strip().lower() for page in static_pages}
+    registry_canonicals = {page["canonical"].strip().lower() for page in static_pages}
+    dynamic_prefixes = [page["canonical"].strip().lower().rstrip("/") + "/" for page in dynamic_pages]
 
-    # A sitemap URL is "registry-relevant" if it matches the canonical URL
-    # pattern used by registry pages (same host, single path segment that
-    # looks like a content slug rather than a known non-registry route).
     known_non_registry_paths = {
         "", "shop", "about", "contact", "privacy-policy", "terms", "refund-policy",
     }
@@ -39,6 +48,8 @@ def check_sitemap_drift(pages: list[dict]) -> None:
     for loc in sitemap_locs:
         loc_clean = loc.strip().lower()
         if loc_clean in registry_canonicals:
+            continue
+        if any(loc_clean.startswith(prefix) for prefix in dynamic_prefixes):
             continue
         # Derive the path (not the host) so "https://host/" -> "" (homepage),
         # "https://host/shop" -> "shop", etc. Using the full URL's rsplit
@@ -57,6 +68,15 @@ def check_sitemap_drift(pages: list[dict]) -> None:
             raise SystemExit(
                 f"Registry slug '{slug}' has no matching URL in static/sitemap.xml "
                 f"(registry claims a page that isn't published)."
+            )
+
+    for page in dynamic_pages:
+        prefix = page["canonical"].strip().lower().rstrip("/") + "/"
+        if not any(loc.strip().lower().startswith(prefix) for loc in sitemap_locs):
+            raise SystemExit(
+                f"Dynamic registry entry '{page['topic']}' (prefix {prefix}) has no "
+                f"matching URL in static/sitemap.xml (registry claims a route that "
+                f"isn't published)."
             )
 
 
@@ -82,6 +102,16 @@ def main() -> None:
     slugs = {page["slug"].strip().lower() for page in pages}
     paths = {page["path"].strip().lower() for page in pages}
     for page in pages:
+        # Static registry pages (the iPhone 18 content cluster) are served
+        # from a matching /static/<slug>.html file and must follow that
+        # naming convention exactly. Dynamic pages (route_kind: "dynamic",
+        # e.g. /phone-detail/<slug> in app.py, backed by the `products`
+        # dict rather than a static file) are exempt from this specific
+        # check, since there is no static file for them to match -- but
+        # every other check in this script (uniqueness, sitemap presence,
+        # required fields) still applies to them equally.
+        if page.get("route_kind") == "dynamic":
+            continue
         expected = f"/static/{page['slug'].strip()}.html".lower()
         if page["path"].strip().lower() != expected:
             raise SystemExit(

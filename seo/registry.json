@@ -36,6 +36,14 @@
       "slug": "iphone-18-series",
       "path": "/static/iphone-18-series.html",
       "canonical": "https://nafiz-ahmed12s.onrender.com/iphone-18-series"
+    },
+    {
+      "topic": "Phone detail pages (per-product, app.py products dict)",
+      "slug": "phone-detail",
+      "path": "app.py:product_page (dynamic route, not a static file)",
+      "canonical": "https://nafiz-ahmed12s.onrender.com/phone-detail",
+      "route_kind": "dynamic",
+      "note": "One sitemap entry per key in app.py's `products` dict (currently iphone-18-pro-max, iphone15pro). This entry tracks the /phone-detail/<slug> route as a whole rather than one registry row per product, since products are added by editing that dict, not by registering a new SEO page."
     }
   ]
 }
