@@ -1,0 +1,8 @@
+name = "nafiz-ahmed12s-edge"
+main = "cloudflare/worker.js"
+compatibility_date = "2026-09-05"
+
+# Set this in the Cloudflare dashboard or with Wrangler before deployment.
+# Example: https://your-origin.example.com
+[vars]
+ORIGIN_URL = ""
