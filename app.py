@@ -280,7 +280,15 @@ def product_detail_page(product_id):
 
 @app.route("/affiliate-picks")
 def affiliate_picks_page():
-    return render_template("affiliate_picks.html")
+    try:
+        with SessionLocal() as db:
+            rows = db.execute(text("""SELECT id,name,description,amazon_url,image_url,display_price
+                FROM affiliate_products WHERE status='published' ORDER BY sort_order ASC,id DESC""")).mappings().all()
+        products = [dict(row) for row in rows]
+    except Exception:
+        app.logger.exception("Failed to load affiliate products for /affiliate-picks")
+        products = None
+    return render_template("affiliate_picks.html", products=products)
 
 
 @app.route("/about")
