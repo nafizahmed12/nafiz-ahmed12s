@@ -207,9 +207,8 @@ def add_home_affiliate_products(response):
         name = escape(row["name"] or "Recommended product")
         description = escape(row["description"] or "Check details and compatibility before purchase.")
         amazon_url = escape(row["amazon_url"] or "#", quote=True)
-        image_url = escape(row["image_url"] or "", quote=True)
         display_price = escape(row["display_price"] or "", quote=True)
-        image_html = f'<img src="{image_url}" alt="{name}" loading="lazy">' if image_url else '<div class="home-affiliate-no-image">Amazon</div>'
+        image_html = '<div class="home-affiliate-no-image">Amazon</div>'
         price_html = f'<span class="home-affiliate-price">{display_price}</span>' if display_price else ''
         cards.append(
             f'<article class="home-affiliate-card"><div class="home-affiliate-image">{image_html}</div>'
