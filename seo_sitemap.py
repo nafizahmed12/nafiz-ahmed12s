@@ -20,6 +20,7 @@ PUBLIC_PATHS = (
     ("/terms", "yearly", "0.5"),
     ("/refund-policy", "yearly", "0.5"),
     ("/phones", "daily", "0.9"),
+    ("/compare", "daily", "0.9"),
     ("/iphone-18", "weekly", "0.9"),
     ("/iphone-18-pro", "weekly", "0.9"),
     ("/iphone-18-pro-max", "weekly", "0.9"),
@@ -96,15 +97,12 @@ def register_canonical_sitemap(app, products):
                 candidates.append((path, "daily", "0.8"))
                 known.add(path)
 
-        brands = set()
         for row in _published_catalog_rows():
-            brand = row["brand"]
-            brands.add(brand)
-            path = f"/phones/{_brand_slug(brand)}"
+            path = f"/phones/{_brand_slug(row['brand'])}"
             if path not in known:
                 candidates.append((path, "weekly", "0.8"))
                 known.add(path)
-            path = f"/phones/{_brand_slug(brand)}/{row['slug']}"
+            path = f"/phones/{_brand_slug(row['brand'])}/{row['slug']}"
             if path not in known:
                 candidates.append((path, "weekly", "0.8"))
                 known.add(path)

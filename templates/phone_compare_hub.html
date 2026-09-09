@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Phone Comparisons | Compare Smartphone Specs & Prices</title>
+  <meta name="description" content="Compare popular smartphones side by side. Explore phone specifications, prices, cameras, batteries, displays and key differences.">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="{{ request.base_url }}">
+  <style>
+    body{font-family:system-ui,sans-serif;max-width:1120px;margin:auto;padding:24px;color:#182033;line-height:1.55}
+    nav{margin-bottom:28px}nav a{margin-right:14px}
+    .hero{padding:20px 0 10px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .card{border:1px solid #ddd;border-radius:14px;padding:16px}.card h2{font-size:18px;margin:0 0 8px}
+    .muted{color:#5f6b7a}.chips{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 24px}.chip{padding:7px 10px;border:1px solid #ddd;border-radius:999px}
+    a{color:inherit}.section{margin-top:28px}
+    @media(max-width:700px){body{padding:16px}.grid{grid-template-columns:1fr}}
+  </style>
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"CollectionPage",
+    "name":"Phone Comparisons",
+    "description":"Compare smartphone specifications, prices and key differences.",
+    "url":"{{ request.base_url }}"
+  }
+  </script>
+</head>
+<body>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/phones">All Phones</a>
+    <a href="/compare">Compare</a>
+    <a href="/blog">Blog</a>
+    <a href="/shop">Shop</a>
+  </nav>
+
+  <main>
+    <div class="hero">
+      <p class="muted">Home › Phone Comparisons</p>
+      <h1>Phone Comparisons</h1>
+      <p>Compare popular smartphones side by side using published specifications, pricing information and model details. Availability and specifications can vary by market and configuration.</p>
+    </div>
+
+    <section class="section">
+      <h2>Popular phone comparisons</h2>
+      <div class="grid">
+        {% for item in comparisons %}
+        <article class="card">
+          <h2><a href="{{ url_for('phone_catalog.phone_compare', left=item.left.slug, right=item.right.slug) }}">{{ item.left.model }} vs {{ item.right.model }}</a></h2>
+          <p class="muted">{{ item.left.brand }} vs {{ item.right.brand }}</p>
+          <p>{{ item.left.short_description }} Compare it with {{ item.right.model }} for a quick side-by-side view.</p>
+        </article>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Recently published phones</h2>
+      <div class="chips">
+        {% for phone in phones %}
+        <a class="chip" href="{{ url_for('phone_catalog.phone_catalog_detail', brand=phone.brand|lower|replace(' ','-'), slug=phone.slug) }}">{{ phone.model }}</a>
+        {% endfor %}
+      </div>
+    </section>
+  </main>
+</body>
+</html>
