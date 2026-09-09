@@ -9,6 +9,7 @@ from sqlalchemy import text
 from database import SessionLocal
 from admin_auth import admin_required
 from phone_brand_seo import brand_seo_context
+from phone_series_routes import SERIES, _slug as series_slug
 
 phone_catalog_bp = Blueprint("phone_catalog", __name__)
 
@@ -53,7 +54,10 @@ def phone_brand(brand):
     phones=_published("AND LOWER(brand)=:brand",{"brand":brand.lower()},100)
     if not phones: abort(404)
     brand_name=phones[0]["brand"]
-    return render_template("phone_brand.html",phones=phones,brand=brand_name,seo=brand_seo_context(brand_name))
+    series=[]
+    for series_key, (series_name, _) in SERIES.get(_slug(brand_name), {}).items():
+        series.append((series_key, series_name))
+    return render_template("phone_brand.html",phones=phones,brand=brand_name,seo=brand_seo_context(brand_name),series=series)
 
 @phone_catalog_bp.get("/phones/<brand>/<slug>")
 def phone_catalog_detail(brand,slug):
