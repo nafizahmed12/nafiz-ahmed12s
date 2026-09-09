@@ -1,1 +1,96 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{ left.model }} vs {{ right.model }} | Phone Comparison</title><meta name="description" content="Compare {{ left.model }} and {{ right.model }} specifications, pricing and key differences."><link rel="canonical" href="{{ request.base_url }}"><style>body{font-family:system-ui,sans-serif;max-width:1100px;margin:auto;padding:24px;color:#182033}.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}.box{border:1px solid #ddd;border-radius:14px;padding:18px}.row{display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid #eee;padding:10px}.row div{padding:0 8px}@media(max-width:700px){.cols{grid-template-columns:1fr}.row{grid-template-columns:1fr}}</style></head><body><nav><a href="/phones">All Phones</a> · <a href="/blog">Blog</a></nav><h1>{{ left.model }} vs {{ right.model }}</h1><p>Side-by-side comparison of published information. Specifications and prices can change by market and configuration.</p><div class="cols"><div class="box"><h2>{{ left.model }}</h2><p>{{ left.short_description }}</p><p>{{ left.price_usd or 'Price not listed' }}</p></div><div class="box"><h2>{{ right.model }}</h2><p>{{ right.short_description }}</p><p>{{ right.price_usd or 'Price not listed' }}</p></div></div><h2>Key specifications</h2>{% set keys = (left.specs.keys()|list + right.specs.keys()|list)|unique|list %}{% for key in keys %}<div class="row"><div><strong>{{ key|replace('_',' ')|title }}</strong></div><div>{{ left.specs.get(key,'—') }}</div><div>{{ right.specs.get(key,'—') }}</div></div>{% endfor %}</body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{{ left.model }} vs {{ right.model }} | Specs, Price & Differences</title>
+  <meta name="description" content="Compare {{ left.model }} vs {{ right.model }} with key specifications, price information, release details and the main differences to help you choose.">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="{{ request.base_url }}">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="{{ left.model }} vs {{ right.model }} | Specs, Price & Differences">
+  <meta property="og:description" content="Side-by-side comparison of {{ left.model }} and {{ right.model }} specifications, pricing and key differences.">
+  <meta property="og:url" content="{{ request.base_url }}">
+  <script type="application/ld+json">
+  {{ {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    'headline': left.model ~ ' vs ' ~ right.model,
+    'description': 'Side-by-side comparison of ' ~ left.model ~ ' and ' ~ right.model ~ ' specifications, pricing and key differences.',
+    'mainEntityOfPage': request.base_url
+  } | tojson }}
+  </script>
+  <script type="application/ld+json">
+  {{ {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    'mainEntity': [
+      {'@type':'Question','name':'What is the main difference between ' ~ left.model ~ ' and ' ~ right.model ~ '?','acceptedAnswer':{'@type':'Answer','text':'The comparison table highlights differences in specifications, pricing and other published information. Check the current configuration and market before buying.'}},
+      {'@type':'Question','name':'Which phone is better for me?','acceptedAnswer':{'@type':'Answer','text':'Choose the phone whose display, camera, performance, battery, storage and price best match your priorities. Individual model pages provide more detail.'}},
+      {'@type':'Question','name':'Are the prices on this comparison page fixed?','acceptedAnswer':{'@type':'Answer','text':'No. Phone prices can vary by country, retailer, storage configuration, taxes and promotions.'}}
+    ]
+  } | tojson }}
+  </script>
+  <style>
+    body{font-family:system-ui,sans-serif;max-width:1100px;margin:auto;padding:24px;color:#182033;line-height:1.6}
+    nav{margin-bottom:24px}a{color:#1455cc;text-decoration:none}a:hover{text-decoration:underline}
+    .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}.box{border:1px solid #ddd;border-radius:14px;padding:18px}
+    .row{display:grid;grid-template-columns:1.2fr 1fr 1fr;border-bottom:1px solid #eee;padding:11px 0}.row div{padding:0 8px}
+    .intro{font-size:1.05rem}.links{display:flex;flex-wrap:wrap;gap:14px;margin:20px 0}
+    @media(max-width:700px){body{padding:16px}.cols{grid-template-columns:1fr}.row{grid-template-columns:1fr}.row div{padding:5px 0}.row div:first-child{font-weight:700}}
+  </style>
+</head>
+<body>
+  <nav><a href="/phones">All Phones</a> · <a href="/compare">Compare Phones</a> · <a href="/phone-guides">Buying Guides</a> · <a href="/blog">Blog</a></nav>
+
+  <h1>{{ left.model }} vs {{ right.model }}</h1>
+  <p class="intro">Compare {{ left.model }} and {{ right.model }} side by side. This page brings together published specifications, release information and available price data so you can quickly identify the important differences.</p>
+
+  <div class="cols">
+    <div class="box">
+      <h2>{{ left.model }}</h2>
+      <p>{{ left.short_description }}</p>
+      <p><strong>Brand:</strong> {{ left.brand }}</p>
+      <p><strong>Release:</strong> {{ left.release_date or 'Not listed' }}</p>
+      <p><strong>Price:</strong> {{ left.price_usd or left.price_bdt or 'Not listed' }}</p>
+      <p><a href="/phones/{{ left.brand|lower|replace(' ','-') }}/{{ left.slug }}">View {{ left.model }} details</a></p>
+    </div>
+    <div class="box">
+      <h2>{{ right.model }}</h2>
+      <p>{{ right.short_description }}</p>
+      <p><strong>Brand:</strong> {{ right.brand }}</p>
+      <p><strong>Release:</strong> {{ right.release_date or 'Not listed' }}</p>
+      <p><strong>Price:</strong> {{ right.price_usd or right.price_bdt or 'Not listed' }}</p>
+      <p><a href="/phones/{{ right.brand|lower|replace(' ','-') }}/{{ right.slug }}">View {{ right.model }} details</a></p>
+    </div>
+  </div>
+
+  <h2>Key specifications</h2>
+  {% set keys = (left.specs.keys()|list + right.specs.keys()|list)|unique|list %}
+  <div class="row"><div><strong>Specification</strong></div><div><strong>{{ left.model }}</strong></div><div><strong>{{ right.model }}</strong></div></div>
+  {% for key in keys %}
+  <div class="row"><div><strong>{{ key|replace('_',' ')|title }}</strong></div><div>{{ left.specs.get(key,'—') }}</div><div>{{ right.specs.get(key,'—') }}</div></div>
+  {% endfor %}
+
+  <h2>Which one should you choose?</h2>
+  <p>Use the specifications above according to your priorities. For a more complete decision, review each phone's individual details and explore our evergreen buying guides before purchasing. Prices and availability can vary by market and configuration.</p>
+
+  <h2>Frequently asked questions</h2>
+  <div class="box">
+    <h3>What is the main difference between {{ left.model }} and {{ right.model }}?</h3>
+    <p>The table above highlights differences in specifications, pricing and other published information. Check the current configuration and market before buying.</p>
+    <h3>Which phone is better for me?</h3>
+    <p>Choose the phone whose display, camera, performance, battery, storage and price best match your priorities.</p>
+    <h3>Are the prices fixed?</h3>
+    <p>No. Prices can vary by country, retailer, storage configuration, taxes and promotions.</p>
+  </div>
+
+  <div class="links">
+    <a href="/phones">Browse all phones</a>
+    <a href="/phones/{{ left.brand|lower|replace(' ','-') }}">More {{ left.brand }} phones</a>
+    <a href="/phones/{{ right.brand|lower|replace(' ','-') }}">More {{ right.brand }} phones</a>
+    <a href="/phone-guides">Read smartphone buying guides</a>
+    <a href="/compare">Explore more phone comparisons</a>
+  </div>
+</body>
+</html>
