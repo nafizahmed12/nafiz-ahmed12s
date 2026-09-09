@@ -2,7 +2,8 @@
 
 from flask import Response, request
 
-from app import app
+from app import app, products
+from seo_sitemap import register_canonical_sitemap
 
 
 ADS_TXT = "google.com, pub-5012987374131521, DIRECT, f08c47fec0942fa0\n"
@@ -17,6 +18,9 @@ ADSENSE_CSP = (
     "frame-src 'self' https://googleads.g.doubleclick.net https://tpc.googlesyndication.com; "
     "media-src 'self' https:; worker-src 'self'; manifest-src 'self';"
 )
+
+
+register_canonical_sitemap(app, products)
 
 
 @app.get("/ads.txt")

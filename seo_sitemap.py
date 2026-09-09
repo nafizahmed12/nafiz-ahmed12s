@@ -1,0 +1,99 @@
+"""Canonical sitemap implementation for the production Flask application."""
+
+import json
+import os
+from html import escape
+from pathlib import Path
+
+from flask import Response, request
+
+
+PUBLIC_PATHS = (
+    ("/", "weekly", "1.0"),
+    ("/shop", "daily", "0.9"),
+    ("/about", "monthly", "0.7"),
+    ("/contact", "monthly", "0.7"),
+    ("/privacy-policy", "yearly", "0.5"),
+    ("/terms", "yearly", "0.5"),
+    ("/refund-policy", "yearly", "0.5"),
+    ("/iphone-18", "weekly", "0.9"),
+    ("/iphone-18-pro", "weekly", "0.9"),
+    ("/iphone-18-pro-max", "weekly", "0.9"),
+    ("/iphone-18-series", "weekly", "0.9"),
+    ("/iphone-18-comparison", "weekly", "0.8"),
+)
+
+
+def _base_url():
+    configured = os.getenv("PUBLIC_BASE_URL", "").strip().rstrip("/")
+    if configured:
+        return configured
+    return request.url_root.rstrip("/")
+
+
+def _registry_paths(base_url):
+    registry_path = Path(__file__).resolve().parent / "seo" / "registry.json"
+    if not registry_path.exists():
+        return []
+    try:
+        data = json.loads(registry_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+
+    paths = []
+    for page in data.get("pages", []):
+        canonical = str(page.get("canonical", "")).strip()
+        route_kind = page.get("route_kind")
+        if not canonical.startswith(base_url + "/"):
+            continue
+        if route_kind == "dynamic":
+            continue
+        path = canonical[len(base_url):] or "/"
+        if "?" in path:
+            continue
+        paths.append(path)
+    return paths
+
+
+def register_canonical_sitemap(app, products):
+    """Replace the legacy sitemap view with a canonical, indexable URL set."""
+
+    def canonical_sitemap():
+        base_url = _base_url()
+        candidates = list(PUBLIC_PATHS)
+
+        # Keep registry-tracked static SEO pages in sync with the sitemap.
+        known = {path for path, _, _ in candidates}
+        for path in _registry_paths(base_url):
+            if path not in known:
+                candidates.append((path, "weekly", "0.8"))
+                known.add(path)
+
+        # Product detail URLs are included only for explicitly defined SEO products.
+        for slug in sorted(products):
+            path = f"/phone-detail/{slug}"
+            if path not in known:
+                candidates.append((path, "daily", "0.8"))
+                known.add(path)
+
+        entries = []
+        for path, changefreq, priority in candidates:
+            loc = escape(base_url + (path if path.startswith("/") else "/" + path), quote=True)
+            entries.append(
+                f"  <url><loc>{loc}</loc><changefreq>{changefreq}</changefreq>"
+                f"<priority>{priority}</priority></url>"
+            )
+
+        content = (
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+            + "\n".join(entries)
+            + '\n</urlset>\n'
+        )
+        response = Response(content, status=200, mimetype="application/xml")
+        response.headers["Cache-Control"] = "public, max-age=3600"
+        return response
+
+    # app.py already owns the route; replacing the endpoint mapping avoids a
+    # second route and keeps the change isolated to the production WSGI layer.
+    app.view_functions["sitemap_xml"] = canonical_sitemap
