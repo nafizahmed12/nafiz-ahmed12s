@@ -5,7 +5,7 @@ services:
     branch: main
     autoDeployTrigger: commit
     buildCommand: pip install -r requirements.txt
-    startCommand: python scripts/migrate.py && gunicorn app:app
+    startCommand: python scripts/migrate.py && gunicorn wsgi:application
     healthCheckPath: /health
     envVars:
       - key: ADMIN_USERNAME
@@ -18,3 +18,5 @@ services:
         generateValue: true
       - key: DATABASE_URL
         sync: false
+      - key: PUBLIC_BASE_URL
+        value: https://nafiz-ahmed12s.onrender.com
