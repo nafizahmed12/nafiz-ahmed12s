@@ -28,20 +28,32 @@ def _row(row):
     return item
 
 
-def _published(where="", params=None, limit=100):
+def _published(where="", params=None, limit=100, offset=0):
     params = dict(params or {})
     params["limit"] = limit
+    params["offset"] = offset
     with SessionLocal() as db:
         rows = db.execute(text(f"""SELECT id,brand,model,slug,short_description,content,image_url,release_date,price_usd,price_bdt,specs_json,seo_description,published_at,source_name,source_url,source_checked_at,data_confidence
             FROM phone_catalog WHERE status='published' {where}
-            ORDER BY published_at DESC NULLS LAST, id DESC LIMIT :limit"""), params).mappings().all()
+            ORDER BY published_at DESC NULLS LAST, id DESC LIMIT :limit OFFSET :offset"""), params).mappings().all()
     return [_row(r) for r in rows]
+
+
+def _published_count(where="", params=None):
+    params = dict(params or {})
+    with SessionLocal() as db:
+        return int(db.execute(text(f"SELECT COUNT(*) FROM phone_catalog WHERE status='published' {where}"), params).scalar_one())
 
 
 @phone_catalog_bp.get("/phones")
 def phones_index():
     q = request.args.get("q", "").strip()
     brand = request.args.get("brand", "").strip()
+    try:
+        page = max(1, int(request.args.get("page", "1")))
+    except ValueError:
+        page = 1
+    per_page = 24
     where, params = [], {}
     if q:
         where.append("(LOWER(brand) LIKE :q OR LOWER(model) LIKE :q OR LOWER(short_description) LIKE :q)")
@@ -50,10 +62,14 @@ def phones_index():
         where.append("LOWER(brand)=:brand")
         params["brand"] = brand.lower()
     clause = ("AND " + " AND ".join(where)) if where else ""
-    phones = _published(clause, params, 100)
+    total = _published_count(clause, params)
+    total_pages = max(1, (total + per_page - 1) // per_page)
+    if page > total_pages:
+        abort(404)
+    phones = _published(clause, params, per_page, (page - 1) * per_page)
     with SessionLocal() as db:
         brands = [r[0] for r in db.execute(text("SELECT DISTINCT brand FROM phone_catalog WHERE status='published' ORDER BY brand")).all()]
-    return render_template("phones_index.html", phones=phones, brands=brands, q=q, selected_brand=brand)
+    return render_template("phones_index.html", phones=phones, brands=brands, q=q, selected_brand=brand, page=page, total_pages=total_pages, total=total)
 
 
 @phone_catalog_bp.get("/phones/<brand>")
@@ -162,17 +178,7 @@ def import_phones():
                 errors.append(f"Row {number}: duplicate slug {slug} inside CSV.")
                 continue
             seen.add(slug)
-            cleaned.append({
-                "brand": brand[:80], "model": model[:180], "slug": slug,
-                "short_description": description[:320], "content": content,
-                "image_url": (raw_row.get("image_url") or "").strip()[:2048] or None,
-                "release_date": (raw_row.get("release_date") or "").strip()[:40] or None,
-                "price_usd": (raw_row.get("price_usd") or "").strip()[:40] or None,
-                "price_bdt": (raw_row.get("price_bdt") or "").strip()[:40] or None,
-                "specs_json": specs, "seo_description": (raw_row.get("seo_description") or "").strip()[:320],
-                "status": status, "source_name": source_name, "source_url": source_url,
-                "source_checked_at": checked_at, "data_confidence": confidence,
-            })
+            cleaned.append({"brand": brand[:80], "model": model[:180], "slug": slug, "short_description": description[:320], "content": content, "image_url": (raw_row.get("image_url") or "").strip()[:2048] or None, "release_date": (raw_row.get("release_date") or "").strip()[:40] or None, "price_usd": (raw_row.get("price_usd") or "").strip()[:40] or None, "price_bdt": (raw_row.get("price_bdt") or "").strip()[:40] or None, "specs_json": specs, "seo_description": (raw_row.get("seo_description") or "").strip()[:320], "status": status, "source_name": source_name, "source_url": source_url, "source_checked_at": checked_at, "data_confidence": confidence})
         if errors:
             flash("Import stopped: " + " | ".join(errors[:8]), "error")
             return redirect(url_for("phone_catalog.admin_phones"))
@@ -238,17 +244,7 @@ def _save_phone(phone_id):
         except ValueError:
             flash("Source checked time must be ISO-8601.", "error")
             return redirect(request.referrer or url_for("phone_catalog.admin_phones"))
-    fields = {
-        "brand": brand[:80], "model": model[:180], "slug": slug, "short_description": description[:320],
-        "content": content, "image_url": request.form.get("image_url", "").strip()[:2048] or None,
-        "release_date": request.form.get("release_date", "").strip()[:40] or None,
-        "price_usd": request.form.get("price_usd", "").strip()[:40] or None,
-        "price_bdt": request.form.get("price_bdt", "").strip()[:40] or None,
-        "specs_json": specs, "seo_description": request.form.get("seo_description", "").strip()[:320], "status": status,
-        "source_name": request.form.get("source_name", "").strip()[:120] or None,
-        "source_url": request.form.get("source_url", "").strip()[:2048] or None,
-        "source_checked_at": checked_at, "data_confidence": confidence,
-    }
+    fields = {"brand": brand[:80], "model": model[:180], "slug": slug, "short_description": description[:320], "content": content, "image_url": request.form.get("image_url", "").strip()[:2048] or None, "release_date": request.form.get("release_date", "").strip()[:40] or None, "price_usd": request.form.get("price_usd", "").strip()[:40] or None, "price_bdt": request.form.get("price_bdt", "").strip()[:40] or None, "specs_json": specs, "seo_description": request.form.get("seo_description", "").strip()[:320], "status": status, "source_name": request.form.get("source_name", "").strip()[:120] or None, "source_url": request.form.get("source_url", "").strip()[:2048] or None, "source_checked_at": checked_at, "data_confidence": confidence}
     with SessionLocal() as db:
         if phone_id is None:
             db.execute(text("""INSERT INTO phone_catalog (brand,model,slug,short_description,content,image_url,release_date,price_usd,price_bdt,specs_json,status,seo_description,published_at,source_name,source_url,source_checked_at,data_confidence)
