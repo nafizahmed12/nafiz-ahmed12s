@@ -17,6 +17,12 @@ def _slug(value):
     value = re.sub(r"[^a-z0-9]+", "-", (value or "").lower()).strip("-")
     return value[:220]
 
+def _schema_price(value):
+    """Return a schema-safe numeric price, or None when the catalog value is not numeric."""
+    raw = str(value or "").strip().replace(",", "")
+    match = re.fullmatch(r"\d+(?:\.\d+)?", raw)
+    return match.group(0) if match else None
+
 def _row(row):
     if not row: return None
     item = dict(row)
@@ -66,7 +72,13 @@ def phone_catalog_detail(brand,slug):
     phone=_row(row)
     related=_published("AND LOWER(brand)=:brand AND slug<>:slug",{"brand":brand.lower(),"slug":slug},6)
     recommended=_published("AND LOWER(brand)<>:brand AND slug<>:slug",{"brand":brand.lower(),"slug":slug},6)
-    return render_template("phone_catalog_detail.html",phone=phone,related=related,recommended=recommended)
+    return render_template(
+        "phone_catalog_detail.html",
+        phone=phone,
+        related=related,
+        recommended=recommended,
+        schema_price_bdt=_schema_price(phone.get("price_bdt")),
+    )
 
 @phone_catalog_bp.get("/compare/<left>-vs-<right>")
 def phone_compare(left,right):
