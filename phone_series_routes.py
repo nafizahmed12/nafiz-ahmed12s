@@ -87,41 +87,65 @@ def _slug(value):
     return re.sub(r"[^a-z0-9]+", "-", (value or "").lower()).strip("-")[:180]
 
 
-def _series_row(brand_slug, series_slug):
+def _matches(model, patterns):
+    model = (model or "").lower()
+    return any(pattern.lower() in model for pattern in patterns)
+
+
+def _build_series(rows, brand_slug, series_slug):
     definition = SERIES.get(brand_slug, {}).get(series_slug)
     if not definition:
         return None
     name, patterns = definition
     brand_name = BRAND_NAMES[brand_slug]
-    clauses = ["LOWER(model) LIKE :p%d" % i for i in range(len(patterns))]
-    params = {"brand": brand_name.lower()}
-    params.update({f"p{i}": f"%{pattern.lower()}%" for i, pattern in enumerate(patterns)})
+    phones = [dict(row) for row in rows if _matches(row["model"], patterns)]
+    if not phones:
+        return None
+    return {"name": name, "brand": brand_name, "slug": series_slug, "phones": phones[:60]}
+
+
+def available_series(brand_slug=None):
+    """Return only series backed by published catalog rows.
+
+    A single catalog query is used for sitemap generation and brand pages, avoiding
+    one database query per candidate series.
+    """
+    requested = _slug(brand_slug) if brand_slug else None
+    brands = [requested] if requested else list(SERIES)
+    brands = [brand for brand in brands if brand in SERIES]
+    if not brands:
+        return []
+    brand_names = [BRAND_NAMES[brand].lower() for brand in brands]
+    params = {f"brand{i}": value for i, value in enumerate(brand_names)}
+    brand_clause = ", ".join(f":brand{i}" for i in range(len(brand_names)))
     with SessionLocal() as db:
         rows = db.execute(text(f"""SELECT id,brand,model,slug,short_description,image_url,release_date,price_usd,price_bdt,specs_json,seo_description,published_at,source_name,source_url,source_checked_at,data_confidence
-            FROM phone_catalog WHERE status='published' AND LOWER(brand)=:brand AND ({' OR '.join(clauses)})
-            ORDER BY published_at DESC NULLS LAST, id DESC LIMIT 60"""), params).mappings().all()
-    return {"name": name, "brand": brand_name, "slug": series_slug, "phones": [dict(r) for r in rows]} if rows else None
-
-
-def available_series():
+            FROM phone_catalog
+            WHERE status='published' AND LOWER(brand) IN ({brand_clause})
+            ORDER BY published_at DESC NULLS LAST, id DESC"""), params).mappings().all()
+    grouped = {brand: [] for brand in brands}
+    for row in rows:
+        grouped.setdefault(_slug(row["brand"]), []).append(row)
     result = []
-    for brand_slug, series_map in SERIES.items():
-        for series_slug, (name, _) in series_map.items():
-            row = _series_row(brand_slug, series_slug)
+    for brand in brands:
+        for series_slug in SERIES[brand]:
+            row = _build_series(grouped.get(brand, []), brand, series_slug)
             if row:
-                result.append((brand_slug, series_slug, row))
+                result.append((brand, series_slug, row))
     return result
 
 
 @phone_series_bp.get("/phone-brands")
 def phone_brands_index():
     with SessionLocal() as db:
-        rows = db.execute(text("SELECT LOWER(brand) AS brand_key, MIN(brand) AS brand_name, COUNT(*) AS phone_count FROM phone_catalog WHERE status='published' GROUP BY LOWER(brand) ORDER BY MIN(brand)")).mappings().all()
-    brands=[]
+        rows = db.execute(text("""SELECT LOWER(brand) AS brand_key, MIN(brand) AS brand_name, COUNT(*) AS phone_count
+            FROM phone_catalog WHERE status='published' GROUP BY LOWER(brand) ORDER BY MIN(brand)""")).mappings().all()
+    available = {(brand, slug): row["name"] for brand, slug, row in available_series()}
+    brands = []
     for row in rows:
         key = _slug(row["brand_name"])
-        brand_series=[(slug,name) for slug,(name,_) in SERIES.get(key,{}).items() if _series_row(key,slug)]
-        brands.append({"slug":key,"name":row["brand_name"],"phone_count":row["phone_count"],"series":brand_series})
+        brand_series = [(slug, name) for slug, (name, _) in SERIES.get(key, {}).items() if (key, slug) in available]
+        brands.append({"slug": key, "name": row["brand_name"], "phone_count": row["phone_count"], "series": brand_series})
     return render_template("phone_brands.html", brands=brands)
 
 
@@ -129,10 +153,11 @@ def phone_brands_index():
 def phone_series(brand, series_slug):
     brand_slug = _slug(brand)
     series_slug = _slug(series_slug)
-    row = _series_row(brand_slug, series_slug)
-    if not row:
+    matches = [row for b, s, row in available_series(brand_slug) if s == series_slug]
+    if not matches:
         abort(404)
-    return render_template("phone_series.html", series=row, phones=row["phones"])
+    series = matches[0]
+    return render_template("phone_series.html", series=series, phones=series["phones"])
 
 
 def register_phone_series_routes(app):
