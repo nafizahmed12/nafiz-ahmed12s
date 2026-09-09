@@ -1,4 +1,8 @@
-"""Production WSGI entrypoint with public AdSense infrastructure routes."""
+"""Production WSGI entrypoint with public AdSense and SEO infrastructure routes."""
+
+from html import escape
+from urllib.parse import urlsplit
+import os
 
 from flask import Response, request
 
@@ -25,6 +29,65 @@ ADSENSE_CSP = (
     "media-src 'self' https:; worker-src 'self'; manifest-src 'self';"
 )
 
+SEO_META = {
+    "/": ("Nafiz Ecommerce — Mobiles, Laptops & Electronics", "Shop mobiles, laptops, electronics, accessories and more at Nafiz Ecommerce. Discover products and deals with secure checkout and fast delivery."),
+    "/shop": ("Shop Mobiles, Laptops & Electronics | Nafiz Ecommerce", "Browse mobiles, laptops, accessories and electronics at Nafiz Ecommerce. Find products, compare options and shop online."),
+    "/phones": ("Mobile Phones — Specs, Prices & Comparisons | Nafiz Ecommerce", "Explore mobile phones, specifications, prices and comparisons. Find the right smartphone for your budget and needs."),
+    "/phone-brands": ("Phone Brands — Compare Smartphones | Nafiz Ecommerce", "Explore popular smartphone brands and compare phones, specifications and prices in one place."),
+    "/compare": ("Compare Mobile Phones — Specs & Prices | Nafiz Ecommerce", "Compare smartphone specifications, features and prices to choose the best phone for you."),
+    "/phone-guides": ("Mobile Phone Buying Guides | Nafiz Ecommerce", "Practical smartphone buying guides covering gaming, cameras, battery, 5G, displays, storage and more."),
+    "/best-phones": ("Best Phones — Top Smartphones by Budget & Use | Nafiz Ecommerce", "Find the best smartphones for gaming, cameras, battery life, 5G, flagship features and different budgets."),
+    "/about": ("About Nafiz Ecommerce", "Learn more about Nafiz Ecommerce and our goal of making online shopping simple, useful and trustworthy."),
+    "/contact": ("Contact Nafiz Ecommerce", "Contact Nafiz Ecommerce for questions, support and help with products or orders."),
+}
+
+
+def _canonical_url():
+    base = os.getenv("PUBLIC_BASE_URL", "").strip().rstrip("/") or request.url_root.rstrip("/")
+    path = urlsplit(request.url).path or "/"
+    if path != "/":
+        path = path.rstrip("/") or "/"
+    return f"{base}{path}"
+
+
+def _inject_seo(response):
+    """Add fallback canonical and social metadata without overriding page metadata."""
+    if request.method != "GET" or response.status_code != 200 or "text/html" not in response.content_type:
+        return response
+    if request.path.startswith(("/admin", "/dashboard", "/account", "/user-login", "/register", "/login", "/orders")):
+        return response
+
+    response.direct_passthrough = False
+    body = response.get_data(as_text=True)
+    if "</head>" not in body:
+        return response
+
+    additions = []
+    canonical = escape(_canonical_url(), quote=True)
+    if 'rel="canonical"' not in body:
+        additions.append(f'<link rel="canonical" href="{canonical}">')
+
+    title, description = SEO_META.get(request.path, (None, None))
+    if title and "<title" not in body.lower():
+        additions.append(f"<title>{escape(title)}</title>")
+    if description and 'name="description"' not in body.lower():
+        additions.append(f'<meta name="description" content="{escape(description, quote=True)}">')
+
+    og_title = title or "Nafiz Ecommerce"
+    og_description = description or "Nafiz Ecommerce — mobiles, laptops, electronics and more."
+    if 'property="og:title"' not in body:
+        additions.append(f'<meta property="og:title" content="{escape(og_title, quote=True)}">')
+    if 'property="og:description"' not in body:
+        additions.append(f'<meta property="og:description" content="{escape(og_description, quote=True)}">')
+    if 'property="og:url"' not in body:
+        additions.append(f'<meta property="og:url" content="{canonical}">')
+    if 'property="og:type"' not in body:
+        additions.append('<meta property="og:type" content="website">')
+
+    if additions:
+        response.set_data(body.replace("</head>", "".join(additions) + "</head>", 1))
+    return response
+
 
 register_blog_routes(app)
 register_phone_catalog_routes(app)
@@ -41,6 +104,12 @@ def ads_txt():
     response = Response(ADS_TXT, status=200, mimetype="text/plain")
     response.headers["Cache-Control"] = "public, max-age=3600"
     return response
+
+
+@app.after_request
+def add_public_seo_metadata(response):
+    """Add safe fallback canonical/Open Graph metadata to public HTML pages."""
+    return _inject_seo(response)
 
 
 @app.after_request
