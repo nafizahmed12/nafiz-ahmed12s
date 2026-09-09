@@ -32,7 +32,7 @@ def _published(where="", params=None, limit=100):
     params = dict(params or {})
     params["limit"] = limit
     with SessionLocal() as db:
-        rows = db.execute(text(f"""SELECT id,brand,model,slug,short_description,content,image_url,release_date,price_usd,price_bdt,specs_json,seo_description,published_at
+        rows = db.execute(text(f"""SELECT id,brand,model,slug,short_description,content,image_url,release_date,price_usd,price_bdt,specs_json,seo_description,published_at,source_name,source_url,source_checked_at,data_confidence
             FROM phone_catalog WHERE status='published' {where}
             ORDER BY published_at DESC NULLS LAST, id DESC LIMIT :limit"""), params).mappings().all()
     return [_row(r) for r in rows]
@@ -68,7 +68,7 @@ def phone_brand(brand):
 @phone_catalog_bp.get("/phones/<brand>/<slug>")
 def phone_catalog_detail(brand, slug):
     with SessionLocal() as db:
-        row = db.execute(text("""SELECT id,brand,model,slug,short_description,content,image_url,release_date,price_usd,price_bdt,specs_json,seo_description,published_at
+        row = db.execute(text("""SELECT id,brand,model,slug,short_description,content,image_url,release_date,price_usd,price_bdt,specs_json,seo_description,published_at,source_name,source_url,source_checked_at,data_confidence
             FROM phone_catalog WHERE slug=:slug AND LOWER(brand)=:brand AND status='published'"""), {"slug": slug, "brand": brand.lower()}).mappings().first()
     if not row:
         abort(404)
@@ -80,7 +80,7 @@ def phone_catalog_detail(brand, slug):
 @phone_catalog_bp.get("/compare/<left>-vs-<right>")
 def phone_compare(left, right):
     with SessionLocal() as db:
-        rows = db.execute(text("""SELECT id,brand,model,slug,short_description,image_url,release_date,price_usd,price_bdt,specs_json,seo_description,published_at
+        rows = db.execute(text("""SELECT id,brand,model,slug,short_description,image_url,release_date,price_usd,price_bdt,specs_json,seo_description,published_at,source_name,source_url,source_checked_at,data_confidence
             FROM phone_catalog WHERE slug IN (:left,:right) AND status='published'"""), {"left": left, "right": right}).mappings().all()
     phones = {_row(r)["slug"]: _row(r) for r in rows}
     if left not in phones or right not in phones:
@@ -130,6 +130,17 @@ def import_phones():
             slug = _slug(raw_row.get("slug") or f"{brand}-{model}")
             specs = (raw_row.get("specs_json") or "{}").strip() or "{}"
             status = (raw_row.get("status") or "draft").strip().lower()
+            confidence = (raw_row.get("data_confidence") or "unverified").strip().lower()
+            source_name = (raw_row.get("source_name") or "").strip()[:120] or None
+            source_url = (raw_row.get("source_url") or "").strip()[:2048] or None
+            checked_raw = (raw_row.get("source_checked_at") or "").strip()
+            checked_at = None
+            if checked_raw:
+                try:
+                    checked_at = datetime.fromisoformat(checked_raw.replace("Z", "+00:00"))
+                except ValueError:
+                    errors.append(f"Row {number}: source_checked_at must be ISO-8601 (for example 2026-09-09T12:00:00).")
+                    continue
             try:
                 json.loads(specs)
             except (TypeError, ValueError):
@@ -140,6 +151,12 @@ def import_phones():
                 continue
             if status not in {"draft", "published"}:
                 errors.append(f"Row {number}: status must be draft or published.")
+                continue
+            if confidence not in {"unverified", "verified", "official"}:
+                errors.append(f"Row {number}: data_confidence must be unverified, verified, or official.")
+                continue
+            if status == "published" and confidence == "unverified":
+                errors.append(f"Row {number}: published phones must use verified or official data_confidence.")
                 continue
             if slug in seen:
                 errors.append(f"Row {number}: duplicate slug {slug} inside CSV.")
@@ -153,7 +170,8 @@ def import_phones():
                 "price_usd": (raw_row.get("price_usd") or "").strip()[:40] or None,
                 "price_bdt": (raw_row.get("price_bdt") or "").strip()[:40] or None,
                 "specs_json": specs, "seo_description": (raw_row.get("seo_description") or "").strip()[:320],
-                "status": status,
+                "status": status, "source_name": source_name, "source_url": source_url,
+                "source_checked_at": checked_at, "data_confidence": confidence,
             })
         if errors:
             flash("Import stopped: " + " | ".join(errors[:8]), "error")
@@ -164,8 +182,8 @@ def import_phones():
                 flash("Import stopped: these slugs already exist: " + ", ".join(sorted(existing)[:8]), "error")
                 return redirect(url_for("phone_catalog.admin_phones"))
             for item in cleaned:
-                db.execute(text("""INSERT INTO phone_catalog (brand,model,slug,short_description,content,image_url,release_date,price_usd,price_bdt,specs_json,status,seo_description,published_at)
-                    VALUES (:brand,:model,:slug,:short_description,:content,:image_url,:release_date,:price_usd,:price_bdt,:specs_json,:status,:seo_description,:published_at)"""), {**item, "published_at": datetime.utcnow() if item["status"] == "published" else None})
+                db.execute(text("""INSERT INTO phone_catalog (brand,model,slug,short_description,content,image_url,release_date,price_usd,price_bdt,specs_json,status,seo_description,published_at,source_name,source_url,source_checked_at,data_confidence)
+                    VALUES (:brand,:model,:slug,:short_description,:content,:image_url,:release_date,:price_usd,:price_bdt,:specs_json,:status,:seo_description,:published_at,:source_name,:source_url,:source_checked_at,:data_confidence)"""), {**item, "published_at": datetime.utcnow() if item["status"] == "published" else None})
             db.commit()
         flash(f"Imported {len(cleaned)} phone(s) successfully.", "success")
     except UnicodeDecodeError:
@@ -208,6 +226,18 @@ def _save_phone(phone_id):
         flash("Brand, model, description and at least 80 characters of useful content are required.", "error")
         return redirect(request.referrer or url_for("phone_catalog.admin_phones"))
     status = request.form.get("status", "draft") if request.form.get("status") in {"draft", "published"} else "draft"
+    confidence = request.form.get("data_confidence", "unverified") if request.form.get("data_confidence") in {"unverified", "verified", "official"} else "unverified"
+    if status == "published" and confidence == "unverified":
+        flash("Published phones must use verified or official data confidence.", "error")
+        return redirect(request.referrer or url_for("phone_catalog.admin_phones"))
+    checked_raw = request.form.get("source_checked_at", "").strip()
+    checked_at = None
+    if checked_raw:
+        try:
+            checked_at = datetime.fromisoformat(checked_raw.replace("Z", "+00:00"))
+        except ValueError:
+            flash("Source checked time must be ISO-8601.", "error")
+            return redirect(request.referrer or url_for("phone_catalog.admin_phones"))
     fields = {
         "brand": brand[:80], "model": model[:180], "slug": slug, "short_description": description[:320],
         "content": content, "image_url": request.form.get("image_url", "").strip()[:2048] or None,
@@ -215,13 +245,16 @@ def _save_phone(phone_id):
         "price_usd": request.form.get("price_usd", "").strip()[:40] or None,
         "price_bdt": request.form.get("price_bdt", "").strip()[:40] or None,
         "specs_json": specs, "seo_description": request.form.get("seo_description", "").strip()[:320], "status": status,
+        "source_name": request.form.get("source_name", "").strip()[:120] or None,
+        "source_url": request.form.get("source_url", "").strip()[:2048] or None,
+        "source_checked_at": checked_at, "data_confidence": confidence,
     }
     with SessionLocal() as db:
         if phone_id is None:
-            db.execute(text("""INSERT INTO phone_catalog (brand,model,slug,short_description,content,image_url,release_date,price_usd,price_bdt,specs_json,status,seo_description,published_at)
-                VALUES (:brand,:model,:slug,:short_description,:content,:image_url,:release_date,:price_usd,:price_bdt,:specs_json,:status,:seo_description,:published_at)"""), {**fields, "published_at": datetime.utcnow() if status == "published" else None})
+            db.execute(text("""INSERT INTO phone_catalog (brand,model,slug,short_description,content,image_url,release_date,price_usd,price_bdt,specs_json,status,seo_description,published_at,source_name,source_url,source_checked_at,data_confidence)
+                VALUES (:brand,:model,:slug,:short_description,:content,:image_url,:release_date,:price_usd,:price_bdt,:specs_json,:status,:seo_description,:published_at,:source_name,:source_url,:source_checked_at,:data_confidence)"""), {**fields, "published_at": datetime.utcnow() if status == "published" else None})
         else:
-            db.execute(text("""UPDATE phone_catalog SET brand=:brand,model=:model,slug=:slug,short_description=:short_description,content=:content,image_url=:image_url,release_date=:release_date,price_usd=:price_usd,price_bdt=:price_bdt,specs_json=:specs_json,status=:status,seo_description=:seo_description,updated_at=CURRENT_TIMESTAMP,published_at=:published_at WHERE id=:id"""), {**fields, "published_at": datetime.utcnow() if status == "published" else None, "id": phone_id})
+            db.execute(text("""UPDATE phone_catalog SET brand=:brand,model=:model,slug=:slug,short_description=:short_description,content=:content,image_url=:image_url,release_date=:release_date,price_usd=:price_usd,price_bdt=:price_bdt,specs_json=:specs_json,status=:status,seo_description=:seo_description,updated_at=CURRENT_TIMESTAMP,published_at=:published_at,source_name=:source_name,source_url=:source_url,source_checked_at=:source_checked_at,data_confidence=:data_confidence WHERE id=:id"""), {**fields, "published_at": datetime.utcnow() if status == "published" else None, "id": phone_id})
         db.commit()
     flash("Phone saved.", "success")
     return redirect(url_for("phone_catalog.admin_phones"))
