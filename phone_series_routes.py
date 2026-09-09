@@ -8,9 +8,6 @@ from database import SessionLocal
 
 phone_series_bp = Blueprint("phone_series", __name__)
 
-# Curated families are intentionally limited to recognizable product lines. A page is
-# only published when the catalog contains matching published models, preventing empty
-# SEO pages and avoiding a large set of near-duplicate programmatic URLs.
 SERIES = {
     "apple": {
         "iphone-18-series": ("Apple iPhone 18 Series", ["iPhone 18"]),
@@ -67,9 +64,7 @@ SERIES = {
         "magic-series": ("HONOR Magic Series", ["Magic"]),
         "x-series": ("HONOR X Series", ["HONOR X", "Honor X"]),
     },
-    "nothing": {
-        "phone-series": ("Nothing Phone Series", ["Nothing Phone"]),
-    },
+    "nothing": {"phone-series": ("Nothing Phone Series", ["Nothing Phone"])},
     "asus": {
         "rog-phone-series": ("ASUS ROG Phone Series", ["ROG Phone"]),
         "zenfone-series": ("ASUS Zenfone Series", ["Zenfone"]),
@@ -118,6 +113,18 @@ def available_series():
     return result
 
 
+@phone_series_bp.get("/phone-brands")
+def phone_brands_index():
+    with SessionLocal() as db:
+        rows = db.execute(text("SELECT LOWER(brand) AS brand_key, MIN(brand) AS brand_name, COUNT(*) AS phone_count FROM phone_catalog WHERE status='published' GROUP BY LOWER(brand) ORDER BY MIN(brand)")).mappings().all()
+    brands=[]
+    for row in rows:
+        key = _slug(row["brand_name"])
+        brand_series=[(slug,name) for slug,(name,_) in SERIES.get(key,{}).items() if _series_row(key,slug)]
+        brands.append({"slug":key,"name":row["brand_name"],"phone_count":row["phone_count"],"series":brand_series})
+    return render_template("phone_brands.html", brands=brands)
+
+
 @phone_series_bp.get("/phones/<brand>/series/<series_slug>")
 def phone_series(brand, series_slug):
     brand_slug = _slug(brand)
@@ -125,8 +132,7 @@ def phone_series(brand, series_slug):
     row = _series_row(brand_slug, series_slug)
     if not row:
         abort(404)
-    phones = row["phones"]
-    return render_template("phone_series.html", series=row, phones=phones)
+    return render_template("phone_series.html", series=row, phones=row["phones"])
 
 
 def register_phone_series_routes(app):
