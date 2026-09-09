@@ -21,6 +21,7 @@ PUBLIC_PATHS = (
     ("/refund-policy", "yearly", "0.5"),
     ("/phones", "daily", "0.9"),
     ("/compare", "daily", "0.9"),
+    ("/phone-guides", "weekly", "0.9"),
     ("/iphone-18", "weekly", "0.9"),
     ("/iphone-18-pro", "weekly", "0.9"),
     ("/iphone-18-pro-max", "weekly", "0.9"),
@@ -111,6 +112,11 @@ def register_canonical_sitemap(app, products):
             path = f"/blog/{slug}"
             if path not in known:
                 candidates.append((path, "weekly", "0.8"))
+                known.add(path)
+
+        for path in ("/phone-guides/how-to-choose-a-smartphone", "/phone-guides/best-phone-for-gaming", "/phone-guides/best-phone-camera-guide", "/phone-guides/best-phone-battery-guide", "/phone-guides/phone-display-buying-guide", "/phone-guides/phone-storage-ram-guide", "/phone-guides/phone-5g-network-guide", "/phone-guides/flagship-vs-midrange-phone"):
+            if path not in known:
+                candidates.append((path, "monthly", "0.8"))
                 known.add(path)
 
         entries = []
