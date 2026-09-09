@@ -3,7 +3,9 @@ from alembic import op
 import json
 from datetime import datetime
 
-revision = "0026_verified_phone_expansion_2026"
+# Keep Alembic version identifiers <= 32 characters because the existing
+# alembic_version.version_num column is VARCHAR(32).
+revision = "0026_phone_expansion_2026"
 down_revision = "0025_verified_phone_expansion_20"
 branch_labels = None
 depends_on = None
