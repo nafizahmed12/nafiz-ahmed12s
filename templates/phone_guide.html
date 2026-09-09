@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="{{ guide.description }}">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="{{ url_for('phone_guides.guide_detail', slug=guide.slug, _external=True) }}">
+<title>{{ guide.title }} | Nafiz Phones</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f7f8fb;color:#172033;font-family:Arial,sans-serif}.wrap{max-width:900px;margin:auto;padding:24px 18px 80px}.nav{display:flex;justify-content:space-between;gap:14px;align-items:center;padding:10px 0 24px}.nav a{color:#536174;text-decoration:none;font-weight:700;font-size:14px}.brand{font-size:20px;color:#111827;font-weight:900}.crumbs{font-size:13px;color:#667085;margin:22px 0}.crumbs a{color:#475467;text-decoration:none}.article{background:#fff;border:1px solid #e5e9f0;border-radius:20px;padding:clamp(24px,5vw,50px);box-shadow:0 10px 35px rgba(16,24,40,.05)}.eyebrow{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:#667085}.article h1{font-size:clamp(32px,6vw,52px);line-height:1.06;letter-spacing:-1.8px;margin:10px 0 16px}.intro{font-size:18px;line-height:1.8;color:#526075;margin-bottom:34px}.section{margin:30px 0}.section h2{font-size:24px;margin-bottom:10px}.section p{font-size:16px;line-height:1.85;color:#475467}.explore{margin-top:40px;padding:22px;background:#eef2f7;border-radius:16px}.explore a{display:inline-block;margin:7px 12px 0 0;color:#344054;font-weight:800;text-decoration:none}.related{margin-top:30px}.related h2{font-size:24px}.related-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.related a{background:#fff;border:1px solid #e5e9f0;border-radius:14px;padding:16px;color:#172033;text-decoration:none;font-weight:800}@media(max-width:650px){.related-grid{grid-template-columns:1fr}.nav span{display:none}}
+</style>
+<script type="application/ld+json">{{ {"@context":"https://schema.org","@type":"Article","headline":guide.title,"description":guide.description,"mainEntityOfPage":{"@type":"WebPage","@id":url_for('phone_guides.guide_detail',slug=guide.slug,_external=True)},"author":{"@type":"Organization","name":"Nafiz Phones"},"publisher":{"@type":"Organization","name":"Nafiz Phones"}}|tojson }}</script>
+</head>
+<body><main class="wrap">
+<nav class="nav"><a class="brand" href="{{ url_for('index') }}">Nafiz Phones</a><span><a href="{{ url_for('phone_catalog.phones_index') }}">All Phones</a> &nbsp; <a href="{{ url_for('phone_compare_hub.compare_hub') }}">Compare</a> &nbsp; <a href="{{ url_for('blog.blog_index') }}">Blog</a></span></nav>
+<div class="crumbs"><a href="{{ url_for('index') }}">Home</a> / <a href="{{ url_for('phone_guides.guides_index') }}">Phone Guides</a> / {{ guide.title }}</div>
+<article class="article"><div class="eyebrow">Phone buying guide</div><h1>{{ guide.title }}</h1><p class="intro">{{ guide.intro }}</p>{% for heading, body in guide.sections %}<section class="section"><h2>{{ heading }}</h2><p>{{ body }}</p></section>{% endfor %}
+<div class="explore"><strong>Continue researching:</strong><br><a href="{{ url_for('phone_catalog.phones_index') }}">Browse the global phone catalog →</a><a href="{{ url_for('phone_compare_hub.compare_hub') }}">Compare phones →</a><a href="{{ url_for('phone_guides.guides_index') }}">More buying guides →</a></div></article>
+<section class="related"><h2>More guides</h2><div class="related-grid">{% for item in related %}<a href="{{ url_for('phone_guides.guide_detail', slug=item.slug) }}">{{ item.title }}</a>{% endfor %}</div></section>
+</main></body></html>
