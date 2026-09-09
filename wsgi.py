@@ -6,6 +6,7 @@ from app import app, products
 from blog_routes import register_blog_routes
 from phone_catalog_routes import register_phone_catalog_routes
 from phone_compare_routes import register_phone_compare_routes
+from phone_guides_routes import register_phone_guide_routes
 from seo_sitemap import register_canonical_sitemap
 
 
@@ -26,6 +27,7 @@ ADSENSE_CSP = (
 register_blog_routes(app)
 register_phone_catalog_routes(app)
 register_phone_compare_routes(app)
+register_phone_guide_routes(app)
 register_canonical_sitemap(app, products)
 
 
