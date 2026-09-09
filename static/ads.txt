@@ -1,0 +1,3 @@
+# Google AdSense
+# Add the exact line provided by AdSense after your site is approved/connected.
+# Example: google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0
