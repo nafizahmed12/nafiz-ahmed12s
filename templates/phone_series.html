@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ series.name }}: Specs, Prices & Comparisons | Nafiz Store</title>
+<meta name="description" content="Explore {{ series.name }} phones with specifications, pricing context, release information and useful comparisons. Compare models and find the right phone for your needs.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="{{ request.base_url }}">
+<meta property="og:title" content="{{ series.name }}: Specs, Prices & Comparisons">
+<meta property="og:description" content="Explore {{ series.name }} models, specifications and comparisons.">
+<meta property="og:type" content="website">
+<script type="application/ld+json">{{ {
+  '@context':'https://schema.org',
+  '@type':'CollectionPage',
+  'name':series.name,
+  'description':'Explore ' ~ series.name ~ ' models, specifications, pricing context and comparisons.',
+  'url':request.base_url,
+  'isPartOf':{'@type':'WebSite','name':'Nafiz Store','url':request.url_root}
+}|tojson }}</script>
+<style>
+body{font-family:system-ui,sans-serif;max-width:1100px;margin:auto;padding:24px;color:#182033;line-height:1.65}nav{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:22px}a{color:#1769e0;text-decoration:none}.crumb{font-size:14px;color:#64748b}.hero,.faq{margin:22px 0;padding:22px;border-radius:16px;background:#f6f8fc}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}.card{border:1px solid #e2e6ed;border-radius:14px;padding:17px;background:#fff}.muted{color:#64748b;font-size:14px}.links{display:flex;gap:14px;flex-wrap:wrap}.links a{font-weight:700}@media(max-width:600px){body{padding:18px}h1{font-size:30px}}
+</style>
+</head>
+<body>
+<nav><a href="/">Home</a><a href="/phones">All Phones</a><a href="/phones/{{ series.brand|lower|replace(' ','-') }}">{{ series.brand }} Phones</a><a href="/compare">Compare</a><a href="/phone-guides">Buying Guides</a><a href="/blog">Blog</a></nav>
+<p class="crumb"><a href="/">Home</a> › <a href="/phones">Phones</a> › <a href="/phones/{{ series.brand|lower|replace(' ','-') }}">{{ series.brand }}</a> › {{ series.name }}</p>
+<section class="hero">
+<h1>{{ series.name }}</h1>
+<p>{{ series.name }} groups related {{ series.brand }} smartphone models so readers can compare generations, specifications, pricing context and practical features from one crawlable page. The catalog below contains only published models currently available on this site.</p>
+<div class="links"><a href="/phones/{{ series.brand|lower|replace(' ','-') }}">Browse {{ series.brand }} phones</a><a href="/compare">Compare phones</a><a href="/phone-guides">Read phone buying guides</a><a href="/best-phones">Best phone recommendations</a></div>
+</section>
+<h2>{{ series.name }} models</h2>
+<div class="grid">
+{% for phone in phones %}
+<article class="card">
+<p class="muted">{{ phone.brand }} · {{ phone.release_date or 'Release information' }}</p>
+<h3><a href="{{ url_for('phone_catalog.phone_catalog_detail',brand=phone.brand|lower|replace(' ','-'),slug=phone.slug) }}">{{ phone.model }}</a></h3>
+<p>{{ phone.short_description }}</p>
+{% if phone.price_bdt %}<p><strong>Bangladesh price context:</strong> {{ phone.price_bdt }}</p>{% endif %}
+<a href="{{ url_for('phone_catalog.phone_catalog_detail',brand=phone.brand|lower|replace(' ','-'),slug=phone.slug) }}">View full specs →</a>
+</article>
+{% endfor %}
+</div>
+<section class="faq"><h2>How to choose a {{ series.brand }} {{ series.name.split(series.brand)[-1].strip() }} phone</h2><p>Compare the exact model, chipset, display, cameras, battery, storage and regional configuration before buying. Prices and network support can vary by market, retailer and configuration, so use the cited source on each model page as the final specification reference.</p></section>
+<p><a href="/phones">← Browse the complete phone catalog</a></p>
+</body></html>
