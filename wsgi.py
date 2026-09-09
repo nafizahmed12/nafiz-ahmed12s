@@ -2,7 +2,9 @@
 
 from html import escape
 from urllib.parse import urlsplit
+import json
 import os
+import re
 
 from flask import Response, request
 
@@ -50,6 +52,39 @@ def _canonical_url():
     return f"{base}{path}"
 
 
+def _inject_phone_structured_seo(body, canonical):
+    """Add a breadcrumb entity and safe social metadata to individual catalog phone pages."""
+    if not request.path.startswith("/phones/"):
+        return body
+    parts = [part for part in request.path.split("/") if part]
+    if len(parts) != 3:
+        return body
+
+    h1_match = re.search(r"<h1[^>]*>(.*?)</h1>", body, flags=re.IGNORECASE | re.DOTALL)
+    model = re.sub(r"<[^>]+>", " ", h1_match.group(1)) if h1_match else parts[-1].replace("-", " ").title()
+    model = " ".join(model.split())
+    brand = parts[1].replace("-", " ").title()
+    payload = {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {"@type": "ListItem", "position": 1, "name": "Home", "item": f"{request.url_root.rstrip('/')}/"},
+            {"@type": "ListItem", "position": 2, "name": "Phones", "item": f"{request.url_root.rstrip('/')}/phones"},
+            {"@type": "ListItem", "position": 3, "name": f"{brand} Phones", "item": f"{request.url_root.rstrip('/')}/phones/{parts[1]}"},
+            {"@type": "ListItem", "position": 4, "name": model, "item": canonical},
+        ],
+    }
+    additions = [f'<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">']
+    if 'name="twitter:card"' not in body:
+        additions.append('<meta name="twitter:card" content="summary_large_image">')
+    if 'name="twitter:title"' not in body:
+        additions.append(f'<meta name="twitter:title" content="{escape(model + " Specs, Price & Features | Nafiz Ecommerce", quote=True)}">')
+    if 'name="twitter:description"' not in body:
+        additions.append(f'<meta name="twitter:description" content="{escape(model + " specifications, price, release details and key features.", quote=True)}">')
+    additions.append(f'<script type="application/ld+json">{json.dumps(payload, ensure_ascii=False, separators=(",", ":"))}</script>')
+    return body.replace("</head>", "".join(additions) + "</head>", 1)
+
+
 def _inject_seo(response):
     """Add fallback canonical and social metadata without overriding page metadata."""
     if request.method != "GET" or response.status_code != 200 or "text/html" not in response.content_type:
@@ -85,7 +120,9 @@ def _inject_seo(response):
         additions.append('<meta property="og:type" content="website">')
 
     if additions:
-        response.set_data(body.replace("</head>", "".join(additions) + "</head>", 1))
+        body = body.replace("</head>", "".join(additions) + "</head>", 1)
+    body = _inject_phone_structured_seo(body, canonical)
+    response.set_data(body)
     return response
 
 
