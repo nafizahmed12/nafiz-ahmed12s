@@ -113,6 +113,21 @@ def add_public_seo_metadata(response):
 
 
 @app.after_request
+def add_noindex_to_private_routes(response):
+    """Prevent private, transactional, and API endpoints from entering search indexes."""
+    noindex_prefixes = (
+        "/admin", "/dashboard", "/account", "/login", "/user-login", "/register",
+        "/logout", "/user-logout", "/forgot-password", "/reset-password",
+        "/admin-forgot-password", "/admin-reset-password", "/checkout", "/cart",
+        "/orders", "/seller", "/supplier", "/api/",
+    )
+    if request.path == "/" or not request.path.startswith(noindex_prefixes):
+        return response
+    response.headers["X-Robots-Tag"] = "noindex, nofollow, noarchive"
+    return response
+
+
+@app.after_request
 def add_adsense_site_verification(response):
     """Expose the AdSense account meta tag on public HTML pages."""
     if (
