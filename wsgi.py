@@ -7,6 +7,16 @@ from app import app
 
 ADS_TXT = "google.com, pub-5012987374131521, DIRECT, f08c47fec0942fa0\n"
 ADSENSE_META = '<meta name="google-adsense-account" content="ca-pub-5012987374131521">'
+ADSENSE_CSP = (
+    "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; "
+    "form-action 'self'; "
+    "img-src 'self' data: https:; font-src 'self' data: https:; "
+    "style-src 'self' 'unsafe-inline' https:; "
+    "script-src 'self' 'unsafe-inline' https://pagead2.googlesyndication.com https://www.googletagmanager.com; "
+    "connect-src 'self' https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net; "
+    "frame-src 'self' https://googleads.g.doubleclick.net https://tpc.googlesyndication.com; "
+    "media-src 'self' https:; worker-src 'self'; manifest-src 'self';"
+)
 
 
 @app.get("/ads.txt")
@@ -19,7 +29,7 @@ def ads_txt():
 
 @app.after_request
 def add_adsense_site_verification(response):
-    """Expose the AdSense account meta tag on public HTML pages without editing templates."""
+    """Expose the AdSense account meta tag on public HTML pages."""
     if (
         request.method == "GET"
         and response.status_code == 200
@@ -30,6 +40,20 @@ def add_adsense_site_verification(response):
         body = response.get_data(as_text=True)
         if "google-adsense-account" not in body and "</head>" in body:
             response.set_data(body.replace("</head>", f"{ADSENSE_META}</head>", 1))
+    return response
+
+
+@app.after_request
+def allow_adsense_crawlers(response):
+    """Keep crawler endpoints explicit and make the CSP compatible with AdSense."""
+    if request.path == "/robots.txt" and request.method == "GET" and response.status_code == 200:
+        response.direct_passthrough = False
+        body = response.get_data(as_text=True)
+        if "Allow: /ads.txt" not in body:
+            body = body.replace("Allow: /\n", "Allow: /\nAllow: /ads.txt\n", 1)
+            response.set_data(body)
+    if request.path != "/ads.txt":
+        response.headers["Content-Security-Policy"] = ADSENSE_CSP
     return response
 
 
