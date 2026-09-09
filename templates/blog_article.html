@@ -1,4 +1,49 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="index,follow"><meta name="description" content="{{article.seo_description or article.excerpt}}"><link rel="canonical" href="{{request.url}}"><title>{{article.title}} | Nafiz Store</title>
-<style>*{box-sizing:border-box}body{margin:0;background:#fff;color:#111827;font-family:Inter,system-ui,-apple-system,sans-serif}.wrap{max-width:820px;margin:auto;padding:25px 18px 70px}.nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:45px}.brand{font-weight:900;font-size:19px;text-decoration:none;color:#111827}.back{font-size:13px;color:#16a34a;font-weight:800;text-decoration:none}.cat{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#16a34a;font-weight:900}.title{font-size:clamp(32px,6vw,52px);line-height:1.12;letter-spacing:-.035em;margin:8px 0 12px}.meta{font-size:12px;color:#6b7280;margin-bottom:28px}.hero{width:100%;max-height:460px;object-fit:cover;border-radius:16px;background:#eef2f7;margin-bottom:30px}.content{font-size:17px;line-height:1.85;color:#263244;white-space:pre-wrap;overflow-wrap:anywhere}.content::first-letter{}.footer{border-top:1px solid #e5e7eb;margin-top:45px;padding-top:20px;color:#6b7280;font-size:12px}@media(max-width:600px){.wrap{padding:18px 15px 50px}.nav{margin-bottom:30px}.content{font-size:16px}.hero{border-radius:12px}}</style></head>
-<body><main class="wrap"><nav class="nav"><a class="brand" href="{{url_for('home')}}">Nafiz Store</a><a class="back" href="{{url_for('blog.blog_index')}}">← All articles</a></nav><article><div class="cat">{{article.category}}</div><h1 class="title">{{article.title}}</h1><div class="meta">Published {{article.published_at.strftime('%d %B %Y')}}</div>{% if article.featured_image_url %}<img class="hero" src="{{article.featured_image_url}}" alt="{{article.title}}">{% endif %}<div class="content">{{article.content}}</div></article><footer class="footer">Written and published by Nafiz Store. Content is intended to provide useful information and analysis.</footer></main></body></html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="index,follow">
+<meta name="description" content="{{article.seo_description or article.excerpt}}">
+<link rel="canonical" href="{{request.url}}">
+<meta property="og:type" content="article">
+<meta property="og:title" content="{{article.title}} | Nafiz Store">
+<meta property="og:description" content="{{article.seo_description or article.excerpt}}">
+<meta property="og:url" content="{{request.url}}">
+{% if article.featured_image_url %}<meta property="og:image" content="{{article.featured_image_url}}">{% endif %}
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{article.title}} | Nafiz Store">
+<meta name="twitter:description" content="{{article.seo_description or article.excerpt}}">
+<title>{{article.title}} | Nafiz Store</title>
+<script type="application/ld+json">{{ {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": article.title,
+  "description": article.seo_description or article.excerpt,
+  "mainEntityOfPage": {"@type": "WebPage", "@id": request.url},
+  "datePublished": article.published_at.isoformat() if article.published_at else none,
+  "dateModified": article.updated_at.isoformat() if article.updated_at else (article.published_at.isoformat() if article.published_at else none),
+  "author": {"@type": "Organization", "name": "Nafiz Store"},
+  "publisher": {"@type": "Organization", "name": "Nafiz Store"}
+} | tojson }}</script>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#fff;color:#111827;font-family:Inter,system-ui,-apple-system,sans-serif}.wrap{max-width:900px;margin:auto;padding:25px 18px 70px}.nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px}.brand{font-weight:900;font-size:19px;text-decoration:none;color:#111827}.back{font-size:13px;color:#16a34a;font-weight:800;text-decoration:none}.crumbs{font-size:12px;color:#6b7280;margin-bottom:18px}.crumbs a{color:#16a34a;text-decoration:none}.cat{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#16a34a;font-weight:900}.title{font-size:clamp(32px,6vw,52px);line-height:1.12;letter-spacing:-.035em;margin:8px 0 12px}.meta{font-size:12px;color:#6b7280;margin-bottom:28px}.hero{width:100%;max-height:460px;object-fit:cover;border-radius:16px;background:#eef2f7;margin-bottom:30px}.content{font-size:17px;line-height:1.85;color:#263244;white-space:pre-wrap;overflow-wrap:anywhere}.trust{margin-top:30px;padding:18px;border:1px solid #e5e7eb;border-radius:14px;background:#f8fafc;color:#4b5563;font-size:13px;line-height:1.7}.related{margin-top:48px;padding-top:28px;border-top:1px solid #e5e7eb}.related h2{font-size:22px;margin:0 0 16px}.related-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.related-card{display:block;border:1px solid #e5e7eb;border-radius:14px;padding:15px;text-decoration:none;color:inherit}.related-card:hover{box-shadow:0 8px 22px rgba(15,23,42,.08)}.related-card small{color:#16a34a;font-weight:800;text-transform:uppercase}.related-card h3{font-size:15px;line-height:1.4;margin:7px 0}.related-card p{font-size:12px;line-height:1.55;color:#6b7280;margin:0}.footer{border-top:1px solid #e5e7eb;margin-top:45px;padding-top:20px;color:#6b7280;font-size:12px}@media(max-width:650px){.wrap{padding:18px 15px 50px}.nav{margin-bottom:24px}.content{font-size:16px}.hero{border-radius:12px}.related-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<nav class="nav" aria-label="Primary"><a class="brand" href="{{url_for('home')}}">Nafiz Store</a><a class="back" href="{{url_for('blog.blog_index')}}">← All articles</a></nav>
+<div class="crumbs"><a href="{{url_for('home')}}">Home</a> / <a href="{{url_for('blog.blog_index')}}">Blog</a> / {{article.category}}</div>
+<article>
+<div class="cat">{{article.category}}</div>
+<h1 class="title">{{article.title}}</h1>
+<div class="meta">Published {{article.published_at.strftime('%d %B %Y')}} · Updated {{article.updated_at.strftime('%d %B %Y')}}</div>
+{% if article.featured_image_url %}<img class="hero" src="{{article.featured_image_url}}" alt="{{article.title}}">{% endif %}
+<div class="content">{{article.content}}</div>
+<div class="trust"><strong>Editorial note:</strong> This article is intended to provide useful information and practical analysis. Product specifications, prices and availability can change, so verify current details before making a purchase.</div>
+</article>
+{% if related %}<section class="related" aria-labelledby="related-heading"><h2 id="related-heading">Related articles</h2><div class="related-grid">{% for item in related %}<a class="related-card" href="{{url_for('blog.blog_article',slug=item.slug)}}"><small>{{item.category}}</small><h3>{{item.title}}</h3>{% if item.excerpt %}<p>{{item.excerpt}}</p>{% endif %}</a>{% endfor %}</div></section>{% endif %}
+<footer class="footer">Written and published by Nafiz Store. Content is intended to provide useful information and analysis. <a href="{{url_for('contact')}}">Contact us</a> · <a href="{{url_for('privacy_policy')}}">Privacy Policy</a></footer>
+</main>
+</body>
+</html>

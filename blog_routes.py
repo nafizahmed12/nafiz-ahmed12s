@@ -53,11 +53,23 @@ def blog_index():
 @blog_bp.get("/blog/<slug>")
 def blog_article(slug):
     with SessionLocal() as db:
-        article = db.execute(text("""SELECT id,title,slug,excerpt,content,category,featured_image_url,seo_description,published_at
+        article = db.execute(text("""SELECT id,title,slug,excerpt,content,category,featured_image_url,seo_description,published_at,updated_at
             FROM blog_articles WHERE slug=:slug AND status='published' AND published_at IS NOT NULL"""), {"slug": slug}).mappings().first()
-    if article is None:
-        abort(404)
-    return render_template("blog_article.html", article=article)
+        if article is None:
+            abort(404)
+        related = db.execute(text("""SELECT id,title,slug,excerpt,category,featured_image_url,published_at
+            FROM blog_articles
+            WHERE status='published' AND published_at IS NOT NULL
+              AND id <> :id AND category = :category
+            ORDER BY published_at DESC, id DESC LIMIT 3"""),
+            {"id": article["id"], "category": article["category"]}).mappings().all()
+        if len(related) < 3:
+            related = db.execute(text("""SELECT id,title,slug,excerpt,category,featured_image_url,published_at
+                FROM blog_articles
+                WHERE status='published' AND published_at IS NOT NULL AND id <> :id
+                ORDER BY published_at DESC, id DESC LIMIT 3"""),
+                {"id": article["id"]}).mappings().all()
+    return render_template("blog_article.html", article=article, related=related)
 
 
 @blog_bp.get("/admin/articles")
