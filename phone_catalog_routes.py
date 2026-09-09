@@ -1,4 +1,6 @@
 """Global phone catalog: searchable, indexable and admin-manageable."""
+import csv
+import io
 import json
 import re
 from datetime import datetime
@@ -98,6 +100,79 @@ def admin_phones():
 @admin_required
 def create_phone():
     return _save_phone(None)
+
+
+@phone_catalog_bp.post("/admin/phones/import")
+@admin_required
+def import_phones():
+    """Import a UTF-8 CSV in one transaction; invalid rows are reported and nothing is partially written."""
+    upload = request.files.get("csv_file")
+    if not upload or not upload.filename:
+        flash("Choose a CSV file to import.", "error")
+        return redirect(url_for("phone_catalog.admin_phones"))
+    try:
+        raw = upload.read().decode("utf-8-sig")
+        reader = csv.DictReader(io.StringIO(raw))
+        required = {"brand", "model", "short_description", "content", "specs_json"}
+        if not reader.fieldnames or not required.issubset(set(reader.fieldnames)):
+            flash("CSV headers must include: brand, model, short_description, content, specs_json.", "error")
+            return redirect(url_for("phone_catalog.admin_phones"))
+        rows = list(reader)
+        if not rows or len(rows) > 500:
+            flash("CSV must contain 1–500 data rows.", "error")
+            return redirect(url_for("phone_catalog.admin_phones"))
+        cleaned, errors, seen = [], [], set()
+        for number, raw_row in enumerate(rows, start=2):
+            brand = (raw_row.get("brand") or "").strip()
+            model = (raw_row.get("model") or "").strip()
+            content = (raw_row.get("content") or "").strip()
+            description = (raw_row.get("short_description") or "").strip()
+            slug = _slug(raw_row.get("slug") or f"{brand}-{model}")
+            specs = (raw_row.get("specs_json") or "{}").strip() or "{}"
+            status = (raw_row.get("status") or "draft").strip().lower()
+            try:
+                json.loads(specs)
+            except (TypeError, ValueError):
+                errors.append(f"Row {number}: specs_json is invalid JSON.")
+                continue
+            if not brand or not model or not description or len(content) < 80:
+                errors.append(f"Row {number}: brand/model/description required and content must be 80+ characters.")
+                continue
+            if status not in {"draft", "published"}:
+                errors.append(f"Row {number}: status must be draft or published.")
+                continue
+            if slug in seen:
+                errors.append(f"Row {number}: duplicate slug {slug} inside CSV.")
+                continue
+            seen.add(slug)
+            cleaned.append({
+                "brand": brand[:80], "model": model[:180], "slug": slug,
+                "short_description": description[:320], "content": content,
+                "image_url": (raw_row.get("image_url") or "").strip()[:2048] or None,
+                "release_date": (raw_row.get("release_date") or "").strip()[:40] or None,
+                "price_usd": (raw_row.get("price_usd") or "").strip()[:40] or None,
+                "price_bdt": (raw_row.get("price_bdt") or "").strip()[:40] or None,
+                "specs_json": specs, "seo_description": (raw_row.get("seo_description") or "").strip()[:320],
+                "status": status,
+            })
+        if errors:
+            flash("Import stopped: " + " | ".join(errors[:8]), "error")
+            return redirect(url_for("phone_catalog.admin_phones"))
+        with SessionLocal() as db:
+            existing = {r[0] for r in db.execute(text("SELECT slug FROM phone_catalog WHERE slug = ANY(:slugs)"), {"slugs": [r["slug"] for r in cleaned]}).all()}
+            if existing:
+                flash("Import stopped: these slugs already exist: " + ", ".join(sorted(existing)[:8]), "error")
+                return redirect(url_for("phone_catalog.admin_phones"))
+            for item in cleaned:
+                db.execute(text("""INSERT INTO phone_catalog (brand,model,slug,short_description,content,image_url,release_date,price_usd,price_bdt,specs_json,status,seo_description,published_at)
+                    VALUES (:brand,:model,:slug,:short_description,:content,:image_url,:release_date,:price_usd,:price_bdt,:specs_json,:status,:seo_description,:published_at)"""), {**item, "published_at": datetime.utcnow() if item["status"] == "published" else None})
+            db.commit()
+        flash(f"Imported {len(cleaned)} phone(s) successfully.", "success")
+    except UnicodeDecodeError:
+        flash("CSV must be UTF-8 encoded.", "error")
+    except Exception:
+        flash("Import failed safely; no rows were committed. Check the CSV and try again.", "error")
+    return redirect(url_for("phone_catalog.admin_phones"))
 
 
 @phone_catalog_bp.get("/admin/phones/<int:phone_id>/edit")
