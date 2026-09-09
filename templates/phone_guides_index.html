@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Practical smartphone buying guides covering cameras, gaming, battery life, displays, storage, 5G and more.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="{{ url_for('phone_guides.guides_index', _external=True) }}">
+<title>Smartphone Buying Guides | Phone Guides</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f7f8fb;color:#172033;font-family:Arial,sans-serif}.wrap{max-width:1120px;margin:auto;padding:24px 18px 70px}.nav{display:flex;justify-content:space-between;gap:14px;align-items:center;padding:10px 0 22px}.nav a{color:#536174;text-decoration:none;font-weight:700;font-size:14px}.brand{font-size:20px;color:#111827;font-weight:900}.hero{padding:45px 0 28px}.eyebrow{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:#667085}.hero h1{font-size:clamp(32px,6vw,54px);line-height:1.05;margin:10px 0 14px;letter-spacing:-1.8px}.hero p{max-width:760px;color:#596579;font-size:17px;line-height:1.75}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.card{background:#fff;border:1px solid #e5e9f0;border-radius:18px;padding:24px;box-shadow:0 8px 30px rgba(16,24,40,.05)}.card h2{font-size:21px;margin:0 0 10px}.card p{color:#667085;line-height:1.7;margin:0 0 18px}.btn{display:inline-block;background:#111827;color:#fff;text-decoration:none;padding:11px 15px;border-radius:10px;font-weight:800;font-size:14px}.links{margin-top:34px;padding:22px;border-radius:16px;background:#eef2f7}.links a{margin-right:16px;color:#344054;font-weight:700;text-decoration:none}@media(max-width:700px){.grid{grid-template-columns:1fr}.hero{padding-top:30px}}
+</style>
+<script type="application/ld+json">{{ {"@context":"https://schema.org","@type":"CollectionPage","name":"Smartphone Buying Guides","description":"Practical smartphone buying guides covering cameras, gaming, battery life, displays, storage, 5G and more.","url":url_for('phone_guides.guides_index', _external=True)}|tojson }}</script>
+</head>
+<body><main class="wrap">
+<nav class="nav"><a class="brand" href="{{ url_for('index') }}">Nafiz Phones</a><span><a href="{{ url_for('phone_catalog.phones_index') }}">All Phones</a> &nbsp; <a href="{{ url_for('phone_compare.compare_index') }}">Compare</a> &nbsp; <a href="{{ url_for('blog.blog_index') }}">Blog</a></span></nav>
+<section class="hero"><div class="eyebrow">Independent buying resources</div><h1>Smartphone Buying Guides</h1><p>Clear, practical explanations to help you compare phones before buying. We focus on specifications that affect real-world use rather than marketing numbers alone.</p></section>
+<section class="grid">{% for guide in guides %}<article class="card"><h2>{{ guide.title }}</h2><p>{{ guide.description }}</p><a class="btn" href="{{ url_for('phone_guides.guide_detail', slug=guide.slug) }}">Read guide</a></article>{% endfor %}</section>
+<div class="links"><strong>Explore the phone catalog:</strong> <a href="{{ url_for('phone_catalog.phones_index') }}">Browse phones</a><a href="{{ url_for('phone_compare.compare_index') }}">Compare phones</a><a href="{{ url_for('blog.blog_index') }}">Read articles</a></div>
+</main></body></html>
