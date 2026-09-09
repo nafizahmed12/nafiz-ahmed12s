@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>All Phones & Smartphones | Specs, Prices & Comparisons</title>
+<meta name="description" content="Explore smartphones from major brands with specifications, prices, release information and comparisons.">
+<link rel="canonical" href="{{ request.base_url }}{% if q or selected_brand %}?{% if q %}q={{ q|urlencode }}{% endif %}{% if q and selected_brand %}&{% endif %}{% if selected_brand %}brand={{ selected_brand|urlencode }}{% endif %}{% endif %}">
+<style>body{font-family:system-ui,sans-serif;margin:0;background:#f7f8fa;color:#172033}.wrap{max-width:1100px;margin:auto;padding:24px}.nav{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:28px}.search{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0}.search input,.search select,.search button{padding:11px;border:1px solid #ccd3df;border-radius:8px}.search input{min-width:260px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}.card{background:white;border:1px solid #e2e6ed;border-radius:14px;padding:16px}.card img{width:100%;height:190px;object-fit:cover;border-radius:10px}.card a{color:#1769e0;text-decoration:none}.muted{color:#657085}h1{font-size:34px}</style>
+</head><body><main class="wrap">
+<nav class="nav"><a href="/">Home</a><a href="/phones">All Phones</a><a href="/blog">Blog</a><a href="/shop">Shop</a></nav>
+<h1>All Phones & Smartphones</h1><p class="muted">Browse phones by brand, specifications, pricing and useful comparisons.</p>
+<form class="search" method="get"><input name="q" value="{{ q }}" placeholder="Search phone or brand"><select name="brand"><option value="">All brands</option>{% for b in brands %}<option value="{{ b }}" {% if selected_brand|lower == b|lower %}selected{% endif %}>{{ b }}</option>{% endfor %}</select><button>Search</button></form>
+<div class="grid">{% for phone in phones %}<article class="card">{% if phone.image_url %}<img src="{{ phone.image_url }}" alt="{{ phone.brand }} {{ phone.model }}" loading="lazy">{% endif %}<p class="muted">{{ phone.brand }}</p><h2><a href="{{ url_for('phone_catalog.phone_catalog_detail',brand=phone.brand|lower|replace(' ','-'),slug=phone.slug) }}">{{ phone.model }}</a></h2><p>{{ phone.short_description }}</p>{% if phone.price_usd %}<strong>{{ phone.price_usd }}</strong>{% endif %}</article>{% else %}<p>No published phones found.</p>{% endfor %}</div>
+</main></body></html>
