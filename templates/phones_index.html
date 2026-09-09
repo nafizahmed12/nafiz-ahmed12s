@@ -1,21 +1,72 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{% if q or selected_brand %}Search Phones{% else %}All Phones & Smartphones{% endif %} | Specs, Prices & Comparisons</title>
-<meta name="description" content="Explore smartphones from major brands with specifications, prices, release information and comparisons.">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% if q or selected_brand %}{{ selected_brand or 'Search' }} Phones{% if q %} — {{ q }}{% endif %}{% else %}Mobile Phones{% endif %} | Specs, Prices & Comparisons</title>
+<meta name="description" content="Browse smartphones by brand, model, price and specifications. Compare popular mobile phones and open detailed phone pages.">
 <meta name="robots" content="{% if q or selected_brand %}noindex,follow{% else %}index,follow{% endif %}">
 <link rel="canonical" href="{{ request.base_url }}{% if page > 1 %}?page={{ page }}{% endif %}">
-<style>body{font-family:system-ui,sans-serif;margin:0;background:#f7f8fa;color:#172033;line-height:1.6}.wrap{max-width:1120px;margin:auto;padding:24px}.nav{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:28px}.nav a{font-weight:600}.search{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0}.search input,.search select,.search button{padding:11px;border:1px solid #ccd3df;border-radius:8px}.search input{min-width:260px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}.card{background:white;border:1px solid #e2e6ed;border-radius:14px;padding:16px}.card img{width:100%;height:190px;object-fit:cover;border-radius:10px}.card a{color:#1769e0;text-decoration:none}.muted{color:#657085}h1{font-size:34px;line-height:1.2}.brands{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.brands a{padding:7px 11px;background:white;border:1px solid #dce2eb;border-radius:999px;text-decoration:none}.intro{max-width:780px}.crumb{font-size:14px;margin-bottom:12px}.count{margin:12px 0}.directory{margin:18px 0;padding:16px;border:1px solid #dce2eb;border-radius:12px;background:white}.pagination{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:28px 0}.pagination a,.pagination span{padding:8px 12px;border:1px solid #dce2eb;border-radius:8px;background:white;text-decoration:none}.pagination .current{font-weight:700}</style>
-</head><body><main class="wrap">
-<nav class="nav" aria-label="Primary"><a href="/">Home</a><a href="/phones">All Phones</a><a href="/phone-brands">Phone Brands & Series</a><a href="/blog">Blog</a><a href="/shop">Shop</a></nav>
+<style>
+:root{--bg:#f5f7fb;--surface:#fff;--text:#172033;--muted:#687386;--line:#e2e7ef;--accent:#1769e0;--accent-dark:#0f55bb;--shadow:0 8px 28px rgba(23,32,51,.07)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.55}.wrap{max-width:1180px;margin:auto;padding:20px 18px 48px}
+a{color:inherit}.topnav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0 22px}.brandmark{font-weight:800;font-size:20px;text-decoration:none}.navlinks{display:flex;gap:18px;flex-wrap:wrap;font-size:14px}.navlinks a{text-decoration:none;color:#4f5b6e}.navlinks a:hover{color:var(--accent)}.crumb{font-size:13px;color:var(--muted);margin:4px 0 18px}.crumb a{color:var(--accent);text-decoration:none}.hero{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:28px;box-shadow:var(--shadow)}h1{font-size:clamp(28px,5vw,42px);line-height:1.12;margin:0 0 10px;letter-spacing:-.02em}.intro{max-width:760px;color:var(--muted);margin:0}.searchbox{display:grid;grid-template-columns:minmax(0,1fr) 190px auto;gap:10px;margin-top:22px}.searchbox input,.searchbox select,.searchbox button{min-height:46px;border:1px solid var(--line);border-radius:11px;padding:0 14px;font:inherit;background:#fff}.searchbox input:focus,.searchbox select:focus{outline:3px solid rgba(23,105,224,.13);border-color:var(--accent)}.searchbox button{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:700;cursor:pointer;padding:0 22px}.searchbox button:hover{background:var(--accent-dark)}.section{margin-top:30px}.sectionhead{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:14px}.sectionhead h2{margin:0;font-size:22px}.muted{color:var(--muted)}.brands{display:flex;gap:9px;flex-wrap:wrap}.brands a{display:inline-flex;padding:9px 13px;background:#fff;border:1px solid var(--line);border-radius:999px;text-decoration:none;font-weight:650;font-size:14px}.brands a:hover{border-color:#b9cae8;color:var(--accent)}.directory{margin-top:16px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:#fff}.directory a{color:var(--accent);font-weight:700;text-decoration:none}.count{font-size:14px;margin:0}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;min-width:0;box-shadow:0 4px 18px rgba(23,32,51,.045);transition:transform .18s ease,box-shadow .18s ease}.card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}.media{height:220px;background:#f8fafc;display:flex;align-items:center;justify-content:center;padding:16px}.media img{width:100%;height:100%;object-fit:contain;border-radius:10px}.noimage{color:#a0a8b5;font-weight:700;font-size:13px}.cardbody{padding:16px;display:flex;flex-direction:column;flex:1}.badge{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--accent);margin-bottom:5px}.card h3{font-size:18px;line-height:1.3;margin:0 0 8px}.card h3 a{text-decoration:none}.card h3 a:hover{color:var(--accent)}.desc{font-size:13px;color:var(--muted);margin:0 0 12px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}.price{font-size:18px;font-weight:800;margin-top:auto;padding-top:5px}.usd{font-size:12px;color:var(--muted);font-weight:600;margin-top:2px}.details{display:block;text-align:center;margin-top:13px;padding:10px 12px;border-radius:10px;background:#f0f5ff;color:var(--accent);font-weight:750;text-decoration:none}.details:hover{background:#e5efff}.empty{background:#fff;border:1px dashed #cbd4e2;border-radius:16px;padding:35px;text-align:center;color:var(--muted)}.pagination{display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;margin:30px 0 0}.pagination a,.pagination span{min-width:40px;text-align:center;padding:9px 12px;border:1px solid var(--line);border-radius:9px;background:#fff;text-decoration:none}.pagination .current{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:800}.footerhint{margin-top:34px;color:var(--muted);font-size:13px;text-align:center}@media(max-width:980px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:720px){.wrap{padding:14px 12px 38px}.topnav{align-items:flex-start;flex-direction:column;padding-bottom:15px}.navlinks{gap:12px}.hero{padding:20px 16px;border-radius:16px}.searchbox{grid-template-columns:1fr 1fr}.searchbox input{grid-column:1/-1}.searchbox button{grid-column:1/-1}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.media{height:175px;padding:11px}.cardbody{padding:12px}.card h3{font-size:16px}.price{font-size:16px}.details{font-size:13px}}@media(max-width:390px){.grid{grid-template-columns:1fr}.media{height:220px}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<nav class="topnav" aria-label="Primary">
+<a class="brandmark" href="/">Nafiz Store</a>
+<div class="navlinks"><a href="/">Home</a><a href="/phones" aria-current="page">Phones</a><a href="/phone-brands">Brands & Series</a><a href="/blog">Blog</a><a href="/shop">Shop</a></div>
+</nav>
+
 <p class="crumb"><a href="/">Home</a> › Phones{% if page > 1 %} › Page {{ page }}{% endif %}</p>
-<h1>All Phones & Smartphones</h1>
-<p class="intro">Browse published smartphone information by brand, model, specifications, pricing and useful comparisons. Each catalog page is designed to help you research a phone before buying.</p>
+
+<section class="hero" aria-labelledby="page-title">
+<h1 id="page-title">Mobile Phones</h1>
+<p class="intro">Explore smartphones by brand, model, price and specifications. Search the catalog or choose a brand to find the phone you want.</p>
+<form class="searchbox" method="get" role="search">
+<input name="q" value="{{ q }}" placeholder="Search iPhone, Galaxy, Pixel..." aria-label="Search phone or brand">
+<select name="brand" aria-label="Filter by brand"><option value="">All brands</option>{% for b in brands %}<option value="{{ b }}" {% if selected_brand|lower == b|lower %}selected{% endif %}>{{ b }}</option>{% endfor %}</select>
+<button type="submit">Search Phones</button>
+</form>
+</section>
+
+{% if brands %}
+<section class="section" aria-labelledby="brand-heading">
+<div class="sectionhead"><h2 id="brand-heading">Browse by brand</h2></div>
+<div class="brands">{% for b in brands %}<a href="{{ url_for('phone_catalog.phone_brand',brand=b|lower|replace(' ','-')) }}">{{ b }} <span class="muted">phones</span></a>{% endfor %}</div>
+</section>
+{% endif %}
+
 <div class="directory"><strong>Looking for a phone family?</strong> <a href="/phone-brands">Browse all phone brands and series →</a></div>
-{% if brands %}<section aria-labelledby="brand-heading"><h2 id="brand-heading">Browse by brand</h2><div class="brands">{% for b in brands %}<a href="{{ url_for('phone_catalog.phone_brand',brand=b|lower|replace(' ','-')) }}">{{ b }} phones</a>{% endfor %}</div></section>{% endif %}
-<form class="search" method="get" role="search"><input name="q" value="{{ q }}" placeholder="Search phone or brand" aria-label="Search phone or brand"><select name="brand" aria-label="Filter by brand"><option value="">All brands</option>{% for b in brands %}<option value="{{ b }}" {% if selected_brand|lower == b|lower %}selected{% endif %}>{{ b }}</option>{% endfor %}</select><button type="submit">Search</button></form>
-<p class="muted count">Showing {{ total }} published phone model{% if total != 1 %}s{% endif %}{% if selected_brand %} from {{ selected_brand }}{% endif %}{% if q %} matching “{{ q }}”{% endif %}.</p>
-<div class="grid">{% for phone in phones %}<article class="card">{% if phone.image_url %}<img src="{{ phone.image_url }}" alt="{{ phone.brand }} {{ phone.model }}" loading="lazy">{% endif %}<p class="muted">{{ phone.brand }}</p><h2><a href="{{ url_for('phone_catalog.phone_catalog_detail',brand=phone.brand|lower|replace(' ','-'),slug=phone.slug) }}">{{ phone.model }}</a></h2><p>{{ phone.short_description }}</p>{% if phone.price_usd %}<strong>{{ phone.price_usd }}</strong>{% endif %}</article>{% else %}<p>No published phones found.</p>{% endfor %}</div>
+
+<section class="section" aria-labelledby="catalog-heading">
+<div class="sectionhead"><h2 id="catalog-heading">{% if q or selected_brand %}Search results{% else %}All Phones{% endif %}</h2><p class="count">{{ total }} published model{% if total != 1 %}s{% endif %}{% if selected_brand %} · {{ selected_brand }}{% endif %}{% if q %} · “{{ q }}”{% endif %}</p></div>
+{% if phones %}
+<div class="grid">
+{% for phone in phones %}
+<article class="card">
+<div class="media">{% if phone.image_url %}<img src="{{ phone.image_url }}" alt="{{ phone.brand }} {{ phone.model }} smartphone" loading="lazy" decoding="async">{% else %}<span class="noimage">Phone image unavailable</span>{% endif %}</div>
+<div class="cardbody">
+<div class="badge">{{ phone.brand }}</div>
+<h3><a href="{{ url_for('phone_catalog.phone_catalog_detail',brand=phone.brand|lower|replace(' ','-'),slug=phone.slug) }}">{{ phone.model }}</a></h3>
+<p class="desc">{{ phone.short_description }}</p>
+{% if phone.price_bdt %}<div class="price">৳ {{ phone.price_bdt }}</div>{% elif phone.price_usd %}<div class="price">{{ phone.price_usd }}</div>{% endif %}
+{% if phone.price_usd and phone.price_bdt %}<div class="usd">{{ phone.price_usd }}</div>{% endif %}
+<a class="details" href="{{ url_for('phone_catalog.phone_catalog_detail',brand=phone.brand|lower|replace(' ','-'),slug=phone.slug) }}">View Details →</a>
+</div>
+</article>
+{% endfor %}
+</div>
+{% else %}
+<div class="empty"><strong>No published phones found.</strong><br>Try another model name or choose a different brand.</div>
+{% endif %}
+</section>
+
 {% if total_pages > 1 %}<nav class="pagination" aria-label="Phone catalog pagination">{% if page > 1 %}<a href="{{ url_for('phone_catalog.phones_index', page=page-1, q=q, brand=selected_brand) }}">← Previous</a>{% endif %}{% for p in range(1,total_pages+1) %}{% if p == page %}<span class="current" aria-current="page">{{ p }}</span>{% elif p <= 3 or p > total_pages-3 or (p >= page-1 and p <= page+1) %}<a href="{{ url_for('phone_catalog.phones_index', page=p, q=q, brand=selected_brand) }}">{{ p }}</a>{% elif p == 4 and page > 5 %}<span>…</span>{% elif p == total_pages-3 and page < total_pages-4 %}<span>…</span>{% endif %}{% endfor %}{% if page < total_pages %}<a href="{{ url_for('phone_catalog.phones_index', page=page+1, q=q, brand=selected_brand) }}">Next →</a>{% endif %}</nav>{% endif %}
-</main></body></html>
+
+<p class="footerhint">Each phone links to a dedicated page with specifications, pricing, release information and related models.</p>
+</main>
+</body>
+</html>
