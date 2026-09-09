@@ -19,6 +19,7 @@ PUBLIC_PATHS = (
     ("/privacy-policy", "yearly", "0.5"),
     ("/terms", "yearly", "0.5"),
     ("/refund-policy", "yearly", "0.5"),
+    ("/phones", "daily", "0.9"),
     ("/iphone-18", "weekly", "0.9"),
     ("/iphone-18-pro", "weekly", "0.9"),
     ("/iphone-18-pro-max", "weekly", "0.9"),
@@ -64,6 +65,19 @@ def _published_article_slugs():
         return []
 
 
+def _published_catalog_rows():
+    try:
+        with SessionLocal() as db:
+            return db.execute(text("""SELECT brand,slug FROM phone_catalog
+                WHERE status='published' ORDER BY brand, id DESC""")).mappings().all()
+    except Exception:
+        return []
+
+
+def _brand_slug(brand):
+    return "-".join(str(brand).lower().split())
+
+
 def register_canonical_sitemap(app, products):
     """Replace the legacy sitemap view with a canonical, indexable URL set."""
 
@@ -80,6 +94,19 @@ def register_canonical_sitemap(app, products):
             path = f"/phone-detail/{slug}"
             if path not in known:
                 candidates.append((path, "daily", "0.8"))
+                known.add(path)
+
+        brands = set()
+        for row in _published_catalog_rows():
+            brand = row["brand"]
+            brands.add(brand)
+            path = f"/phones/{_brand_slug(brand)}"
+            if path not in known:
+                candidates.append((path, "weekly", "0.8"))
+                known.add(path)
+            path = f"/phones/{_brand_slug(brand)}/{row['slug']}"
+            if path not in known:
+                candidates.append((path, "weekly", "0.8"))
                 known.add(path)
 
         for slug in _published_article_slugs():
