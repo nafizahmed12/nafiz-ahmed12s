@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, make_response, render_template, session, request
+from flask import Blueprint, jsonify, make_response, render_template, session, request, redirect
 from sqlalchemy import text
 
 from database import SessionLocal
@@ -20,6 +20,9 @@ def _shop_response(template, **context):
 
 @shop_bp.get("/shop")
 def shop():
+    # Keep the dedicated phone catalog as the canonical destination for mobile browsing.
+    if _category() == "mobile":
+        return redirect("/phones")
     return _shop_response("shop.html", category=_category())
 
 
