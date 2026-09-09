@@ -9,6 +9,7 @@ from flask import Response, request
 from sqlalchemy import text
 
 from database import SessionLocal
+from phone_series_routes import available_series
 
 
 PUBLIC_PATHS = (
@@ -106,12 +107,20 @@ def register_canonical_sitemap(app, products):
                 candidates.append((path, "daily", "0.8"))
                 known.add(path)
 
-        for row in _published_catalog_rows():
+        published_rows = _published_catalog_rows()
+        for row in published_rows:
             path = f"/phones/{_brand_slug(row['brand'])}"
             if path not in known:
                 candidates.append((path, "weekly", "0.8"))
                 known.add(path)
             path = f"/phones/{_brand_slug(row['brand'])}/{row['slug']}"
+            if path not in known:
+                candidates.append((path, "weekly", "0.8"))
+                known.add(path)
+
+        # Add only series pages that have at least one published catalog match.
+        for brand_slug, series_slug, _ in available_series():
+            path = f"/phones/{brand_slug}/series/{series_slug}"
             if path not in known:
                 candidates.append((path, "weekly", "0.8"))
                 known.add(path)
