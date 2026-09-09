@@ -10,59 +10,37 @@
   <meta property="og:type" content="website">
   <meta property="og:title" content="{{ category.title }} | Nafiz Store">
   <meta property="og:description" content="{{ category.description }}">
-  <script type="application/ld+json">
-  {{ {
-    "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    "name": category.heading,
-    "description": category.description,
-    "url": request.url
-  } | tojson }}
-  </script>
+  <script type="application/ld+json">{{ {"@context":"https://schema.org","@type":"CollectionPage","name":category.heading,"description":category.description,"url":request.url} | tojson }}</script>
 </head>
 <body>
 <main class="wrap" style="max-width:1100px;margin:auto;padding:24px">
   <nav aria-label="Breadcrumb" style="margin-bottom:18px"><a href="{{ url_for('index') }}">Home</a> / <a href="{{ url_for('phone_catalog.phones_index') }}">Phones</a> / Best Phones</nav>
-  <header>
-    <h1>{{ category.heading }}</h1>
-    <p>{{ category.intro }}</p>
-  </header>
-
+  <header><h1>{{ category.heading }}</h1><p>{{ category.intro }}</p></header>
   {% if category_key == 'best-phones' %}
-  <section>
-    <h2>Browse by need</h2>
-    <ul>
-      {% for key, item in categories.items() if key != 'best-phones' %}
-      <li><a href="{{ url_for('best_phones.best_phones_category', category=key) }}">{{ item.heading }}</a></li>
-      {% endfor %}
-    </ul>
-  </section>
+  <section><h2>Browse by need</h2><ul>
+    {% for key, item in categories.items() if key != 'best-phones' %}
+    <li><a href="{{ url_for('best_phones.best_phones_category', category=key) }}">{{ item.heading }}</a></li>
+    {% endfor %}
+  </ul></section>
   {% endif %}
-
-  <section>
-    <h2>{{ category.heading }}: recommended models</h2>
+  <section><h2>{{ category.heading }}: recommended models</h2>
     {% if phones %}
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px">
       {% for phone in phones %}
       <article style="border:1px solid #ddd;border-radius:12px;padding:16px">
         {% if phone.image_url %}<img src="{{ phone.image_url }}" alt="{{ phone.model }} smartphone" loading="lazy" style="max-width:100%;height:180px;object-fit:contain">{% endif %}
-        <h3>{{ phone.model }}</h3>
-        <p><strong>{{ phone.brand }}</strong>{% if phone.release_date %} · {{ phone.release_date }}{% endif %}</p>
+        <h3>{{ phone.model }}</h3><p><strong>{{ phone.brand }}</strong>{% if phone.release_date %} · {{ phone.release_date }}{% endif %}</p>
         <p>{{ phone.short_description }}</p>
         {% if phone.price_bdt %}<p><strong>Listed Bangladesh price:</strong> {{ phone.price_bdt }}</p>{% endif %}
         <a href="{{ url_for('phone_catalog.phone_catalog_detail', brand=phone.brand|lower|replace(' ','-'), slug=phone.slug) }}">View full {{ phone.model }} specs</a>
       </article>
       {% endfor %}
     </div>
-    {% else %}
-    <p>No published models currently match this category. Check the <a href="{{ url_for('phone_catalog.phones_index') }}">full phone catalog</a>.</p>
-    {% endif %}
+    {% else %}<p>No published models currently match this category. Check the <a href="{{ url_for('phone_catalog.phones_index') }}">full phone catalog</a>.</p>{% endif %}
   </section>
-
-  <section style="margin-top:28px">
-    <h2>How to choose</h2>
-    <p>Use this page as a shortlist, then open the individual phone pages for detailed specifications and source information. Prices, regional configurations and network compatibility can change, so verify the exact model before purchasing.</p>
-    <p>For deeper buying advice, explore <a href="{{ url_for('phone_guides.phone_guides_index') }}">smartphone buying guides</a> and <a href="{{ url_for('phone_compare.compare_index') }}">phone comparisons</a>.</p>
+  <section style="margin-top:28px"><h2>How to choose</h2>
+    <p>Use this page as a shortlist, then open individual phone pages for detailed specifications and source information. Prices, regional configurations and network compatibility can change, so verify the exact model before purchasing.</p>
+    <p>For deeper buying advice, explore <a href="{{ url_for('phone_guides.guides_index') }}">smartphone buying guides</a> and <a href="{{ url_for('phone_compare.compare_index') }}">phone comparisons</a>.</p>
   </section>
 </main>
 </body>
