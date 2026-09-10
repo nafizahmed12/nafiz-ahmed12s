@@ -23,42 +23,30 @@ def shop():
     # Keep the dedicated phone catalog as the canonical destination for mobile browsing.
     if _category() == "mobile":
         return redirect("/phones")
-    return _shop_response("shop.html", category=_category())
+    return _shop_response("shop_new.html", category=_category())
 
 
 @shop_bp.get("/checkout")
 def checkout_page():
     category = _category()
     if not session.get("user_id"):
-        return _shop_response("shop.html", checkout_requires_login=True, category=category), 401
-    return _shop_response("shop.html", checkout_mode=True, category=category)
+        return _shop_response("shop_new.html", checkout_requires_login=True, category=category), 401
+    return _shop_response("shop_new.html", checkout_mode=True, category=category)
 
 
 @shop_bp.get("/payment/success")
 def payment_success():
-    return render_template(
-        "payment_result.html",
-        result="success",
-        order_id=request.args.get("order_id"),
-    )
+    return render_template("payment_result.html", result="success", order_id=request.args.get("order_id"))
 
 
 @shop_bp.get("/payment/fail")
 def payment_fail():
-    return render_template(
-        "payment_result.html",
-        result="fail",
-        order_id=request.args.get("order_id"),
-    )
+    return render_template("payment_result.html", result="fail", order_id=request.args.get("order_id"))
 
 
 @shop_bp.get("/payment/cancel")
 def payment_cancel():
-    return render_template(
-        "payment_result.html",
-        result="cancel",
-        order_id=request.args.get("order_id"),
-    )
+    return render_template("payment_result.html", result="cancel", order_id=request.args.get("order_id"))
 
 
 def _category_products_response():
@@ -92,40 +80,34 @@ def _category_products_response():
     where_sql = " AND ".join(filters)
 
     with SessionLocal() as db:
-        rows = db.execute(
-            text(f"""
-                SELECT p.id,p.name,p.slug,p.description,p.product_type,
-                       COALESCE(l.price,p.price) AS price,p.currency,p.sku,
-                       p.stock_quantity,pi.image_url,l.id AS listing_id,
-                       l.price AS listing_price
-                FROM products p
-                JOIN product_categories pc ON pc.id = p.category_id
-                LEFT JOIN LATERAL (
-                    SELECT id,price FROM product_listings
-                    WHERE product_id=p.id AND status IN ('active','published')
-                    ORDER BY featured DESC,id ASC LIMIT 1
-                ) l ON TRUE
-                LEFT JOIN LATERAL (
-                    SELECT image_url FROM product_images
-                    WHERE product_id=p.id
-                    ORDER BY sort_order ASC,id ASC LIMIT 1
-                ) pi ON TRUE
-                WHERE {where_sql}
-                ORDER BY p.id DESC
-                LIMIT :limit OFFSET :offset
-            """),
-            params,
-        ).mappings().all()
+        rows = db.execute(text(f"""
+            SELECT p.id,p.name,p.slug,p.description,p.product_type,
+                   COALESCE(l.price,p.price) AS price,p.currency,p.sku,
+                   p.stock_quantity,pi.image_url,l.id AS listing_id,
+                   l.price AS listing_price
+            FROM products p
+            JOIN product_categories pc ON pc.id = p.category_id
+            LEFT JOIN LATERAL (
+                SELECT id,price FROM product_listings
+                WHERE product_id=p.id AND status IN ('active','published')
+                ORDER BY featured DESC,id ASC LIMIT 1
+            ) l ON TRUE
+            LEFT JOIN LATERAL (
+                SELECT image_url FROM product_images
+                WHERE product_id=p.id
+                ORDER BY sort_order ASC,id ASC LIMIT 1
+            ) pi ON TRUE
+            WHERE {where_sql}
+            ORDER BY p.id DESC
+            LIMIT :limit OFFSET :offset
+        """), params).mappings().all()
 
-        total = db.execute(
-            text(f"""
-                SELECT COUNT(*)
-                FROM products p
-                JOIN product_categories pc ON pc.id = p.category_id
-                WHERE {where_sql}
-            """),
-            params,
-        ).scalar_one()
+        total = db.execute(text(f"""
+            SELECT COUNT(*)
+            FROM products p
+            JOIN product_categories pc ON pc.id = p.category_id
+            WHERE {where_sql}
+        """), params).scalar_one()
 
     return jsonify({
         "items": [_product_row(row) for row in rows],
