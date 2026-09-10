@@ -30,8 +30,10 @@
       const sale = p.compare_at_price && Number(p.compare_at_price) > Number(p.price);
       const badge = p.featured ? 'FEATURED' : (sale ? 'SALE' : (index < 2 ? 'NEW' : 'POPULAR'));
       const compare = sale ? `<s style="font-size:11px;color:#94a3b8;margin-right:6px">${money(p.compare_at_price, p.currency)}</s>` : '';
+      const image = p.image_url ? `<img class="product-image" src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy" onerror="this.style.display='none'">` : '';
 
-      return `<a class="product" href="/shop">
+      return `<a class="product" href="/product/${Number(p.id)}" aria-label="View details for ${esc(p.name)}">
+        ${image}
         <div class="product-body">
           <small>${esc(p.category || 'New in')}</small>
           <h3>${esc(p.name)}</h3>
