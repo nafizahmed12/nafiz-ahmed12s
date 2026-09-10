@@ -1,42 +1,12 @@
 <!doctype html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Create Account — Nafiz Ahmed</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='portfolio.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='portfolio-theme.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <style>
-        .auth-wrap{max-width:540px;margin:70px auto;padding:34px}.auth-wrap form{display:grid;gap:14px}.auth-wrap input{width:100%;box-sizing:border-box}.auth-links{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:18px}.flash{padding:12px 14px;border-radius:12px;margin-bottom:16px;background:rgba(255,255,255,.06)}
-    </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Create a Nafiz-Ecommerce account.">
+<title>Create Account — Nafiz-Ecommerce</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#f6f7f9;color:#101828;font-family:Inter,system-ui,sans-serif}.shell{min-height:100vh;display:grid;grid-template-columns:1.05fr .95fr}.visual{background:#101828;color:#fff;padding:48px;display:flex;flex-direction:column;justify-content:space-between}.brand{font-size:23px;font-weight:800;letter-spacing:-1px}.brand span{color:#ff4f2f}.visual h1{font-size:clamp(42px,5vw,70px);line-height:.98;letter-spacing:-3px;max-width:620px;margin:0}.visual h1 span{color:#ff8d73}.visual p{max-width:500px;color:#cbd5e1;line-height:1.7;font-size:13px}.steps{display:grid;gap:9px}.step{display:flex;gap:10px;align-items:center;color:#cbd5e1;font-size:10px}.num{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:#263246;color:#fff;font-weight:800}.form-side{display:grid;place-items:center;padding:30px}.box{width:min(470px,100%);background:#fff;border:1px solid #e4e7ec;border-radius:22px;padding:34px;box-shadow:0 25px 70px rgba(16,24,40,.08)}.eyebrow{color:#ff4f2f;font-size:10px;font-weight:800;letter-spacing:.12em}.box h2{font-size:30px;letter-spacing:-1.5px;margin:10px 0 7px}.muted{color:#667085;font-size:12px}.flash{background:#fff7f4;border:1px solid #ffd8ce;border-radius:10px;padding:11px 12px;margin:14px 0;font-size:11px}.form{display:grid;gap:12px;margin-top:22px}.form label{font-size:10px;font-weight:700;color:#344054}.form input{display:block;width:100%;height:46px;margin-top:6px;border:1px solid #d9dee7;border-radius:10px;padding:0 13px;outline:0}.form input:focus{border-color:#ff4f2f;box-shadow:0 0 0 4px rgba(255,79,47,.1)}button{height:46px;border:0;border-radius:10px;background:#ff4f2f;color:#fff;font-weight:800;font-size:11px}.links{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:18px;font-size:10px;color:#667085}.links a:hover{color:#ff4f2f}@media(max-width:850px){.shell{grid-template-columns:1fr}.visual{min-height:330px;padding:28px}.visual h1{font-size:46px}.form-side{padding:18px}}@media(max-width:480px){.visual{display:none}.form-side{padding:14px}.box{padding:25px;border-radius:18px}}</style>
 </head>
-<body>
-<main class="section">
-    <div class="glass-card auth-wrap">
-        <span class="section-label">CREATE ACCOUNT</span>
-        <h1>Build your account.</h1>
-        <p>Create an account to access your dashboard and manage your websites.</p>
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% for category, message in messages %}<div class="flash">{{ message }}</div>{% endfor %}
-        {% endwith %}
-        {% if error %}<div class="flash">{{ error }}</div>{% endif %}
-
-        <form method="post" autocomplete="on">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input name="username" placeholder="Username" minlength="3" maxlength="80" autocomplete="username" required>
-            <input type="email" name="email" placeholder="Email address" maxlength="255" autocomplete="email" required>
-            <input type="password" name="password" placeholder="Password (8+ characters)" minlength="8" autocomplete="new-password" required>
-            <input type="password" name="confirm_password" placeholder="Confirm password" minlength="8" autocomplete="new-password" required>
-            <button class="btn btn-primary" type="submit">Create Account <span>→</span></button>
-        </form>
-
-        <div class="auth-links">
-            <a href="{{ url_for('home') }}">← Home</a>
-            <a href="{{ url_for('user_login') }}">Already have an account? Login</a>
-        </div>
-    </div>
-</main>
-</body>
-</html>
+<body><div class="shell"><section class="visual"><div class="brand">NAFIZ<span>-ECOMMERCE</span></div><div><div class="eyebrow">CREATE YOUR ACCOUNT</div><h1>Everything you need to <span>shop better.</span></h1><p>Create your Nafiz-Ecommerce account and keep your orders, profile and shopping experience in one place.</p></div><div class="steps"><div class="step"><span class="num">1</span>Create your account</div><div class="step"><span class="num">2</span>Browse and save products</div><div class="step"><span class="num">3</span>Checkout securely</div></div></section><section class="form-side"><div class="box"><div class="eyebrow">NEW CUSTOMER</div><h2>Join Nafiz-Ecommerce.</h2><p class="muted">Create your account in less than a minute.</p>{% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="flash">{{ message }}</div>{% endfor %}{% endwith %}{% if error %}<div class="flash">{{ error }}</div>{% endif %}<form class="form" method="post" autocomplete="on"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>USERNAME<input name="username" placeholder="Choose a username" minlength="3" maxlength="80" autocomplete="username" required></label><label>EMAIL ADDRESS<input type="email" name="email" placeholder="you@example.com" maxlength="255" autocomplete="email" required></label><label>PASSWORD<input type="password" name="password" placeholder="At least 8 characters" minlength="8" autocomplete="new-password" required></label><label>CONFIRM PASSWORD<input type="password" name="confirm_password" placeholder="Repeat your password" minlength="8" autocomplete="new-password" required></label><button type="submit">Create Account →</button></form><div class="links"><a href="{{ url_for('user_login') }}">Already registered? Login</a><a href="{{ url_for('home') }}">← Home</a></div></div></section></div></body></html>

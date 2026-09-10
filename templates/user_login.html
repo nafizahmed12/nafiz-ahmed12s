@@ -1,41 +1,24 @@
 <!doctype html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Login — Nafiz Ahmed</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='portfolio.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='portfolio-theme.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <style>
-        .auth-wrap{max-width:540px;margin:70px auto;padding:34px}.auth-wrap form{display:grid;gap:14px}.auth-wrap input{width:100%;box-sizing:border-box}.auth-links{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:18px}.flash{padding:12px 14px;border-radius:12px;margin-bottom:16px;background:rgba(255,255,255,.06)}
-    </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Sign in to Nafiz-Ecommerce.">
+<title>Login — Nafiz-Ecommerce</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#f6f7f9;color:#101828;font-family:Inter,system-ui,sans-serif}.shell{min-height:100vh;display:grid;grid-template-columns:1.05fr .95fr}.visual{background:#101828;color:#fff;padding:48px;display:flex;flex-direction:column;justify-content:space-between}.brand{font-size:23px;font-weight:800;letter-spacing:-1px}.brand span{color:#ff4f2f}.visual h1{font-size:clamp(42px,5vw,70px);line-height:.98;letter-spacing:-3px;max-width:620px;margin:0}.visual h1 span{color:#ff8d73}.visual p{max-width:500px;color:#cbd5e1;line-height:1.7;font-size:13px}.benefits{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.benefit{border:1px solid #344054;border-radius:12px;padding:14px}.benefit b{display:block;font-size:11px}.benefit small{color:#98a2b3;font-size:9px}.form-side{display:grid;place-items:center;padding:30px}.box{width:min(440px,100%);background:#fff;border:1px solid #e4e7ec;border-radius:22px;padding:34px;box-shadow:0 25px 70px rgba(16,24,40,.08)}.eyebrow{color:#ff4f2f;font-size:10px;font-weight:800;letter-spacing:.12em}.box h2{font-size:30px;letter-spacing:-1.5px;margin:10px 0 7px}.muted{color:#667085;font-size:12px}.flash{background:#fff7f4;border:1px solid #ffd8ce;border-radius:10px;padding:11px 12px;margin:14px 0;font-size:11px}.form{display:grid;gap:12px;margin-top:22px}.form label{font-size:10px;font-weight:700;color:#344054}.form input{width:100%;height:46px;border:1px solid #d9dee7;border-radius:10px;padding:0 13px;outline:0}.form input:focus{border-color:#ff4f2f;box-shadow:0 0 0 4px rgba(255,79,47,.1)}button{height:46px;border:0;border-radius:10px;background:#ff4f2f;color:#fff;font-weight:800;font-size:11px}.links{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:18px;font-size:10px;color:#667085}.links a:hover{color:#ff4f2f}@media(max-width:850px){.shell{grid-template-columns:1fr}.visual{min-height:330px;padding:28px}.visual h1{font-size:46px}.benefits{grid-template-columns:1fr 1fr}.form-side{padding:18px}}@media(max-width:480px){.visual{display:none}.form-side{padding:14px}.box{padding:25px;border-radius:18px}}
+</style>
 </head>
 <body>
-<main class="section">
-    <div class="glass-card auth-wrap">
-        <span class="section-label">WELCOME BACK</span>
-        <h1>Login to your account.</h1>
-        <p>Use your username or email address to continue.</p>
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% for category, message in messages %}<div class="flash">{{ message }}</div>{% endfor %}
-        {% endwith %}
-        {% if error %}<div class="flash">{{ error }}</div>{% endif %}
-
-        <form method="post" autocomplete="on">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input name="username" placeholder="Username or email" autocomplete="username" required>
-            <input type="password" name="password" placeholder="Password" autocomplete="current-password" required>
-            <button class="btn btn-primary" type="submit">Login <span>→</span></button>
-        </form>
-
-        <div class="auth-links">
-            <a href="{{ url_for('forgot_password') }}">Forgot password?</a>
-            <a href="{{ url_for('home') }}">← Home</a>
-            <a href="{{ url_for('register') }}">Create a new account</a>
-        </div>
-    </div>
-</main>
+<div class="shell">
+<section class="visual"><div class="brand">NAFIZ<span>-ECOMMERCE</span></div><div><div class="eyebrow">WELCOME BACK</div><h1>Your trusted place to <span>shop smarter.</span></h1><p>Sign in to manage your orders, account details and shopping activity from one clean dashboard.</p></div><div class="benefits"><div class="benefit"><b>Secure</b><small>Protected checkout</small></div><div class="benefit"><b>Fast</b><small>Simple ordering</small></div><div class="benefit"><b>Trusted</b><small>Customer support</small></div></div></section>
+<section class="form-side"><div class="box"><div class="eyebrow">ACCOUNT LOGIN</div><h2>Welcome back.</h2><p class="muted">Use your username or email address to continue.</p>
+{% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="flash">{{ message }}</div>{% endfor %}{% endwith %}{% if error %}<div class="flash">{{ error }}</div>{% endif %}
+<form class="form" method="post" autocomplete="on"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>USERNAME OR EMAIL<input name="username" placeholder="you@example.com" autocomplete="username" required></label><label>PASSWORD<input type="password" name="password" placeholder="Your password" autocomplete="current-password" required></label><button type="submit">Sign In →</button></form>
+<div class="links"><a href="{{ url_for('forgot_password') }}">Forgot password?</a><a href="{{ url_for('register') }}">Create account</a><a href="{{ url_for('home') }}">← Home</a></div></div></section>
+</div>
 </body>
 </html>
