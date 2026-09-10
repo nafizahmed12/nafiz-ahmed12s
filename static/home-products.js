@@ -1,5 +1,5 @@
 (() => {
-  const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({
+  const esc = (value) => String(value ?? '').replace(/[&<>\"']/g, (c) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   }[c]));
 
@@ -7,6 +7,22 @@
     const prefix = currency === 'BDT' ? '৳' : `${currency} `;
     return `${prefix}${esc(value)}`;
   };
+
+  function phoneDetailHref(p) {
+    const category = String(p.category_slug || '').toLowerCase();
+    const slug = String(p.slug || '').trim().toLowerCase();
+    if (category !== 'mobile' || !slug) return `/product/${Number(p.id)}`;
+    const brands = [
+      ['samsung', 'samsung'], ['apple', 'apple'], ['iphone', 'apple'],
+      ['google', 'google'], ['pixel', 'google'], ['oneplus', 'oneplus'],
+      ['xiaomi', 'xiaomi'], ['redmi', 'xiaomi'], ['realme', 'realme'],
+      ['vivo', 'vivo'], ['oppo', 'oppo'], ['honor', 'honor'], ['huawei', 'huawei'],
+      ['motorola', 'motorola'], ['nothing', 'nothing'], ['sony', 'sony'],
+      ['nokia', 'nokia'], ['asus', 'asus']
+    ];
+    const match = brands.find(([prefix]) => slug === prefix || slug.startsWith(`${prefix}-`));
+    return match ? `/phones/${match[1]}/${encodeURIComponent(slug)}` : `/product/${Number(p.id)}`;
+  }
 
   function loadMarketplaceStyles() {
     if (document.querySelector('link[data-marketplace-home]')) return;
@@ -31,8 +47,9 @@
       const badge = p.featured ? 'FEATURED' : (sale ? 'SALE' : (index < 2 ? 'NEW' : 'POPULAR'));
       const compare = sale ? `<s style="font-size:11px;color:#94a3b8;margin-right:6px">${money(p.compare_at_price, p.currency)}</s>` : '';
       const image = p.image_url ? `<img class="product-image" src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy" onerror="this.style.display='none'">` : '';
+      const href = phoneDetailHref(p);
 
-      return `<a class="product" href="/product/${Number(p.id)}" aria-label="View details for ${esc(p.name)}">
+      return `<a class="product" href="${href}" aria-label="View details for ${esc(p.name)}">
         ${image}
         <div class="product-body">
           <small>${esc(p.category || 'New in')}</small>
