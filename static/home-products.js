@@ -115,6 +115,17 @@
     const grid = document.querySelector('.products');
     if (!grid) return;
     try {
+      const url = new URL(window.location.href);
+      const category = url.searchParams.get('category') || '';
+      if (category && category !== 'mobile') {
+        const response = await fetch(`/api/category-products?category=${encodeURIComponent(category)}&page=1&per_page=10`, { headers: { Accept: 'application/json' } });
+        if (!response.ok) return;
+        const data = await response.json();
+        renderProducts((data.items || []).map((p) => ({ ...p, category: category.replace(/-/g, ' ') })));
+        const heading = document.querySelector('.section-head h2');
+        if (heading) heading.textContent = `${category.replace(/\b\w/g, (c) => c.toUpperCase())} products`;
+        return;
+      }
       const response = await fetch('/api/home', { headers: { Accept: 'application/json' } });
       if (!response.ok) return;
       const data = await response.json();
@@ -124,9 +135,28 @@
     }
   }
 
+  function bindCategoryNavigation() {
+    document.querySelectorAll('a.cat[href*="/shop?category="]').forEach((link) => {
+      link.addEventListener('click', (event) => {
+        const url = new URL(link.href, window.location.origin);
+        const category = url.searchParams.get('category');
+        if (!category || category === 'mobile') return;
+        event.preventDefault();
+        const next = new URL(window.location.href);
+        next.searchParams.set('category', category);
+        history.pushState({ category }, '', next);
+        loadProducts();
+        const section = document.querySelector('.products')?.closest('.section');
+        if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+    window.addEventListener('popstate', loadProducts);
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     addTrustLinks();
     loadMarketplaceStyles();
+    bindCategoryNavigation();
     const schedule = window.requestIdleCallback || ((callback) => setTimeout(callback, 1));
     schedule(loadProducts, { timeout: 1500 });
   });
