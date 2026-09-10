@@ -4,20 +4,36 @@ on:
   push:
     branches:
       - fix/iphone-18-pro-max-official-image-proxy
+  pull_request:
+    types: [opened, synchronize]
 
 permissions:
   contents: write
 
 jobs:
   fetch-official-image:
-    if: ${{ !contains(github.event.head_commit.message, 'chore: add official iPhone 18 Pro Max image') }}
+    if: >-
+      github.repository == github.event.pull_request.head.repo.full_name ||
+      github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+
+      - name: Skip if the official image is already committed
+        id: existing
+        shell: bash
+        run: |
+          if [ -f static/images/iphone-18-pro-max-official.jpg ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Download Apple's current product-page image
+        if: steps.existing.outputs.exists != 'true'
         run: |
           python - <<'PY'
           import html
@@ -51,6 +67,7 @@ jobs:
           PY
 
       - name: Commit official image to this PR branch
+        if: steps.existing.outputs.exists != 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
