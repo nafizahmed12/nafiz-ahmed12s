@@ -14,6 +14,18 @@ def _category():
 def _shop_response(template, **context):
     category = context.get("category", _category())
     response = make_response(render_template(template, category=category, **{k: v for k, v in context.items() if k != "category"}))
+    # Keep category SEO deterministic even when the shared after_request hook cannot
+    # replace the old template title because the storefront template was redesigned.
+    if category in {"fashion", "clothing", "beauty", "accessories"} and response.mimetype == "text/html":
+        titles = {
+            "fashion": "Shop Fashion Products in Bangladesh | Nafiz Ecommerce",
+            "clothing": "Clothing Online in Bangladesh | Nafiz Ecommerce",
+            "beauty": "Beauty Products in Bangladesh | Nafiz Ecommerce",
+            "accessories": "Accessories Online in Bangladesh | Nafiz Ecommerce",
+        }
+        html = response.get_data(as_text=True)
+        html = html.replace("<title>Nafiz-Ecommerce — Shop</title>", f"<title>{titles[category]}</title>", 1)
+        response.set_data(html)
     response.set_cookie("selected_category", category, max_age=3600, httponly=True, samesite="Lax")
     return response
 
