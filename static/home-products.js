@@ -11,7 +11,20 @@
   function phoneDetailHref(p) {
     const category = String(p.category_slug || '').toLowerCase();
     const slug = String(p.slug || '').trim().toLowerCase();
-    if (category !== 'mobile' || !slug) return `/product/${Number(p.id)}`;
+    const name = String(p.name || '').trim().toLowerCase();
+    if (category !== 'mobile' || (!slug && !name)) return `/product/${Number(p.id)}`;
+
+    // Homepage commerce records for these phones link to the full phone catalog pages.
+    const catalogAliases = {
+      'iphone-15-pro': ['apple', 'apple-iphone-15-pro'],
+      'iphone15pro': ['apple', 'apple-iphone-15-pro'],
+      'iphone-18-pro-max': ['apple', 'iphone-18-pro-max']
+    };
+    if (catalogAliases[slug]) {
+      const [brand, catalogSlug] = catalogAliases[slug];
+      return `/phones/${brand}/${encodeURIComponent(catalogSlug)}`;
+    }
+
     const brands = [
       ['samsung', 'samsung'], ['apple', 'apple'], ['iphone', 'apple'],
       ['google', 'google'], ['pixel', 'google'], ['oneplus', 'oneplus'],
@@ -20,8 +33,17 @@
       ['motorola', 'motorola'], ['nothing', 'nothing'], ['sony', 'sony'],
       ['nokia', 'nokia'], ['asus', 'asus']
     ];
-    const match = brands.find(([prefix]) => slug === prefix || slug.startsWith(`${prefix}-`));
-    return match ? `/phones/${match[1]}/${encodeURIComponent(slug)}` : `/product/${Number(p.id)}`;
+    const match = brands.find(([prefix]) =>
+      slug === prefix || slug.startsWith(`${prefix}-`) || name === prefix || name.startsWith(`${prefix} `)
+    );
+    if (!match) return `/product/${Number(p.id)}`;
+
+    let catalogSlug = slug;
+    // Older Apple catalog entries use the apple- prefix.
+    if (match[1] === 'apple' && slug.startsWith('iphone-')) {
+      catalogSlug = `apple-${slug}`;
+    }
+    return `/phones/${match[1]}/${encodeURIComponent(catalogSlug)}`;
   }
 
   function loadMarketplaceStyles() {
