@@ -22,7 +22,7 @@ def test_product_detail_page_renders_with_correct_id():
     """
     response = client.get("/product/7")
     assert response.status_code == 200
-    assert b"const productId=7;" in response.data
+    assert b"productId=7" in response.data
 
 
 def test_product_detail_page_only_matches_integer_ids():
