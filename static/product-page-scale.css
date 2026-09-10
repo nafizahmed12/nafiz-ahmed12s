@@ -1,24 +1,24 @@
 /* Nafiz-Ecommerce product page scale improvements */
 .product{gap:38px}
 .gallery{padding:16px}
-.main{height:620px}
-.main img{padding:12px}
-.thumb{width:86px;height:86px}
-.info{padding:28px}
-.info h1{font-size:36px;line-height:1.25}
-.rating{font-size:13px}
-.price{font-size:38px}
-.stock{font-size:13px}
-.desc{font-size:14px;line-height:1.8}
-.block b{font-size:13px}
-.chip{font-size:12px;padding:9px 12px}
-.btn{font-size:14px;height:50px}
-.benefit{font-size:11px;padding:13px 6px}
-.benefit b{font-size:12px}
-.delivery h3{font-size:14px}
-.d b{font-size:12px}
-.d span{font-size:11px}
-.tabs button{font-size:13px}
-.panel{font-size:14px}
-@media(max-width:1000px){.main{height:560px}}
-@media(max-width:650px){.main{height:420px}.main img{padding:8px}.info h1{font-size:30px}.price{font-size:32px}.desc{font-size:13px}.btn{font-size:14px}.thumb{width:78px;height:78px}}
+.main{height:680px}
+.main img{padding:4px}
+.thumb{width:96px;height:96px}
+.info{padding:30px}
+.info h1{font-size:38px;line-height:1.25}
+.rating{font-size:14px}
+.price{font-size:40px}
+.stock{font-size:14px}
+.desc{font-size:15px;line-height:1.8}
+.block b{font-size:14px}
+.chip{font-size:13px;padding:10px 13px}
+.btn{font-size:15px;height:52px}
+.benefit{font-size:12px;padding:14px 7px}
+.benefit b{font-size:13px}
+.delivery h3{font-size:15px}
+.d b{font-size:13px}
+.d span{font-size:12px}
+.tabs button{font-size:14px}
+.panel{font-size:15px}
+@media(max-width:1000px){.main{height:600px}}
+@media(max-width:650px){.main{height:450px}.main img{padding:2px}.info h1{font-size:31px}.price{font-size:33px}.desc{font-size:14px}.btn{font-size:14px}.thumb{width:82px;height:82px}}
