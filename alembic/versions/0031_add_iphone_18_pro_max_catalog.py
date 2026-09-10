@@ -1,6 +1,6 @@
 """Add iPhone 18 Pro Max to the customer-facing catalog.
 
-Revision ID: 0031_add_iphone_18_pro_max_catalog
+Revision ID: 0031_iphone_18_pro_max
 Revises: 0030_popular_phone_coverage
 """
 
@@ -8,7 +8,7 @@ from alembic import op
 from sqlalchemy import text
 
 
-revision = "0031_add_iphone_18_pro_max_catalog"
+revision = "0031_iphone_18_pro_max"
 down_revision = "0030_popular_phone_coverage"
 branch_labels = None
 depends_on = None
@@ -48,7 +48,6 @@ def upgrade() -> None:
             },
         ).scalar_one()
 
-    # Make the product visible in the storefront/home product feed.
     listing = bind.execute(
         text("SELECT id FROM product_listings WHERE product_id=:product_id LIMIT 1"),
         {"product_id": product_id},
