@@ -1,0 +1,59 @@
+name: Fetch official iPhone 18 Pro Max image
+
+on:
+  push:
+    branches:
+      - fix/iphone-18-pro-max-official-image-proxy
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-official-image:
+    if: ${{ !contains(github.event.head_commit.message, 'chore: add official iPhone 18 Pro Max image') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download Apple's current product-page image
+        run: |
+          python - <<'PY'
+          import html
+          import re
+          import urllib.request
+          from pathlib import Path
+
+          page = "https://www.apple.com/iphone-18-pro/"
+          req = urllib.request.Request(page, headers={"User-Agent": "Mozilla/5.0"})
+          text = urllib.request.urlopen(req, timeout=20).read(2_000_000).decode("utf-8", "ignore")
+          patterns = [
+              r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)',
+              r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:image["\']',
+          ]
+          url = next((m.group(1) for p in patterns if (m := re.search(p, text, re.I))), None)
+          if not url:
+              raise SystemExit("Apple og:image not found")
+          url = html.unescape(url)
+          if not (url.startswith("https://www.apple.com/") or url.startswith("https://images.apple.com/")):
+              raise SystemExit(f"Unexpected Apple image host: {url}")
+
+          out = Path("static/images/iphone-18-pro-max-official.jpg")
+          out.parent.mkdir(parents=True, exist_ok=True)
+          req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+          with urllib.request.urlopen(req, timeout=20) as response:
+              data = response.read(8_000_000)
+              if not response.headers.get("Content-Type", "").startswith("image/"):
+                  raise SystemExit("Apple returned a non-image response")
+          out.write_bytes(data)
+          print(f"Saved {out} ({len(data)} bytes) from {url}")
+          PY
+
+      - name: Commit official image to this PR branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add static/images/iphone-18-pro-max-official.jpg
+          git commit -m "chore: add official iPhone 18 Pro Max image"
+          git push
