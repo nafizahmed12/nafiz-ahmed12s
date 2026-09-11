@@ -16,12 +16,26 @@ def _shop_response(template, **context):
     response = make_response(render_template(template, category=category, **{k: v for k, v in context.items() if k != "category"}))
     # Keep category SEO deterministic even when the shared after_request hook cannot
     # replace the old template title because the storefront template was redesigned.
-    if category in {"fashion", "clothing", "beauty", "accessories"} and response.mimetype == "text/html":
+    titled_categories = {
+        "fashion", "clothing", "beauty", "accessories",
+        "tablets", "computers", "gadgets", "appliances",
+        "lifestyle", "camera", "audio", "wearables", "offers",
+    }
+    if category in titled_categories and response.mimetype == "text/html":
         titles = {
             "fashion": "Shop Fashion Products in Bangladesh | Nafiz Ecommerce",
             "clothing": "Clothing Online in Bangladesh | Nafiz Ecommerce",
             "beauty": "Beauty Products in Bangladesh | Nafiz Ecommerce",
             "accessories": "Accessories Online in Bangladesh | Nafiz Ecommerce",
+            "tablets": "Shop Tablets in Bangladesh | Nafiz Ecommerce",
+            "computers": "Laptops & Desktops in Bangladesh | Nafiz Ecommerce",
+            "gadgets": "Gadgets & Accessories in Bangladesh | Nafiz Ecommerce",
+            "appliances": "Home Appliances in Bangladesh | Nafiz Ecommerce",
+            "lifestyle": "Lifestyle Products in Bangladesh | Nafiz Ecommerce",
+            "camera": "Cameras & Networking in Bangladesh | Nafiz Ecommerce",
+            "audio": "Audio & Headphones in Bangladesh | Nafiz Ecommerce",
+            "wearables": "Smartwatches & Wearables in Bangladesh | Nafiz Ecommerce",
+            "offers": "Exclusive Deals & Offers | Nafiz Ecommerce",
         }
         html = response.get_data(as_text=True)
         html = html.replace("<title>Nafiz-Ecommerce — Shop</title>", f"<title>{titles[category]}</title>", 1)
@@ -32,8 +46,10 @@ def _shop_response(template, **context):
 
 @shop_bp.get("/shop")
 def shop():
-    # Keep the dedicated phone catalog as the canonical destination for mobile browsing.
-    if _category() == "mobile":
+    # Keep the dedicated phone catalog as the canonical destination for mobile/phone
+    # browsing, including the homepage's "Apple Products" and "Phones" nav links --
+    # /shop's own product_categories table has no phone data of its own.
+    if _category() in {"mobile", "apple", "phones"}:
         return redirect("/phones")
     return _shop_response("shop_new.html", category=_category())
 
