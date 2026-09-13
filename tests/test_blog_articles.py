@@ -18,8 +18,9 @@ def test_missing_article_returns_404():
     assert response.status_code == 404
 
 
-def test_sitemap_contains_no_unpublished_blog_urls():
+def test_sitemap_contains_published_blog_urls_only():
     client = app.test_client()
     response = client.get("/sitemap.xml")
     assert response.status_code == 200
-    assert b"/blog/" not in response.data
+    assert b"/blog/" in response.data
+    assert b"/blog/does-not-exist" not in response.data

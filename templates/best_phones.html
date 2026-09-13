@@ -14,12 +14,12 @@
 </head>
 <body>
 <main class="wrap" style="max-width:1100px;margin:auto;padding:24px">
-  <nav aria-label="Breadcrumb" style="margin-bottom:18px"><a href="{{ url_for('index') }}">Home</a> / <a href="{{ url_for('phone_catalog.phones_index') }}">Phones</a> / Best Phones</nav>
+  <nav aria-label="Breadcrumb" style="margin-bottom:18px"><a href="/">Home</a> / <a href="/phones">Phones</a> / Best Phones</nav>
   <header><h1>{{ category.heading }}</h1><p>{{ category.intro }}</p></header>
   {% if category_key == 'best-phones' %}
   <section><h2>Browse by need</h2><ul>
     {% for key, item in categories.items() if key != 'best-phones' %}
-    <li><a href="{{ url_for('best_phones.best_phones_category', category=key) }}">{{ item.heading }}</a></li>
+    <li><a href="/best-phones/{{ key }}">{{ item.heading }}</a></li>
     {% endfor %}
   </ul></section>
   {% endif %}
@@ -32,15 +32,15 @@
         <h3>{{ phone.model }}</h3><p><strong>{{ phone.brand }}</strong>{% if phone.release_date %} · {{ phone.release_date }}{% endif %}</p>
         <p>{{ phone.short_description }}</p>
         {% if phone.price_bdt %}<p><strong>Listed Bangladesh price:</strong> {{ phone.price_bdt }}</p>{% endif %}
-        <a href="{{ url_for('phone_catalog.phone_catalog_detail', brand=phone.brand|lower|replace(' ','-'), slug=phone.slug) }}">View full {{ phone.model }} specs</a>
+        <a href="/phones/{{ phone.brand|lower|replace(' ','-') }}/{{ phone.slug }}">View full {{ phone.model }} specs</a>
       </article>
       {% endfor %}
     </div>
-    {% else %}<p>No published models currently match this category. Check the <a href="{{ url_for('phone_catalog.phones_index') }}">full phone catalog</a>.</p>{% endif %}
+    {% else %}<p>No published models currently match this category. Check the <a href="/phones">full phone catalog</a>.</p>{% endif %}
   </section>
   <section style="margin-top:28px"><h2>How to choose</h2>
     <p>Use this page as a shortlist, then open individual phone pages for detailed specifications and source information. Prices, regional configurations and network compatibility can change, so verify the exact model before purchasing.</p>
-    <p>For deeper buying advice, explore <a href="{{ url_for('phone_guides.guides_index') }}">smartphone buying guides</a> and <a href="{{ url_for('phone_compare.compare_index') }}">phone comparisons</a>.</p>
+    <p>For deeper buying advice, explore <a href="/phone-guides">smartphone buying guides</a> and <a href="/compare">phone comparisons</a>.</p>
   </section>
 </main>
 </body>
