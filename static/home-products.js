@@ -14,7 +14,6 @@
     const name = String(p.name || '').trim().toLowerCase();
     if (category !== 'mobile' || (!slug && !name)) return `/product/${Number(p.id)}`;
 
-    // Homepage commerce records for these phones link to the full phone catalog pages.
     const catalogAliases = {
       'iphone-15-pro': ['apple', 'apple-iphone-15-pro'],
       'iphone15pro': ['apple', 'apple-iphone-15-pro'],
@@ -39,7 +38,6 @@
     if (!match) return `/product/${Number(p.id)}`;
 
     let catalogSlug = slug;
-    // Older Apple catalog entries use the apple- prefix.
     if (match[1] === 'apple' && slug.startsWith('iphone-')) {
       catalogSlug = `apple-${slug}`;
     }
@@ -129,6 +127,7 @@
       <a href="/privacy-policy">Privacy Policy</a>
       <a href="/terms">Terms &amp; Conditions</a>
       <a href="/refund-policy">Refund &amp; Return Policy</a>
+      <a href="/disclaimer">Disclaimer</a>
     `;
     footerGrid.appendChild(section);
   }
