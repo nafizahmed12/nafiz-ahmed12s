@@ -1,1 +1,0 @@
-Mobile navigation fix: Apple Products now uses click/tap state on touch devices, while desktop hover remains supported. Category links use real anchors and the menu closes on outside tap or Escape.
