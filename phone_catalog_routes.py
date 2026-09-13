@@ -39,7 +39,7 @@ def _row(row):
 def _published(where="", params=None, limit=100, offset=0):
     params = dict(params or {}); params["limit"] = limit; params["offset"] = offset
     with SessionLocal() as db:
-        rows = db.execute(text("""SELECT id,brand,model,slug,short_description,content,image_url,release_date,price_usd,price_bdt,specs_json,seo_description,published_at,source_name,source_url,source_checked_at,data_confidence FROM phone_catalog WHERE status='published' {where} ORDER BY published_at DESC NULLS LAST, id DESC LIMIT :limit OFFSET :offset"""), params).mappings().all()
+        rows = db.execute(text(f"""SELECT id,brand,model,slug,short_description,content,image_url,release_date,price_usd,price_bdt,specs_json,seo_description,published_at,source_name,source_url,source_checked_at,data_confidence FROM phone_catalog WHERE status='published' {where} ORDER BY published_at DESC NULLS LAST, id DESC LIMIT :limit OFFSET :offset"""), params).mappings().all()
     return [_row(r) for r in rows]
 
 def _published_count(where="", params=None):
