@@ -48,8 +48,8 @@ CREATE TABLE IF NOT EXISTS affiliate_products (
     display_price VARCHAR(50),
     sort_order INTEGER NOT NULL DEFAULT 0,
     status VARCHAR(20) NOT NULL DEFAULT 'published',
-    created_at DATETIME NOT NULL,
-    updated_at DATETIME NOT NULL
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL
 )
 """
 
@@ -90,6 +90,21 @@ def _drop_table():
         db.commit()
 
 
+def _extract_affiliate_section(body):
+    """Isolate just the injected home-affiliate-section block.
+
+    The homepage legitimately has other <img> tags elsewhere (e.g. the
+    hero banner's featured-product photo) -- checking the whole page body
+    for "<img" would also fail on that unrelated content, not just on
+    this feature's own image-removal fix. The section is a single
+    self-contained block with no nested <section> tags, so slicing to the
+    first </section> after its start is enough to isolate it here.
+    """
+    start = body.index("home-affiliate-section")
+    end = body.index("</section>", start) + len("</section>")
+    return body[start:end]
+
+
 def test_home_affiliate_section_never_renders_an_img_tag_even_with_image_url_set():
     _reset_table_with_one_published_row(
         image_url="https://m.media-amazon.com/images/I/51GOhI8bhHL._AC_SL1000_.jpg"
@@ -100,7 +115,9 @@ def test_home_affiliate_section_never_renders_an_img_tag_even_with_image_url_set
         body = resp.get_data(as_text=True)
 
         assert "home-affiliate-section" in body, "affiliate section should still be present"
-        assert "<img" not in body, "no <img> tag should render anywhere on the homepage"
+        assert "<img" not in _extract_affiliate_section(body), (
+            "no <img> tag should render inside the affiliate section"
+        )
         assert "m.media-amazon.com" not in body, "the external image URL should not leak into the page at all"
         assert '<div class="home-affiliate-no-image">Amazon</div>' in body, (
             "the existing text-only placeholder should render instead of an <img> tag"
@@ -137,7 +154,7 @@ def test_home_affiliate_section_renders_no_image_placeholder_when_image_url_is_a
         resp = client.get("/")
         body = resp.get_data(as_text=True)
 
-        assert "<img" not in body
+        assert "<img" not in _extract_affiliate_section(body)
         assert '<div class="home-affiliate-no-image">Amazon</div>' in body
     finally:
         _drop_table()
