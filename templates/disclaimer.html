@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Disclaimer for Nafiz Ecommerce covering product information, pricing, affiliate relationships, advertising, editorial content and external links.">
+  <link rel="canonical" href="{{ request.url }}">
+  <meta name="robots" content="index,follow">
+  <title>Disclaimer | Nafiz Ecommerce</title>
+  <style>
+    body{margin:0;background:#f8fafc;color:#0f172a;font-family:Inter,system-ui,sans-serif;line-height:1.7}
+    .wrap{max-width:850px;margin:0 auto;padding:40px 20px}
+    .card{background:#fff;border:1px solid #e2e8f0;border-radius:20px;padding:32px}
+    a{color:#15803d;text-decoration:none}
+    .nav{margin-bottom:24px}
+    .nav a{margin-right:18px;font-weight:700}
+    .muted{color:#64748b}
+    h1{color:#0b1f3a}
+    h2{margin-top:28px}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <nav class="nav" aria-label="Primary">
+      <a href="{{ url_for('home') }}">Nafiz Ecommerce</a>
+      <a href="{{ url_for('shop_ui.shop') }}">Shop</a>
+      <a href="{{ url_for('blog.blog_index') }}">Blog</a>
+      <a href="{{ url_for('contact') }}">Contact</a>
+      <a href="{{ url_for('privacy_policy') }}">Privacy</a>
+      <a href="{{ url_for('terms') }}">Terms</a>
+    </nav>
+
+    <section class="card">
+      <h1>Disclaimer</h1>
+      <p class="muted">Last updated: September 13, 2026</p>
+      <p>The information provided on Nafiz Ecommerce is published for general informational, shopping and educational purposes. We aim to keep our information useful and accurate, but product details, prices, availability and third-party information can change.</p>
+
+      <h2>Product Information</h2>
+      <p>Product names, specifications, images, descriptions and other details are provided to help visitors research products. Information may come from manufacturers, retailers, suppliers or other publicly available sources and may not always reflect the latest changes. Please verify important specifications and purchase details with the applicable seller or manufacturer before making a purchase.</p>
+
+      <h2>Prices and Availability</h2>
+      <p>Prices, stock status, promotions, delivery information and availability may change without notice. Any price or availability displayed on this website should be treated as informational until confirmed during the applicable checkout or purchase process.</p>
+
+      <h2>Affiliate Disclosure</h2>
+      <p>Nafiz Ecommerce may use affiliate links to third-party retailers and services. If you make a qualifying purchase through an affiliate link, we may receive a commission at no additional cost to you. Affiliate relationships do not guarantee a particular product recommendation or editorial conclusion.</p>
+
+      <h2>Advertising Disclosure</h2>
+      <p>This website may display advertising from third-party advertising providers, including Google AdSense, when applicable. Advertisements are separate from our editorial content. We do not ask visitors to click advertisements, and advertising availability or appearance may vary by page and visitor.</p>
+
+      <h2>Editorial Content</h2>
+      <p>Our articles, comparisons, buying guides and technology information are intended to help readers make informed decisions. We make reasonable efforts to provide useful and accurate information, but we do not guarantee that every article is complete, current or error-free. Time-sensitive information should be independently verified before relying on it.</p>
+
+      <h2>External Links</h2>
+      <p>Our website may link to external websites, retailers, manufacturers and other third-party services. We do not control those websites and are not responsible for their content, availability, policies, products or practices. Please review the applicable third party's terms and privacy policy before using its services.</p>
+
+      <h2>No Guarantee</h2>
+      <p>Nafiz Ecommerce does not guarantee the accuracy, completeness, reliability or availability of information on this website. Use of the information provided is at your own discretion and risk. This disclaimer does not replace professional, legal, financial or other qualified advice where such advice is appropriate.</p>
+
+      <h2>Changes to This Disclaimer</h2>
+      <p>We may update this Disclaimer from time to time to reflect changes to our website, services, advertising or affiliate relationships. Updates will be posted on this page with a revised date.</p>
+
+      <h2>Contact Us</h2>
+      <p>If you have questions about this Disclaimer, please visit our <a href="{{ url_for('contact') }}">Contact page</a>.</p>
+    </section>
+  </main>
+</body>
+</html>
