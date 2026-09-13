@@ -6,7 +6,7 @@ import json
 import os
 import re
 
-from flask import Response, request
+from flask import Response, request, render_template
 
 from app import app, products
 from blog_routes import register_blog_routes
@@ -41,6 +41,7 @@ SEO_META = {
     "/best-phones": ("Best Phones — Top Smartphones by Budget & Use | Nafiz Ecommerce", "Find the best smartphones for gaming, cameras, battery life, 5G, flagship features and different budgets."),
     "/about": ("About Nafiz Ecommerce", "Learn more about Nafiz Ecommerce and our goal of making online shopping simple, useful and trustworthy."),
     "/contact": ("Contact Nafiz Ecommerce", "Contact Nafiz Ecommerce for questions, support and help with products or orders."),
+    "/disclaimer": ("Disclaimer | Nafiz Ecommerce", "Read the Nafiz Ecommerce disclaimer covering product information, pricing, availability, affiliate relationships, advertising and external links."),
 }
 
 
@@ -133,6 +134,11 @@ register_phone_guide_routes(app)
 register_phone_series_routes(app)
 register_best_phone_routes(app)
 register_canonical_sitemap(app, products)
+
+
+@app.get("/disclaimer")
+def disclaimer():
+    return render_template("disclaimer.html")
 
 
 @app.get("/ads.txt")
