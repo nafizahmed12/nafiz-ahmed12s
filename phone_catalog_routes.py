@@ -26,6 +26,12 @@ def _schema_price(value):
 def _row(row):
     if not row: return None
     item = dict(row)
+    item["name"] = item.get("model") or ""
+    raw_price = str(item.get("price_bdt") or "").strip().replace(",", "")
+    try:
+        item["price_bdt"] = float(raw_price) if raw_price else None
+    except (TypeError, ValueError):
+        item["price_bdt"] = None
     try: item["specs"] = json.loads(item.get("specs_json") or "{}")
     except (TypeError, ValueError): item["specs"] = {}
     return item
@@ -33,7 +39,7 @@ def _row(row):
 def _published(where="", params=None, limit=100, offset=0):
     params = dict(params or {}); params["limit"] = limit; params["offset"] = offset
     with SessionLocal() as db:
-        rows = db.execute(text(f"""SELECT id,brand,model,slug,short_description,content,image_url,release_date,price_usd,price_bdt,specs_json,seo_description,published_at,source_name,source_url,source_checked_at,data_confidence FROM phone_catalog WHERE status='published' {where} ORDER BY published_at DESC NULLS LAST, id DESC LIMIT :limit OFFSET :offset"""), params).mappings().all()
+        rows = db.execute(text("""SELECT id,brand,model,slug,short_description,content,image_url,release_date,price_usd,price_bdt,specs_json,seo_description,published_at,source_name,source_url,source_checked_at,data_confidence FROM phone_catalog WHERE status='published' {where} ORDER BY published_at DESC NULLS LAST, id DESC LIMIT :limit OFFSET :offset"""), params).mappings().all()
     return [_row(r) for r in rows]
 
 def _published_count(where="", params=None):
@@ -72,13 +78,7 @@ def phone_catalog_detail(brand,slug):
     phone=_row(row)
     related=_published("AND LOWER(brand)=:brand AND slug<>:slug",{"brand":brand.lower(),"slug":slug},6)
     recommended=_published("AND LOWER(brand)<>:brand AND slug<>:slug",{"brand":brand.lower(),"slug":slug},6)
-    return render_template(
-        "phone_catalog_detail.html",
-        phone=phone,
-        related=related,
-        recommended=recommended,
-        schema_price_bdt=_schema_price(phone.get("price_bdt")),
-    )
+    return render_template("phone_catalog_detail.html",phone=phone,related=related,recommended=recommended,schema_price_bdt=_schema_price(phone.get("price_bdt")))
 
 @phone_catalog_bp.get("/compare/<left>-vs-<right>")
 def phone_compare(left,right):
