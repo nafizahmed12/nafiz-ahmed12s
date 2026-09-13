@@ -1,15 +1,20 @@
 """Refresh current Bangladesh phone prices for catalog models.
-Revision ID: 0039_refresh_bd_phone_prices_specs
+
+Revision ID: 0039_bd_price_refresh
 Revises: 0038_verified_bd_phone_prices
 """
 from datetime import datetime
+
 from alembic import op
 from sqlalchemy import text
-revision = "0039_refresh_bd_phone_prices_specs"
+
+revision = "0039_bd_price_refresh"
 down_revision = "0038_verified_bd_phone_prices"
 branch_labels = None
 depends_on = None
+
 CHECKED = datetime(2026, 9, 13)
+
 REFRESH = {
     "samsung-galaxy-s24": (105600, "official", "https://www.gsmarena.com.bd/samsung-galaxy-s24/"),
     "samsung-galaxy-s24-plus": (132000, "official", "https://www.gsmarena.com.bd/samsung-galaxy-s24-plus/"),
@@ -36,9 +41,31 @@ REFRESH = {
     "poco-f6": (60000, "reference", "https://www.gsmarena.com.bd/xiaomi-poco-f6/"),
     "oppo-find-x7-ultra": (92700, "reference", "https://www.gsmarena.com.bd/price-range/40000-250000/11"),
 }
+
+
 def upgrade():
     bind = op.get_bind()
     for slug, (price, status, url) in REFRESH.items():
-        bind.execute(text("""UPDATE phone_catalog SET price_bdt=:price, source_name=:source, source_url=:url, source_checked_at=:checked, data_confidence='verified', updated_at=CURRENT_TIMESTAMP WHERE slug=:slug AND status='published'"""), {"slug":slug,"price":price,"source":f"GSMArena Bangladesh ({status})","url":url,"checked":CHECKED})
+        bind.execute(
+            text(
+                """UPDATE phone_catalog
+                SET price_bdt=:price,
+                    source_name=:source,
+                    source_url=:url,
+                    source_checked_at=:checked,
+                    data_confidence='verified',
+                    updated_at=CURRENT_TIMESTAMP
+                WHERE slug=:slug AND status='published'"""
+            ),
+            {
+                "slug": slug,
+                "price": price,
+                "source": f"GSMArena Bangladesh ({status})",
+                "url": url,
+                "checked": CHECKED,
+            },
+        )
+
+
 def downgrade():
     pass
