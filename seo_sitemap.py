@@ -20,6 +20,7 @@ PUBLIC_PATHS = (
     ("/privacy-policy", "yearly", "0.5"),
     ("/terms", "yearly", "0.5"),
     ("/refund-policy", "yearly", "0.5"),
+    ("/disclaimer", "yearly", "0.5"),
     ("/phones", "daily", "0.9"),
     ("/phone-brands", "weekly", "0.9"),
     ("/compare", "daily", "0.9"),
