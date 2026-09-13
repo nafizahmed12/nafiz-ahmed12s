@@ -31,6 +31,8 @@ os.environ.setdefault("DATABASE_URL", "sqlite:///ci_test.db")
 os.environ.setdefault("ADMIN_USERNAME", "ci-admin")
 os.environ.setdefault("ADMIN_PASSWORD", "ci-password")
 
+from datetime import datetime, timezone
+
 import pytest
 from sqlalchemy import text
 
@@ -39,6 +41,28 @@ from database import engine
 
 client = app_module.app.test_client()
 
+# Explicit, manually-assigned id -- portable across SQLite and Postgres.
+# SQLite treats a bare "INTEGER PRIMARY KEY" as an alias for the implicit
+# rowid and auto-fills it on INSERT; Postgres does not (that needs SERIAL/
+# IDENTITY), so an insert that omits id -- as this file's inserts used to --
+# passes locally against SQLite but raises a NOT NULL violation in CI's
+# real Postgres. Tracking id ourselves sidesteps the dialect difference
+# instead of depending on either backend's autoincrement default, and still
+# assigns ids in the same increasing insertion order a real autoincrement
+# would, which is what the sort_order/id-DESC ordering test relies on.
+_next_id = [1]
+
+
+_TABLE_DDL = """
+    CREATE TABLE affiliate_products (
+        id INTEGER PRIMARY KEY,
+        name TEXT, description TEXT, amazon_url TEXT,
+        image_url TEXT, display_price TEXT,
+        status TEXT, sort_order INTEGER DEFAULT 0,
+        created_at TIMESTAMP, updated_at TIMESTAMP
+    )
+"""
+
 
 @pytest.fixture
 def affiliate_products_table():
@@ -46,31 +70,36 @@ def affiliate_products_table():
     test, then drop it -- this repo's SQLite test bootstrap doesn't include
     this table (it's Postgres-migration-only), so tests exercising it need
     to stand it up themselves.
+
+    Drops first rather than "CREATE TABLE IF NOT EXISTS": in CI's shared
+    Postgres, a same-named table can already exist with a different, real
+    schema (e.g. from the actual Alembic migration's created_at/updated_at
+    NOT NULL columns), which IF NOT EXISTS would silently keep instead of
+    replacing with this test's throwaway one.
     """
     with engine.begin() as conn:
-        conn.execute(text("""
-            CREATE TABLE IF NOT EXISTS affiliate_products (
-                id INTEGER PRIMARY KEY,
-                name TEXT, description TEXT, amazon_url TEXT,
-                image_url TEXT, display_price TEXT,
-                status TEXT, sort_order INTEGER DEFAULT 0
-            )
-        """))
+        conn.execute(text("DROP TABLE IF EXISTS affiliate_products"))
+        conn.execute(text(_TABLE_DDL))
+    _next_id[0] = 1
     yield
     with engine.begin() as conn:
         conn.execute(text("DROP TABLE IF EXISTS affiliate_products"))
 
 
 def _insert(name, description, amazon_url, status, sort_order, image_url=None, display_price=None):
+    now = datetime.now(timezone.utc)
+    row_id = _next_id[0]
+    _next_id[0] += 1
     with engine.begin() as conn:
         conn.execute(
             text("""INSERT INTO affiliate_products
-                (name, description, amazon_url, image_url, display_price, status, sort_order)
-                VALUES (:name, :description, :amazon_url, :image_url, :display_price, :status, :sort_order)"""),
+                (id, name, description, amazon_url, image_url, display_price, status, sort_order, created_at, updated_at)
+                VALUES (:id, :name, :description, :amazon_url, :image_url, :display_price, :status, :sort_order, :created_at, :updated_at)"""),
             {
-                "name": name, "description": description, "amazon_url": amazon_url,
+                "id": row_id, "name": name, "description": description, "amazon_url": amazon_url,
                 "image_url": image_url, "display_price": display_price,
                 "status": status, "sort_order": sort_order,
+                "created_at": now, "updated_at": now,
             },
         )
 
@@ -143,14 +172,9 @@ def test_affiliate_picks_escapes_product_content():
     client-side esc() helper existed to provide.
     """
     with engine.begin() as conn:
-        conn.execute(text("""
-            CREATE TABLE IF NOT EXISTS affiliate_products (
-                id INTEGER PRIMARY KEY,
-                name TEXT, description TEXT, amazon_url TEXT,
-                image_url TEXT, display_price TEXT,
-                status TEXT, sort_order INTEGER DEFAULT 0
-            )
-        """))
+        conn.execute(text("DROP TABLE IF EXISTS affiliate_products"))
+        conn.execute(text(_TABLE_DDL))
+    _next_id[0] = 1
     try:
         _insert(
             name="<script>alert(1)</script>",
