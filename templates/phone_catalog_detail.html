@@ -7,31 +7,163 @@
 <meta name="description" content="{{ phone.seo_description or phone.short_description }} Explore {{ phone.brand }} {{ phone.model }} specifications, price information and key features.">
 <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
 <link rel="canonical" href="{{ request.base_url }}">
+{% if schema_price_bdt %}<script type="application/ld+json">{{ {'@context':'https://schema.org','@type':'Product','name':phone.brand ~ ' ' ~ phone.model,'description':phone.seo_description or phone.short_description,'brand':{'@type':'Brand','name':phone.brand},'image':phone.image_url,'offers':{'@type':'Offer','priceCurrency':'BDT','price':schema_price_bdt,'availability':'https://schema.org/InStock'}}|tojson }}</script>{% else %}<script type="application/ld+json">{{ {'@context':'https://schema.org','@type':'Product','name':phone.brand ~ ' ' ~ phone.model,'description':phone.seo_description or phone.short_description,'brand':{'@type':'Brand','name':phone.brand},'image':phone.image_url}|tojson }}</script>{% endif %}
 <style>
-body{font-family:system-ui,sans-serif;max-width:1000px;margin:auto;padding:24px;color:#182033;line-height:1.65}.hero{display:grid;grid-template-columns:minmax(260px,420px) 1fr;gap:28px}.hero img{width:100%;border-radius:16px;max-height:430px;object-fit:cover}.muted{color:#64748b}.specs{border-collapse:collapse;width:100%;margin-top:20px}.specs td{padding:10px;border-bottom:1px solid #e5e7eb}.related{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}.box,.source,.faq,.discover,.facts{margin-top:22px;padding:16px;border:1px solid #e5e7eb;border-radius:12px;background:#f8fafc}.facts dl{display:grid;grid-template-columns:minmax(120px,180px) 1fr;margin:0}.facts dt,.facts dd{padding:8px 0;border-bottom:1px solid #e5e7eb}.facts dt{font-weight:700}.facts dd{margin:0}.price{font-size:24px;font-weight:800;margin:12px 0}.verified{color:#166534}.unverified{color:#64748b;font-size:16px}.pill{display:inline-block;padding:6px 10px;border:1px solid #dbe2ea;border-radius:999px;margin:4px;text-decoration:none}.compare{font-weight:600}@media(max-width:700px){.hero{grid-template-columns:1fr}h1{font-size:30px}.facts dl{grid-template-columns:1fr}.facts dt{padding-bottom:2px;border-bottom:0}.facts dd{padding-top:2px}.specs{display:block;overflow-x:auto}}
+:root{--bg:#061018;--panel:#0b1620;--panel2:#0e1b27;--card:#0a151f;--text:#edf6ff;--muted:#91a5b7;--line:#1b3040;--accent:#1688ff;--accent2:#5bb4ff;--shadow:0 20px 60px rgba(0,0,0,.28)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 75% 8%,rgba(16,125,235,.09),transparent 28%),var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.5}a{color:inherit}.top{background:rgba(5,13,20,.94);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:1000;backdrop-filter:blur(16px)}.nav{max-width:1420px;margin:auto;min-height:64px;padding:0 18px;display:flex;align-items:center;gap:28px}.logo{font-size:21px;font-weight:900;text-decoration:none;letter-spacing:-.04em;white-space:nowrap}.logo b{color:var(--accent)}.navlinks{display:flex;align-items:center;gap:25px;margin-left:auto;font-size:14px;font-weight:650}.navlinks a{text-decoration:none;color:#a9bac8}.navlinks a:hover,.navlinks .active{color:#fff}.navlinks .active{position:relative}.navlinks .active:after{content:"";position:absolute;left:0;right:0;bottom:-22px;height:2px;background:var(--accent)}.apple-menu-wrap{position:relative;height:64px;display:flex;align-items:center}.apple-trigger{display:flex;align-items:center;gap:7px;height:100%;border:0;background:none;color:#a9bac8;font:inherit;font-weight:700;cursor:pointer;padding:0;white-space:nowrap}.apple-trigger:hover,.apple-menu-wrap.is-open .apple-trigger{color:#fff}.chevron{font-size:11px;transition:transform .2s}.apple-menu-wrap.is-open .chevron{transform:rotate(180deg)}.apple-mega{position:absolute;top:calc(100% - 1px);right:-120px;width:min(760px,calc(100vw - 24px));padding:20px;background:#0b151f;border:1px solid var(--line);border-radius:0 0 20px 20px;box-shadow:var(--shadow);display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;opacity:0;visibility:hidden;transform:translateY(-10px);pointer-events:none;transition:opacity .18s ease,transform .18s ease,visibility .18s ease}.apple-menu-wrap.is-open .apple-mega{opacity:1;visibility:visible;transform:translateY(0);pointer-events:auto}.apple-mega-head{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:1px 3px 12px;border-bottom:1px solid var(--line);margin-bottom:4px}.apple-mega-head div{display:flex;align-items:center;gap:10px}.apple-mark{width:34px;height:34px;border-radius:10px;background:#fff;color:#111;display:grid;place-items:center;font-size:17px}.apple-mega-head strong{font-size:15px}.apple-mega-head small{display:block;color:var(--muted);font-size:11px}.apple-mega-head>a{font-size:12px;color:var(--accent2);font-weight:800;text-decoration:none}.apple-item{display:flex;align-items:center;gap:10px;padding:12px 10px;border:1px solid transparent;border-radius:13px;text-decoration:none;transition:background .16s,border-color .16s}.apple-item:hover{background:#101f2c;border-color:var(--line)}.apple-icon{width:40px;height:40px;border-radius:12px;background:#142432;border:1px solid #263e50;display:grid;place-items:center;font-size:18px;flex:none}.apple-item strong{font-size:13px;display:block}.apple-item span{font-size:11px;color:var(--muted);display:block}
+.wrap{max-width:1420px;margin:auto;padding:16px 18px 55px}.crumb{font-size:12px;color:#7890a3;margin:2px 0 14px}.crumb a{color:var(--accent2);text-decoration:none}.layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:22px}.sidebar{min-width:0}.side-title{font-size:14px;font-weight:850;margin:2px 4px 9px}.brand-list{display:flex;flex-direction:column;gap:2px}.brand-list a{display:flex;align-items:center;gap:10px;padding:7px 9px;border-radius:8px;text-decoration:none;color:#b6c4d0;font-size:12px}.brand-list a:hover{background:#0d2231;color:#fff}.brand-list a.current{background:linear-gradient(90deg,#0878e8,#075cb8);color:#fff;font-weight:800}.brand-dot{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;background:#132432;border:1px solid #284255;font-size:11px;font-weight:900;color:#d8e9f7}.current .brand-dot{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.2)}.side-links{display:flex;flex-direction:column;gap:2px;margin-top:16px}.side-links a{display:block;padding:7px 9px;border-radius:8px;text-decoration:none;color:#b6c4d0;font-size:12px}.side-links a:hover{background:#0d2231;color:#fff}
+.content{min-width:0}
+.hero{position:relative;overflow:hidden;border:1px solid #1d3546;border-radius:11px;background:linear-gradient(110deg,#091923 0%,#0a1721 55%,#0c2130 100%);display:grid;grid-template-columns:minmax(240px,380px) 1fr;gap:0}
+.hero-media{background:#eef2f5;display:flex;align-items:center;justify-content:center;padding:26px;min-height:280px}.hero-media img{max-width:100%;max-height:340px;object-fit:contain;filter:drop-shadow(0 15px 30px rgba(0,0,0,.25))}.hero-noimage{width:120px;height:200px;border-radius:20px;background:#dfe5ea;display:flex;align-items:center;justify-content:center;text-align:center;color:#657482;font-size:11px;font-weight:800}
+.hero-copy{position:relative;z-index:2;padding:28px 30px;display:flex;flex-direction:column;justify-content:center;min-width:0}.hero-copy .brand-tag{font-size:11px;color:var(--accent2);font-weight:900;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}.hero-copy h1{font-size:29px;line-height:1.12;margin:0 0 9px;letter-spacing:-.03em}.hero-copy .desc{margin:0 0 14px;color:#a9bdcd;font-size:13px;max-width:560px}
+.price-block{margin:2px 0 14px}.price{font-size:26px;font-weight:950;color:#f1f8ff}.price.unverified{color:#9db2c2;font-size:18px;font-weight:800}.price-sub{font-size:12px;color:#7994a7;margin-top:2px}
+.hero-meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}.meta-pill{font-size:11px;padding:6px 10px;border:1px solid #203a4d;background:rgba(8,25,37,.72);border-radius:8px;color:#c6dcec}
+.hero-actions{display:flex;gap:10px;flex-wrap:wrap}.btn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;font-size:12px;font-weight:850;border-radius:8px;padding:10px 16px;white-space:nowrap}.btn-primary{background:#1688ff;color:#fff}.btn-primary:hover{background:#39a0ff}.btn-outline{border:1px solid var(--line);background:var(--panel);color:#c6dcec}.btn-outline:hover{border-color:#2a608a;color:#fff}
+.section{margin-top:26px}.section h2{font-size:20px;margin:0 0 12px;letter-spacing:-.02em}
+.facts-card{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:6px 18px}.facts-row{display:flex;justify-content:space-between;gap:14px;padding:12px 0;border-bottom:1px solid var(--line);font-size:13px}.facts-row:last-child{border-bottom:none}.facts-row dt{color:var(--muted);font-weight:650;margin:0}.facts-row dd{margin:0;font-weight:750;text-align:right}
+.about-card{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:20px 22px;color:#c3d4e1;font-size:13px}.about-card p{margin:0 0 10px}.about-card p:last-child{margin-bottom:0}
+.specs-card{background:var(--panel);border:1px solid var(--line);border-radius:11px;overflow:hidden}.specs-card table{border-collapse:collapse;width:100%}.specs-card td{padding:12px 18px;border-bottom:1px solid var(--line);font-size:13px}.specs-card tr:last-child td{border-bottom:none}.specs-card td:first-child{color:var(--muted);font-weight:700;width:38%}.specs-card td:last-child{color:#e8f2fb}
+.faq-card{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:6px 20px}.faq-item{padding:14px 0;border-bottom:1px solid var(--line)}.faq-item:last-child{border-bottom:none}.faq-item h3{font-size:13px;margin:0 0 6px;color:#e8f2fb}.faq-item p{margin:0;font-size:12px;color:var(--muted)}
+.source-card{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:14px 18px;font-size:12px;color:var(--muted)}.source-card strong{color:#c6dcec}.source-card a{color:var(--accent2);text-decoration:none}
+.pill-links{display:flex;gap:10px;flex-wrap:wrap}.pill-links a{border:1px solid var(--line);background:var(--panel);padding:9px 12px;border-radius:8px;text-decoration:none;color:#a8bfd0;font-size:11px}.pill-links a:hover{border-color:#2a608a;color:#fff}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.card{background:linear-gradient(180deg,#0a1721,#09141d);border:1px solid #1c3343;border-radius:11px;overflow:hidden;display:flex;flex-direction:column;min-width:0;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}.card:hover{transform:translateY(-3px);border-color:#2b6a9a;box-shadow:0 16px 35px rgba(0,0,0,.24)}.body{padding:13px 14px 14px;display:flex;flex-direction:column;flex:1}.brand-label{font-size:9px;color:var(--accent2);font-weight:900;text-transform:uppercase;letter-spacing:.06em}.card h3{font-size:14px;line-height:1.25;margin:4px 0 5px}.card h3 a{text-decoration:none;color:#edf6ff}.card h3 a:hover{color:var(--accent2)}.desc{font-size:11px;color:#8096a7;margin:0 0 10px;min-height:28px}.compare-link{margin-top:auto;font-size:11px;color:var(--accent2);text-decoration:none;font-weight:750}.compare-link:hover{color:#fff}
+@media(max-width:1150px){.layout{grid-template-columns:190px minmax(0,1fr)}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.hero{grid-template-columns:minmax(200px,320px) 1fr}.navlinks{gap:16px}}
+@media(max-width:820px){.layout{display:block}.sidebar{margin-bottom:15px}.brand-list{flex-direction:row;overflow:auto;padding-bottom:4px}.brand-list a{white-space:nowrap;background:#0b1822;border:1px solid var(--line)}.side-links{display:none}.hero{grid-template-columns:1fr}.hero-media{min-height:220px}.hero-copy{padding:22px}.nav{gap:13px}.navlinks{gap:12px}.navlinks a:nth-child(1),.navlinks a:nth-last-child(1){display:none}.apple-menu-wrap{height:64px}.apple-mega{right:-80px;width:min(650px,calc(100vw - 20px));grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:560px){.wrap{padding:12px 10px 38px}.nav{min-height:58px;padding:0 11px}.logo{font-size:18px}.navlinks{font-size:12px}.apple-trigger{font-size:12px}.hero-copy h1{font-size:24px}.price{font-size:22px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.facts-row{font-size:12px}.specs-card td{padding:10px 12px;font-size:12px}.apple-mega{position:fixed;top:58px;left:8px;right:8px;width:auto;max-height:72vh;overflow:auto;border-radius:14px;grid-template-columns:repeat(2,minmax(0,1fr));padding:12px}.apple-mega-head{grid-column:1/-1}}
 </style>
 </head>
 <body>
-<nav><a href="/">Home</a> · <a href="/phones">All Phones</a> · <a href="/phones/{{ phone.brand|lower|replace(' ','-') }}">{{ phone.brand }} Phones</a> · <a href="/compare">Compare Phones</a> · <a href="/phone-guides">Buying Guides</a></nav>
-<p class="muted">Home › Phones › {{ phone.brand }} › {{ phone.model }}</p>
-<div class="hero">
-<div>{% if phone.image_url %}<img src="{{ phone.image_url }}" alt="{{ phone.brand }} {{ phone.model }} smartphone" fetchpriority="high">{% endif %}</div>
-<section>
-<p class="muted">{{ phone.brand }} smartphone</p>
+<header class="top">
+<nav class="nav">
+<a class="logo" href="/">Nafiz <b>Store</b></a>
+<div class="navlinks">
+<a href="/">Home</a><a class="active" href="/phones">Phones</a>
+<div class="apple-menu-wrap" id="appleMenu"><button class="apple-trigger" id="appleTrigger" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="appleMega">Apple Products <span class="chevron">⌄</span></button><div class="apple-mega" id="appleMega" role="menu" aria-label="Apple Products"><div class="apple-mega-head"><div><span class="apple-mark"></span><span><strong>Apple Products</strong><small>Explore the Apple collection</small></span></div><a href="/phones?brand=Apple">View all Apple products →</a></div><a class="apple-item" href="/phones?brand=Apple" role="menuitem"><span class="apple-icon">iP</span><span><strong>iPhone</strong><span>Latest iPhone models</span></span></a><a class="apple-item" href="/shop?category=tablets" role="menuitem"><span class="apple-icon">iP</span><span><strong>iPad</strong><span>Tablets & iPad models</span></span></a><a class="apple-item" href="/shop?category=computers" role="menuitem"><span class="apple-icon"></span><span><strong>MacBook</strong><span>Mac laptops</span></span></a><a class="apple-item" href="/shop?category=computers" role="menuitem"><span class="apple-icon">⌘</span><span><strong>Mac mini</strong><span>Compact desktops</span></span></a><a class="apple-item" href="/shop?category=wearables" role="menuitem"><span class="apple-icon">⌚</span><span><strong>Apple Watch</strong><span>Smart watches</span></span></a><a class="apple-item" href="/shop?category=audio" role="menuitem"><span class="apple-icon">◉</span><span><strong>AirPods</strong><span>Wireless audio</span></span></a><a class="apple-item" href="/shop?category=gadgets" role="menuitem"><span class="apple-icon">⌁</span><span><strong>AirTag</strong><span>Find your items</span></span></a><a class="apple-item" href="/shop?category=accessories" role="menuitem"><span class="apple-icon">▣</span><span><strong>Accessories</strong><span>Apple essentials</span></span></a></div></div>
+<a href="/phone-brands">Brands</a><a href="/blog">Blog</a><a href="/shop">Shop</a>
+</div></nav></header>
+<main class="wrap">
+<p class="crumb"><a href="/">Home</a> <span>›</span> <a href="/phones">Phones</a> <span>›</span> <a href="/phones/{{ phone.brand|lower|replace(' ','-') }}">{{ phone.brand }}</a> <span>›</span> {{ phone.model }}</p>
+<div class="layout">
+<aside class="sidebar">
+<div class="side-title">Brands</div>
+<div class="brand-list">
+<a href="/phones"><span class="brand-dot">▦</span>All Phones</a>
+<a class="{% if phone.brand|lower == 'apple' %}current{% endif %}" href="/phones/apple"><span class="brand-dot"></span>Apple</a>
+<a class="{% if phone.brand|lower == 'asus' %}current{% endif %}" href="/phones/asus"><span class="brand-dot">AS</span>ASUS</a>
+<a class="{% if phone.brand|lower == 'fairphone' %}current{% endif %}" href="/phones/fairphone"><span class="brand-dot">F</span>Fairphone</a>
+<a class="{% if phone.brand|lower == 'google' %}current{% endif %}" href="/phones/google"><span class="brand-dot">G</span>Google</a>
+<a class="{% if phone.brand|lower == 'honor' %}current{% endif %}" href="/phones/honor"><span class="brand-dot">H</span>HONOR</a>
+<a class="{% if phone.brand|lower == 'huawei' %}current{% endif %}" href="/phones/huawei"><span class="brand-dot">H</span>Huawei</a>
+<a class="{% if phone.brand|lower == 'infinix' %}current{% endif %}" href="/phones/infinix"><span class="brand-dot">I</span>Infinix</a>
+<a class="{% if phone.brand|lower == 'motorola' %}current{% endif %}" href="/phones/motorola"><span class="brand-dot">M</span>Motorola</a>
+<a class="{% if phone.brand|lower == 'nokia' %}current{% endif %}" href="/phones/nokia"><span class="brand-dot">N</span>Nokia</a>
+<a class="{% if phone.brand|lower == 'nothing' %}current{% endif %}" href="/phones/nothing"><span class="brand-dot">N</span>Nothing</a>
+<a class="{% if phone.brand|lower == 'oneplus' %}current{% endif %}" href="/phones/oneplus"><span class="brand-dot">1+</span>OnePlus</a>
+<a class="{% if phone.brand|lower == 'oppo' %}current{% endif %}" href="/phones/oppo"><span class="brand-dot">O</span>OPPO</a>
+<a class="{% if phone.brand|lower == 'poco' %}current{% endif %}" href="/phones/poco"><span class="brand-dot">PO</span>POCO</a>
+<a class="{% if phone.brand|lower == 'realme' %}current{% endif %}" href="/phones/realme"><span class="brand-dot">R</span>realme</a>
+<a class="{% if phone.brand|lower == 'redmagic' %}current{% endif %}" href="/phones/redmagic"><span class="brand-dot">R</span>REDMAGIC</a>
+<a class="{% if phone.brand|lower == 'redmi' %}current{% endif %}" href="/phones/redmi"><span class="brand-dot">mi</span>Redmi</a>
+<a class="{% if phone.brand|lower == 'samsung' %}current{% endif %}" href="/phones/samsung"><span class="brand-dot">S</span>Samsung</a>
+<a class="{% if phone.brand|lower == 'sony' %}current{% endif %}" href="/phones/sony"><span class="brand-dot">S</span>Sony</a>
+<a class="{% if phone.brand|lower == 'tecno' %}current{% endif %}" href="/phones/tecno"><span class="brand-dot">T</span>Tecno</a>
+<a class="{% if phone.brand|lower == 'vivo' %}current{% endif %}" href="/phones/vivo"><span class="brand-dot">V</span>vivo</a>
+<a class="{% if phone.brand|lower == 'xiaomi' %}current{% endif %}" href="/phones/xiaomi"><span class="brand-dot">mi</span>Xiaomi</a>
+</div>
+<div class="side-links">
+<a href="/compare">Compare Phones</a>
+<a href="/phone-guides">Buying Guides</a>
+<a href="/best-phones">Best Phones</a>
+</div>
+</aside>
+<section class="content">
+
+<section class="hero">
+<div class="hero-media">{% if phone.image_url %}<img src="{{ phone.image_url }}" alt="{{ phone.brand }} {{ phone.model }} smartphone" fetchpriority="high" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="hero-noimage" style="display:none">Image unavailable</div>{% else %}<div class="hero-noimage">Image unavailable</div>{% endif %}</div>
+<div class="hero-copy">
+<div class="brand-tag">{{ phone.brand }}</div>
 <h1>{{ phone.model }}</h1>
-<p>{{ phone.short_description }}</p>
-{% if phone.price_bdt is not none %}<p class="price verified">৳{{ "{:,.0f}".format(phone.price_bdt) }}</p>{% elif phone.price_usd %}<p class="price">{{ phone.price_usd }}</p>{% else %}<p class="price unverified">Price not verified</p>{% endif %}
-{% if phone.price_bdt is not none and phone.price_usd %}<p class="muted">{{ phone.price_usd }} · Bangladesh price shown above</p>{% endif %}
-{% if phone.release_date %}<p>Release: {{ phone.release_date }}</p>{% endif %}
-<p><a class="compare" href="/compare">Compare {{ phone.model }} with other phones →</a></p>
+{% if phone.short_description %}<p class="desc">{{ phone.short_description }}</p>{% endif %}
+<div class="price-block">
+{% if phone.price_bdt is not none %}<div class="price">৳ {{ "{:,.0f}".format(phone.price_bdt) }}</div><div class="price-sub">Bangladesh price{% if phone.price_usd %} · {{ phone.price_usd }} international{% endif %}</div>
+{% elif phone.price_usd %}<div class="price">{{ phone.price_usd }}</div><div class="price-sub">International price · Bangladesh price not verified</div>
+{% else %}<div class="price unverified">Price not verified</div>{% endif %}
+</div>
+<div class="hero-meta">
+{% if phone.release_date %}<span class="meta-pill">Released {{ phone.release_date }}</span>{% endif %}
+{% if phone.data_confidence and phone.data_confidence != 'unverified' %}<span class="meta-pill">{{ phone.data_confidence|title }} data</span>{% endif %}
+</div>
+<div class="hero-actions">
+<a class="btn btn-primary" href="/compare">Compare {{ phone.model }} →</a>
+<a class="btn btn-outline" href="/phones/{{ phone.brand|lower|replace(' ','-') }}">More {{ phone.brand }} phones</a>
+</div>
+</div>
+</section>
+
+<section class="section">
+<h2>{{ phone.model }} Key Facts</h2>
+<div class="facts-card"><dl>
+<div class="facts-row"><dt>Brand</dt><dd>{{ phone.brand }}</dd></div>
+{% if phone.release_date %}<div class="facts-row"><dt>Release date</dt><dd>{{ phone.release_date }}</dd></div>{% endif %}
+<div class="facts-row"><dt>Bangladesh price</dt><dd>{% if phone.price_bdt is not none %}৳ {{ "{:,.0f}".format(phone.price_bdt) }}{% else %}Price not verified{% endif %}</dd></div>
+{% if phone.price_usd %}<div class="facts-row"><dt>International price</dt><dd>{{ phone.price_usd }}</dd></div>{% endif %}
+{% if phone.data_confidence and phone.data_confidence != 'unverified' %}<div class="facts-row"><dt>Data confidence</dt><dd>{{ phone.data_confidence|title }}</dd></div>{% endif %}
+</dl></div>
+</section>
+
+{% if phone.content %}
+<section class="section">
+<h2>About {{ phone.model }}</h2>
+<div class="about-card">{{ phone.content }}</div>
+</section>
+{% endif %}
+
+{% if phone.specs %}
+<section class="section">
+<h2>{{ phone.model }} Specifications</h2>
+<div class="specs-card"><table>{% for key,value in phone.specs.items() %}<tr><td>{{ key|replace('_',' ')|title }}</td><td>{{ value }}</td></tr>{% endfor %}</table></div>
+</section>
+{% endif %}
+
+<section class="section">
+<h2>Frequently Asked Questions About {{ phone.model }}</h2>
+<div class="faq-card">
+<div class="faq-item"><h3>What is the Bangladesh price of {{ phone.model }}?</h3><p>{% if phone.price_bdt is not none %}The currently recorded Bangladesh price is ৳{{ "{:,.0f}".format(phone.price_bdt) }}.{% else %}A Bangladesh price has not been verified for this model yet.{% endif %}</p></div>
+<div class="faq-item"><h3>Where was the data for {{ phone.model }} verified?</h3><p>{% if phone.source_name %}This page records {{ phone.source_name }} as its verification source{% if phone.source_checked_at %}, checked on {{ phone.source_checked_at }}{% endif %}.{% else %}The catalog is designed to record manufacturer or regional source information for verified phone data.{% endif %}</p></div>
+<div class="faq-item"><h3>Does {{ phone.model }} have the same configuration everywhere?</h3><p>Memory, storage, network bands, colors, pricing and some features can vary by country or carrier.</p></div>
+</div>
+</section>
+
+{% if phone.data_confidence and phone.data_confidence != 'unverified' %}
+<section class="section">
+<div class="source-card"><strong>Data verification:</strong> {{ phone.data_confidence|title }}{% if phone.source_name %} · Source: {{ phone.source_name }}{% endif %}{% if phone.source_checked_at %} · Checked {{ phone.source_checked_at }}{% endif %}{% if phone.source_url %} · <a href="{{ phone.source_url }}" rel="nofollow noopener" target="_blank">View source</a>{% endif %}</div>
+</section>
+{% endif %}
+
+<section class="section">
+<h2>Explore {{ phone.brand }} Phones</h2>
+<div class="pill-links"><a href="/phones/{{ phone.brand|lower|replace(' ','-') }}">All {{ phone.brand }} phones →</a><a href="/phones">All brands & phones →</a><a href="/compare">Phone comparison hub →</a></div>
+</section>
+
+{% if related %}
+<section class="section">
+<h2>More {{ phone.brand }} Phones</h2>
+<div class="grid">{% for p in related %}<article class="card"><div class="body"><div class="brand-label">{{ p.brand }}</div><h3><a href="{{ url_for('phone_catalog.phone_catalog_detail',brand=p.brand|lower|replace(' ','-'),slug=p.slug) }}">{{ p.model }}</a></h3>{% if p.short_description %}<p class="desc">{{ p.short_description }}</p>{% endif %}<a class="compare-link" href="/compare/{{ phone.slug }}-vs-{{ p.slug }}">Compare with {{ p.model }} →</a></div></article>{% endfor %}</div>
+</section>
+{% endif %}
+
+{% if recommended %}
+<section class="section">
+<h2>Related Phones From Other Brands</h2>
+<div class="grid">{% for p in recommended %}<article class="card"><div class="body"><div class="brand-label">{{ p.brand }}</div><h3><a href="{{ url_for('phone_catalog.phone_catalog_detail',brand=p.brand|lower|replace(' ','-'),slug=p.slug) }}">{{ p.brand }} {{ p.model }}</a></h3>{% if p.short_description %}<p class="desc">{{ p.short_description }}</p>{% endif %}<a class="compare-link" href="/compare/{{ phone.slug }}-vs-{{ p.slug }}">Compare with {{ p.model }} →</a></div></article>{% endfor %}</div>
+</section>
+{% endif %}
+
 </section>
 </div>
-<section class="facts"><h2>{{ phone.model }} Key Facts</h2><dl><dt>Brand</dt><dd>{{ phone.brand }}</dd>{% if phone.release_date %}<dt>Release date</dt><dd>{{ phone.release_date }}</dd>{% endif %}<dt>Bangladesh price</dt><dd>{% if phone.price_bdt is not none %}৳{{ "{:,.0f}".format(phone.price_bdt) }}{% else %}Price not verified{% endif %}</dd>{% if phone.price_usd %}<dt>International price</dt><dd>{{ phone.price_usd }}</dd>{% endif %}{% if phone.data_confidence and phone.data_confidence != 'unverified' %}<dt>Data confidence</dt><dd>{{ phone.data_confidence|title }}</dd>{% endif %}</dl></section>
-<section><h2>About {{ phone.model }}</h2><div>{{ phone.content }}</div><p>Use the specification table below for a quick reference, then explore other {{ phone.brand }} models or compare devices.</p></section>
-{% if phone.specs %}<section><h2>{{ phone.model }} Specifications</h2><table class="specs">{% for key,value in phone.specs.items() %}<tr><td><strong>{{ key|replace('_',' ')|title }}</strong></td><td>{{ value }}</td></tr>{% endfor %}</table></section>{% endif %}
-<section class="faq"><h2>Frequently Asked Questions About {{ phone.model }}</h2><h3>What is the Bangladesh price of {{ phone.model }}?</h3><p>{% if phone.price_bdt is not none %}The currently recorded Bangladesh price is ৳{{ "{:,.0f}".format(phone.price_bdt) }}.{% else %}A Bangladesh price has not been verified for this model yet.{% endif %}</p><h3>Where was the data for {{ phone.model }} verified?</h3><p>{% if phone.source_name %}This page records {{ phone.source_name }} as its verification source{% if phone.source_checked_at %}, checked on {{ phone.source_checked_at }}{% endif %}.{% else %}The catalog is designed to record manufacturer or regional source information for verified phone data.{% endif %}</p><h3>Does {{ phone.model }} have the same configuration everywhere?</h3><p>Memory, storage, network bands, colors, pricing and some features can vary by country or carrier.</p></section>
-{% if phone.data_confidence and phone.data_confidence != 'unverified' %}<section class="source"><strong>Data verification:</strong> {{ phone.data_confidence|title }}{% if phone.source_name %} · Source: {{ phone.source_name }}{% endif %}{% if phone.source_checked_at %} · Checked {{ phone.source_checked_at }}{% endif %}{% if phone.source_url %} · <a href="{{ phone.source_url }}" rel="nofollow noopener" target="_blank">View source</a>{% endif %}</section>{% endif %}
-<section class="discover"><h2>Explore {{ phone.brand }} Phones</h2><a class="pill" href="/phones/{{ phone.brand|lower|replace(' ','-') }}">All {{ phone.brand }} phones →</a><a class="pill" href="/phones">All brands & phones →</a><a class="pill" href="/compare">Phone comparison hub →</a></section>
-<section><h2>More {{ phone.brand }} Phones</h2><div class="related">{% for p in related %}<div class="box"><a href="{{ url_for('phone_catalog.phone_catalog_detail',brand=p.brand|lower|replace(' ','-'),slug=p.slug) }}"><strong>{{ p.model }}</strong></a><p class="muted">{{ p.short_description }}</p><a href="/compare/{{ phone.slug }}-vs-{{ p.slug }}">Compare {{ phone.model }} vs {{ p.model }} →</a></div>{% endfor %}</div></section>
-{% if recommended %}<section><h2>Related Phones From Other Brands</h2><div class="related">{% for p in recommended %}<div class="box"><a href="{{ url_for('phone_catalog.phone_catalog_detail',brand=p.brand|lower|replace(' ','-'),slug=p.slug) }}"><strong>{{ p.brand }} {{ p.model }}</strong></a><p class="muted">{{ p.short_description }}</p><a href="/compare/{{ phone.slug }}-vs-{{ p.slug }}">Compare with {{ p.model }} →</a></div>{% endfor %}</div></section>{% endif %}
-</body></html>
+</main>
+<script>
+(function(){const wrap=document.getElementById('appleMenu'),trigger=document.getElementById('appleTrigger');if(!wrap||!trigger)return;trigger.addEventListener('click',function(e){e.stopPropagation();const open=wrap.classList.toggle('is-open');trigger.setAttribute('aria-expanded',String(open));});document.addEventListener('click',function(e){if(!wrap.contains(e.target)){wrap.classList.remove('is-open');trigger.setAttribute('aria-expanded','false');}});document.addEventListener('keydown',function(e){if(e.key==='Escape'){wrap.classList.remove('is-open');trigger.setAttribute('aria-expanded','false');}});})();
+</script>
+</body>
+</html>
