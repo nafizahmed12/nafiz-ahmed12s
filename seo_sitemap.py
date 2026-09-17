@@ -26,6 +26,7 @@ PUBLIC_PATHS = (
     ("/compare", "daily", "0.9"),
     ("/phone-guides", "weekly", "0.9"),
     ("/best-phones", "weekly", "0.9"),
+    ("/blog", "weekly", "0.8"),
     ("/best-phones/best-gaming-phones", "weekly", "0.8"),
     ("/best-phones/best-camera-phones", "weekly", "0.8"),
     ("/best-phones/best-battery-phones", "weekly", "0.8"),
@@ -87,6 +88,14 @@ def _published_catalog_rows():
         return []
 
 
+def _published_series():
+    """Return series backed by published catalog rows without breaking the sitemap."""
+    try:
+        return available_series()
+    except Exception:
+        return []
+
+
 def _brand_slug(brand):
     return "-".join(str(brand).lower().split())
 
@@ -120,8 +129,9 @@ def register_canonical_sitemap(app, products):
                 candidates.append((path, "weekly", "0.8"))
                 known.add(path)
 
-        # Add only series pages that have at least one published catalog match.
-        for brand_slug, series_slug, _ in available_series():
+        # available_series() is already backed by published catalog rows, but its
+        # database query must never make the public sitemap fail if the DB is down.
+        for brand_slug, series_slug, _ in _published_series():
             path = f"/phones/{brand_slug}/series/{series_slug}"
             if path not in known:
                 candidates.append((path, "weekly", "0.8"))
@@ -133,7 +143,16 @@ def register_canonical_sitemap(app, products):
                 candidates.append((path, "weekly", "0.8"))
                 known.add(path)
 
-        for path in ("/phone-guides/how-to-choose-a-smartphone", "/phone-guides/best-phone-for-gaming", "/phone-guides/best-phone-camera-guide", "/phone-guides/best-phone-battery-guide", "/phone-guides/phone-display-buying-guide", "/phone-guides/phone-storage-ram-guide", "/phone-guides/phone-5g-network-guide", "/phone-guides/flagship-vs-midrange-phone"):
+        for path in (
+            "/phone-guides/how-to-choose-a-smartphone",
+            "/phone-guides/best-phone-for-gaming",
+            "/phone-guides/best-phone-camera-guide",
+            "/phone-guides/best-phone-battery-guide",
+            "/phone-guides/phone-display-buying-guide",
+            "/phone-guides/phone-storage-ram-guide",
+            "/phone-guides/phone-5g-network-guide",
+            "/phone-guides/flagship-vs-midrange-phone",
+        ):
             if path not in known:
                 candidates.append((path, "monthly", "0.8"))
                 known.add(path)
