@@ -16,6 +16,7 @@ from phone_guides_routes import register_phone_guide_routes
 from phone_series_routes import register_phone_series_routes
 from best_phones_routes import register_best_phone_routes
 from seo_sitemap import register_canonical_sitemap
+from seo_product_metadata import register_product_metadata
 
 
 ADS_TXT = "google.com, pub-5012987374131521, DIRECT, f08c47fec0942fa0\n"
@@ -134,6 +135,7 @@ register_phone_guide_routes(app)
 register_phone_series_routes(app)
 register_best_phone_routes(app)
 register_canonical_sitemap(app, products)
+register_product_metadata(app)
 
 
 @app.get("/disclaimer")
