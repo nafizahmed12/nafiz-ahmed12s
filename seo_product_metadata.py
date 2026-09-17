@@ -25,7 +25,7 @@ def _replace_or_add_tag(body, pattern, replacement):
 
 
 def normalize_product_metadata(response):
-    """Normalize existing phone-page metadata without changing page content/routes."""
+    """Normalize existing phone-page SEO tags without changing routes or page content."""
     if request.method != "GET" or response.status_code != 200 or "text/html" not in response.content_type:
         return response
     if not request.path.startswith("/phone-detail/"):
@@ -48,9 +48,11 @@ def normalize_product_metadata(response):
         f'<meta property="og:url" content="{canonical}">',
     )
 
-    body = body.replace('<meta property="og:site_name" content="Nafiz Store">', '<meta property="og:site_name" content="Nafiz Ecommerce">')
-    body = body.replace("<title>", "<title>", 1)
-    body = re.sub(r'(</title>)', lambda m: m.group(0), body, count=1, flags=re.IGNORECASE)
+    head_end = body.lower().find("</head>")
+    head = body[:head_end]
+    tail = body[head_end:]
+    head = head.replace("Nafiz Store", "Nafiz Ecommerce")
+    body = head + tail
 
     response.set_data(body)
     return response
