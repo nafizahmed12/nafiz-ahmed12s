@@ -28,6 +28,7 @@ from admin_security import (
 from admin_auth import admin_required
 from csrf import register_csrf_protection
 from mail_utils import send_password_reset_email
+from auth0_integration import auth0_is_configured, get_auth0_client, get_or_create_local_user
 from schema import (
     allow_contact, allow_login, allow_registration, allow_subscription,
     allow_password_reset, authenticate_user, change_password, create_message,
@@ -340,6 +341,77 @@ def register():
         flash("Account created successfully. Welcome!", "success")
         return redirect(url_for("dashboard"))
     return render_template("register.html")
+
+
+@app.route("/auth0/login")
+async def auth0_login():
+    if not auth0_is_configured():
+        return "Auth0 is not configured. Set AUTH0_DOMAIN, AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET, AUTH0_SECRET and AUTH0_REDIRECT_URI.", 503
+    client = get_auth0_client()
+    try:
+        authorization_url = await client.start_interactive_login(
+            {},
+            {"request": request},
+        )
+        return redirect(authorization_url)
+    except Exception:
+        app.logger.exception("Auth0 login initialization failed")
+        return "Unable to start Auth0 login.", 503
+
+
+@app.route("/auth0/callback")
+async def auth0_callback():
+    client = get_auth0_client()
+    if client is None:
+        return "Auth0 is not configured.", 503
+
+    try:
+        store_options = {"request": request}
+        await client.complete_interactive_login(
+            str(request.url),
+            store_options,
+        )
+        profile = await client.get_user(store_options)
+        if not profile:
+            return "Authentication did not return a user profile.", 400
+
+        user_id, username = get_or_create_local_user(profile)
+        session.clear()
+        session.permanent = True
+        session["user_id"] = user_id
+        session["username"] = username
+        session["auth0_sub"] = profile.get("sub")
+        session["user_session_created_at"] = __import__("datetime").datetime.now(__import__("datetime").timezone.utc).timestamp()
+        flash("Logged in successfully with Auth0.", "success")
+        return redirect(url_for("dashboard"))
+    except ValueError as exc:
+        return str(exc), 400
+    except Exception:
+        app.logger.exception("Auth0 callback failed")
+        return "Authentication could not be completed.", 400
+
+
+@app.route("/auth0/logout")
+async def auth0_logout():
+    client = get_auth0_client()
+    if client is None:
+        session.clear()
+        return redirect(url_for("home"))
+
+    from auth0_server_python.auth_types import LogoutOptions
+
+    try:
+        return_to = url_for("home", _external=True)
+        session.clear()
+        logout_url = await client.logout(
+            LogoutOptions(return_to=return_to),
+            {"request": request},
+        )
+        return redirect(logout_url)
+    except Exception:
+        app.logger.exception("Auth0 logout failed")
+        session.clear()
+        return redirect(url_for("home"))
 
 
 @app.route("/user-login", methods=["GET", "POST"])
