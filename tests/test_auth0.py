@@ -33,7 +33,7 @@ def test_auth0_callback_requires_a_valid_authenticated_profile(monkeypatch):
         async def get_user(self, store_options):
             return None
 
-    monkeypatch.setattr(app, "auth0_client", FakeAuth0())
+    monkeypatch.setattr(app, "get_auth0_client", lambda: FakeAuth0())
     response = client.get("/auth0/callback?code=fake&state=fake", follow_redirects=False)
     assert response.status_code == 400
     assert b"Authentication did not return a user profile" in response.data
