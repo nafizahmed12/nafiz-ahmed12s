@@ -41,7 +41,7 @@ from schema import (
 load_dotenv()
 def get_adsense_publisher_id():
     publisher_id = os.getenv("ADSENSE_PUBLISHER_ID", "").strip()
-    if re.fullmatch(r"pub-\\d{16}", publisher_id):
+    if re.fullmatch(r"pub-\d{16}", publisher_id):
         return publisher_id
     return None
 
@@ -233,7 +233,7 @@ def ads_txt():
     if not publisher_id:
         abort(404)
     return Response(
-        f"google.com, {publisher_id}, DIRECT, f08c47fec0942fa0\\n",
+        f"google.com, {publisher_id}, DIRECT, f08c47fec0942fa0\n",
         mimetype="text/plain",
     )
 
