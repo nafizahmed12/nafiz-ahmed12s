@@ -130,6 +130,19 @@ jobs:
           print('Admin fixture ready')
           "
 
+      - name: Run production configuration audit
+        env:
+          RUN_PRODUCTION_CONFIG_AUDIT: "1"
+          SECRET_KEY: ci-production-audit-secret
+          DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/ci_test
+          ADMIN_USERNAME: ci-admin
+          ADMIN_PASSWORD: ci-password
+          APP_BASE_URL: https://example.com
+          USE_SQLITE: "0"
+          SESSION_COOKIE_SECURE: "1"
+          RENDER: "0"
+        run: python -m pytest -q tests/test_production_config.py
+
       - name: Run regression tests
         env:
           SECRET_KEY: ci-test-secret
