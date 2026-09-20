@@ -3,6 +3,13 @@ import os
 from app import app
 
 
+def test_wsgi_import_does_not_register_a_duplicate_ads_txt_endpoint():
+    import wsgi
+
+    rules = [rule for rule in wsgi.app.url_map.iter_rules() if rule.rule == "/ads.txt"]
+    assert len(rules) == 1
+
+
 def test_adsense_setup_is_disabled_without_publisher_id(monkeypatch):
     monkeypatch.delenv("ADSENSE_PUBLISHER_ID", raising=False)
     with app.test_client() as client:
