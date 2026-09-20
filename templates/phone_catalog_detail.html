@@ -7,7 +7,32 @@
 <meta name="description" content="{{ phone.seo_description or phone.short_description }} Explore {{ phone.brand }} {{ phone.model }} specifications, price information and key features.">
 <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
 <link rel="canonical" href="{{ request.base_url }}">
-{% if schema_price_bdt %}<script type="application/ld+json">{{ {'@context':'https://schema.org','@type':'Product','name':phone.brand ~ ' ' ~ phone.model,'description':phone.seo_description or phone.short_description,'brand':{'@type':'Brand','name':phone.brand},'image':phone.image_url,'offers':{'@type':'Offer','priceCurrency':'BDT','price':schema_price_bdt,'availability':'https://schema.org/InStock'}}|tojson }}</script>{% else %}<script type="application/ld+json">{{ {'@context':'https://schema.org','@type':'Product','name':phone.brand ~ ' ' ~ phone.model,'description':phone.seo_description or phone.short_description,'brand':{'@type':'Brand','name':phone.brand},'image':phone.image_url}|tojson }}</script>{% endif %}
+{% set product_name = phone.brand ~ ' ' ~ phone.model %}
+{% set product_description = phone.seo_description or phone.short_description %}
+{% set product_schema = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  'name': product_name,
+  'description': product_description,
+  'sku': phone.slug,
+  'category': 'Smartphones',
+  'brand': {'@type': 'Brand', 'name': phone.brand},
+  'image': ([phone.image_url] if phone.image_url else [])
+} %}
+{% if schema_price_bdt %}{% set product_schema = product_schema | combine({'offers': {'@type':'Offer','url':request.base_url,'priceCurrency':'BDT','price':schema_price_bdt,'itemCondition':'https://schema.org/NewCondition'}}) %}{% endif %}
+<script type="application/ld+json">{{ product_schema | tojson }}</script>
+<script type="application/ld+json">
+{{ {
+  '@context':'https://schema.org',
+  '@type':'BreadcrumbList',
+  'itemListElement':[
+    {'@type':'ListItem','position':1,'name':'Home','item':request.url_root.rstrip('/')},
+    {'@type':'ListItem','position':2,'name':'Phones','item':request.url_root.rstrip('/') ~ '/phones'},
+    {'@type':'ListItem','position':3,'name':phone.brand,'item':request.url_root.rstrip('/') ~ '/phones/' ~ phone.brand|lower|replace(' ','-')},
+    {'@type':'ListItem','position':4,'name':product_name,'item':request.base_url}
+  ]
+} | tojson }}
+</script>
 <style>
 :root{--bg:#061018;--panel:#0b1620;--panel2:#0e1b27;--card:#0a151f;--text:#edf6ff;--muted:#91a5b7;--line:#1b3040;--accent:#1688ff;--accent2:#5bb4ff;--shadow:0 20px 60px rgba(0,0,0,.28)}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 75% 8%,rgba(16,125,235,.09),transparent 28%),var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.5}a{color:inherit}.top{background:rgba(5,13,20,.94);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:1000;backdrop-filter:blur(16px)}.nav{max-width:1420px;margin:auto;min-height:64px;padding:0 18px;display:flex;align-items:center;gap:28px}.logo{font-size:21px;font-weight:900;text-decoration:none;letter-spacing:-.04em;white-space:nowrap}.logo b{color:var(--accent)}.navlinks{display:flex;align-items:center;gap:25px;margin-left:auto;font-size:14px;font-weight:650}.navlinks a{text-decoration:none;color:#a9bac8}.navlinks a:hover,.navlinks .active{color:#fff}.navlinks .active{position:relative}.navlinks .active:after{content:"";position:absolute;left:0;right:0;bottom:-22px;height:2px;background:var(--accent)}.apple-menu-wrap{position:relative;height:64px;display:flex;align-items:center}.apple-trigger{display:flex;align-items:center;gap:7px;height:100%;border:0;background:none;color:#a9bac8;font:inherit;font-weight:700;cursor:pointer;padding:0;white-space:nowrap}.apple-trigger:hover,.apple-menu-wrap.is-open .apple-trigger{color:#fff}.chevron{font-size:11px;transition:transform .2s}.apple-menu-wrap.is-open .chevron{transform:rotate(180deg)}.apple-mega{position:absolute;top:calc(100% - 1px);right:-120px;width:min(760px,calc(100vw - 24px));padding:20px;background:#0b151f;border:1px solid var(--line);border-radius:0 0 20px 20px;box-shadow:var(--shadow);display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;opacity:0;visibility:hidden;transform:translateY(-10px);pointer-events:none;transition:opacity .18s ease,transform .18s ease,visibility .18s ease}.apple-menu-wrap.is-open .apple-mega{opacity:1;visibility:visible;transform:translateY(0);pointer-events:auto}.apple-mega-head{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:1px 3px 12px;border-bottom:1px solid var(--line);margin-bottom:4px}.apple-mega-head div{display:flex;align-items:center;gap:10px}.apple-mark{width:34px;height:34px;border-radius:10px;background:#fff;color:#111;display:grid;place-items:center;font-size:17px}.apple-mega-head strong{font-size:15px}.apple-mega-head small{display:block;color:var(--muted);font-size:11px}.apple-mega-head>a{font-size:12px;color:var(--accent2);font-weight:800;text-decoration:none}.apple-item{display:flex;align-items:center;gap:10px;padding:12px 10px;border:1px solid transparent;border-radius:13px;text-decoration:none;transition:background .16s,border-color .16s}.apple-item:hover{background:#101f2c;border-color:var(--line)}.apple-icon{width:40px;height:40px;border-radius:12px;background:#142432;border:1px solid #263e50;display:grid;place-items:center;font-size:18px;flex:none}.apple-item strong{font-size:13px;display:block}.apple-item span{font-size:11px;color:var(--muted);display:block}
