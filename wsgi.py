@@ -17,9 +17,6 @@ from phone_series_routes import register_phone_series_routes
 from best_phones_routes import register_best_phone_routes
 from seo_sitemap import register_canonical_sitemap
 
-
-ADS_TXT = "google.com, pub-5012987374131521, DIRECT, f08c47fec0942fa0\n"
-ADSENSE_META = '<meta name="google-adsense-account" content="ca-pub-5012987374131521">'
 ADSENSE_CSP = (
     "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; "
     "form-action 'self'; "
@@ -141,14 +138,6 @@ def disclaimer():
     return render_template("disclaimer.html")
 
 
-@app.get("/ads.txt")
-def ads_txt():
-    """Serve ads.txt from the root domain with a crawler-friendly 200 response."""
-    response = Response(ADS_TXT, status=200, mimetype="text/plain")
-    response.headers["Cache-Control"] = "public, max-age=3600"
-    return response
-
-
 @app.after_request
 def add_public_seo_metadata(response):
     """Add safe fallback canonical/Open Graph metadata to public HTML pages."""
@@ -173,16 +162,6 @@ def add_noindex_to_private_routes(response):
 @app.after_request
 def add_adsense_site_verification(response):
     """Expose the AdSense account meta tag on public HTML pages."""
-    if (
-        request.method == "GET"
-        and response.status_code == 200
-        and "text/html" in response.content_type
-        and not request.path.startswith(("/admin", "/dashboard", "/account", "/user-login", "/register"))
-    ):
-        response.direct_passthrough = False
-        body = response.get_data(as_text=True)
-        if "google-adsense-account" not in body and "</head>" in body:
-            response.set_data(body.replace("</head>", f"{ADSENSE_META}</head>", 1))
     return response
 
 
