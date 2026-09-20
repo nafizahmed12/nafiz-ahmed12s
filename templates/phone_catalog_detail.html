@@ -9,18 +9,30 @@
 <link rel="canonical" href="{{ request.base_url }}">
 {% set product_name = phone.brand ~ ' ' ~ phone.model %}
 {% set product_description = phone.seo_description or phone.short_description %}
-{% set product_schema = {
-  '@context': 'https://schema.org',
-  '@type': 'Product',
-  'name': product_name,
-  'description': product_description,
-  'sku': phone.slug,
-  'category': 'Smartphones',
-  'brand': {'@type': 'Brand', 'name': phone.brand},
-  'image': ([phone.image_url] if phone.image_url else [])
-} %}
-{% if schema_price_bdt %}{% set product_schema = product_schema | combine({'offers': {'@type':'Offer','url':request.base_url,'priceCurrency':'BDT','price':schema_price_bdt,'itemCondition':'https://schema.org/NewCondition'}}) %}{% endif %}
-<script type="application/ld+json">{{ product_schema | tojson }}</script>
+{% if schema_price_bdt %}
+<script type="application/ld+json">{{ {
+  '@context':'https://schema.org',
+  '@type':'Product',
+  'name':product_name,
+  'description':product_description,
+  'sku':phone.slug,
+  'category':'Smartphones',
+  'brand':{'@type':'Brand','name':phone.brand},
+  'image':([phone.image_url] if phone.image_url else []),
+  'offers':{'@type':'Offer','url':request.base_url,'priceCurrency':'BDT','price':schema_price_bdt,'itemCondition':'https://schema.org/NewCondition'}
+} | tojson }}</script>
+{% else %}
+<script type="application/ld+json">{{ {
+  '@context':'https://schema.org',
+  '@type':'Product',
+  'name':product_name,
+  'description':product_description,
+  'sku':phone.slug,
+  'category':'Smartphones',
+  'brand':{'@type':'Brand','name':phone.brand},
+  'image':([phone.image_url] if phone.image_url else [])
+} | tojson }}</script>
+{% endif %}
 <script type="application/ld+json">
 {{ {
   '@context':'https://schema.org',
