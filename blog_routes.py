@@ -72,6 +72,32 @@ def blog_article(slug):
     return render_template("blog_article.html", article=article, related=related)
 
 
+@blog_bp.get("/blog/category/<slug>")
+def blog_category(slug):
+    category_name = slug.replace("-", " ").title()
+    with SessionLocal() as db:
+        articles = db.execute(text("""SELECT id,title,slug,excerpt,category,featured_image_url,published_at
+            FROM blog_articles
+            WHERE status='published' AND published_at IS NOT NULL AND lower(replace(category, ' ', '-'))=:slug
+            ORDER BY published_at DESC, id DESC LIMIT 100"""), {"slug": slug}).mappings().all()
+    if not articles:
+        abort(404)
+    return render_template("blog_index.html", articles=articles, page_title=category_name, page_description=f"Articles in {category_name}.")
+
+
+@blog_bp.get("/blog/tag/<slug>")
+def blog_tag(slug):
+    keyword = slug.replace("-", " ").strip().lower()
+    with SessionLocal() as db:
+        articles = db.execute(text("""SELECT id,title,slug,excerpt,category,featured_image_url,published_at
+            FROM blog_articles
+            WHERE status='published' AND published_at IS NOT NULL
+              AND (lower(title) LIKE :q OR lower(excerpt) LIKE :q OR lower(category) LIKE :q OR lower(content) LIKE :q)
+            ORDER BY published_at DESC, id DESC LIMIT 100"""), {"q": "%" + keyword + "%"}).mappings().all()
+    if not articles:
+        abort(404)
+    return render_template("blog_index.html", articles=articles, page_title=slug, page_description=f"Articles tagged {slug}.")
+
 @blog_bp.get("/admin/articles")
 @admin_required
 def admin_articles():
