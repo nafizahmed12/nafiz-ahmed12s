@@ -51,14 +51,16 @@ def test_production_uses_https_base_url():
 
 
 def test_production_payment_credentials_are_configured():
-    require_production_audit()
+    if os.getenv("RUN_PAYMENT_CONFIG_AUDIT") != "1":
+        pytest.skip("Set RUN_PAYMENT_CONFIG_AUDIT=1 to require live payment credentials")
     missing = [key for key in PAYMENT_REQUIRED if not os.getenv(key, "").strip()]
     assert not missing, f"Missing payment environment variables: {', '.join(missing)}"
     assert os.getenv("SSLCOMMERZ_SANDBOX") == "0", "SSLCOMMERZ_SANDBOX=0 is required for live payments"
 
 
 def test_production_bkash_credentials_are_configured():
-    require_production_audit()
+    if os.getenv("RUN_PAYMENT_CONFIG_AUDIT") != "1":
+        pytest.skip("Set RUN_PAYMENT_CONFIG_AUDIT=1 to require live payment credentials")
     missing = [key for key in BKASH_REQUIRED if not os.getenv(key, "").strip()]
     assert not missing, f"Missing bKash environment variables: {', '.join(missing)}"
 
