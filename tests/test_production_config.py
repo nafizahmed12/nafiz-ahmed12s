@@ -25,75 +25,49 @@ BKASH_REQUIRED = (
 )
 
 
-def _set_production_env(monkeypatch):
-    values = {
-        "SECRET_KEY": "x" * 64,
-        "DATABASE_URL": "postgresql://user:password@localhost:5432/nafiz",
-        "ADMIN_USERNAME": "admin",
-        "ADMIN_PASSWORD": "strong-admin-password",
-        "APP_BASE_URL": "https://example.com",
-        "SESSION_COOKIE_SECURE": "1",
-        "USE_SQLITE": "0",
-        "SSLCOMMERZ_SANDBOX": "0",
-    }
-    for key, value in values.items():
-        monkeypatch.setenv(key, value)
+def require_production_audit():
+    if os.getenv("RUN_PRODUCTION_CONFIG_AUDIT") != "1":
+        pytest.skip("Set RUN_PRODUCTION_CONFIG_AUDIT=1 on the deployment host to run the production configuration audit")
 
 
-def test_production_requires_core_environment_variables(monkeypatch):
-    _set_production_env(monkeypatch)
-    for key in PRODUCTION_REQUIRED:
-        monkeypatch.delenv(key, raising=False)
-        assert not os.getenv(key), f"{key} must be supplied in production"
-        monkeypatch.setenv(key, "configured")
+def test_production_has_core_environment_variables():
+    require_production_audit()
+    missing = [key for key in PRODUCTION_REQUIRED if not os.getenv(key, "").strip()]
+    assert not missing, f"Missing production environment variables: {', '.join(missing)}"
 
 
-def test_production_uses_postgresql_and_secure_sessions(monkeypatch):
-    _set_production_env(monkeypatch)
-
-    assert os.getenv("USE_SQLITE") != "1"
-    assert os.getenv("DATABASE_URL", "").startswith(("postgresql://", "postgresql+psycopg2://"))
-    assert os.getenv("SESSION_COOKIE_SECURE") == "1"
-
-
-def test_production_uses_https_base_url(monkeypatch):
-    _set_production_env(monkeypatch)
-
-    base_url = os.getenv("APP_BASE_URL", "").rstrip("/")
-    assert base_url.startswith("https://")
-    assert base_url != "https://nafiz-ahmed12s.onrender.com"
+def test_production_uses_postgresql_and_secure_sessions():
+    require_production_audit()
+    database_url = os.getenv("DATABASE_URL", "").strip().lower()
+    assert os.getenv("USE_SQLITE", "0") != "1", "USE_SQLITE=1 must not be enabled in production"
+    assert database_url.startswith(("postgresql://", "postgresql+psycopg2://")), "Production DATABASE_URL must use PostgreSQL"
+    assert os.getenv("SESSION_COOKIE_SECURE") == "1", "SESSION_COOKIE_SECURE=1 is required for HTTPS production"
 
 
-def test_production_payment_credentials_are_configured(monkeypatch):
-    _set_production_env(monkeypatch)
-    for key in PAYMENT_REQUIRED:
-        monkeypatch.setenv(key, "configured-secret")
-    assert all(os.getenv(key) for key in PAYMENT_REQUIRED)
-    assert os.getenv("SSLCOMMERZ_SANDBOX") == "0"
+def test_production_uses_https_base_url():
+    require_production_audit()
+    base_url = os.getenv("APP_BASE_URL", "").strip().rstrip("/")
+    assert base_url.startswith("https://"), "APP_BASE_URL must use HTTPS in production"
 
 
-def test_production_bkash_credentials_are_configured(monkeypatch):
-    _set_production_env(monkeypatch)
-    for key in BKASH_REQUIRED:
-        monkeypatch.setenv(key, "configured-secret")
-    assert all(os.getenv(key) for key in BKASH_REQUIRED)
+def test_production_payment_credentials_are_configured():
+    require_production_audit()
+    missing = [key for key in PAYMENT_REQUIRED if not os.getenv(key, "").strip()]
+    assert not missing, f"Missing payment environment variables: {', '.join(missing)}"
+    assert os.getenv("SSLCOMMERZ_SANDBOX") == "0", "SSLCOMMERZ_SANDBOX=0 is required for live payments"
 
 
-def test_production_session_cookie_is_secure(monkeypatch):
-    _set_production_env(monkeypatch)
-    with app.test_request_context("/"):
-        assert app.config["SESSION_COOKIE_SECURE"] is True
+def test_production_bkash_credentials_are_configured():
+    require_production_audit()
+    missing = [key for key in BKASH_REQUIRED if not os.getenv(key, "").strip()]
+    assert not missing, f"Missing bKash environment variables: {', '.join(missing)}"
 
 
-def test_production_configuration_rejects_sqlite(monkeypatch):
-    _set_production_env(monkeypatch)
-    monkeypatch.setenv("USE_SQLITE", "1")
-    assert os.getenv("USE_SQLITE") == "1"
-    pytest.fail("Production must not enable USE_SQLITE=1")
+def test_loaded_flask_config_uses_secure_session_cookie():
+    require_production_audit()
+    assert app.config["SESSION_COOKIE_SECURE"] is True
 
 
-def test_production_configuration_rejects_http_base_url(monkeypatch):
-    _set_production_env(monkeypatch)
-    monkeypatch.setenv("APP_BASE_URL", "http://example.com")
-    assert not os.getenv("APP_BASE_URL", "").startswith("https://")
-    pytest.fail("Production APP_BASE_URL must use HTTPS")
+def test_production_does_not_use_the_render_default_url():
+    require_production_audit()
+    assert os.getenv("APP_BASE_URL", "").strip().rstrip("/") != "https://nafiz-ahmed12s.onrender.com"
