@@ -1,6 +1,7 @@
 import hmac
 import logging
 import os
+import re
 import secrets
 from datetime import timedelta
 from urllib.parse import urlparse
@@ -38,6 +39,13 @@ from schema import (
 )
 
 load_dotenv()
+def get_adsense_publisher_id():
+    publisher_id = os.getenv("ADSENSE_PUBLISHER_ID", "").strip()
+    if re.fullmatch(r"pub-\\d{16}", publisher_id):
+        return publisher_id
+    return None
+
+
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
 secret_key = os.getenv("SECRET_KEY")
@@ -86,6 +94,29 @@ products = {
         'description': 'Official iPhone 15 Pro with Titanium design and A17 Pro chip.'
     }
 }
+
+
+@app.after_request
+def inject_adsense_head(response):
+    publisher_id = get_adsense_publisher_id()
+    private_prefixes = (
+        "/admin", "/login", "/user-login", "/dashboard", "/account", "/orders",
+        "/checkout", "/supplier", "/api/", "/forgot-password", "/reset-password",
+    )
+    if (
+        publisher_id
+        and request.method == "GET"
+        and response.mimetype == "text/html"
+        and not any(request.path == prefix or request.path.startswith(prefix + "/") for prefix in private_prefixes)
+    ):
+        body = response.get_data(as_text=True)
+        if "pagead2.googlesyndication.com/pagead/js/adsbygoogle.js" not in body and "</head>" in body:
+            snippet = (
+                f'<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-{publisher_id}" '
+                'crossorigin="anonymous"></script>'
+            )
+            response.set_data(body.replace("</head>", snippet + "</head>", 1))
+    return response
 
 
 @app.after_request
@@ -194,6 +225,17 @@ def readiness():
 @app.route("/favicon.ico")
 def favicon_ico():
     return redirect(url_for("static", filename="favicon.svg"), code=301)
+
+
+@app.route("/ads.txt")
+def ads_txt():
+    publisher_id = get_adsense_publisher_id()
+    if not publisher_id:
+        abort(404)
+    return Response(
+        f"google.com, {publisher_id}, DIRECT, f08c47fec0942fa0\\n",
+        mimetype="text/plain",
+    )
 
 
 @app.route("/robots.txt")
