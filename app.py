@@ -247,7 +247,19 @@ def home():
         if website:
             return render_template("published_site.html", website=website)
         abort(404)
-    return render_template("index.html")
+    articles = []
+    try:
+        with SessionLocal() as db:
+            articles = db.execute(text("""SELECT id,title,slug,excerpt,category,featured_image_url,published_at
+                FROM blog_articles
+                WHERE status = 'published' AND published_at IS NOT NULL
+                ORDER BY published_at DESC, id DESC
+                LIMIT 6""")).mappings().all()
+    except Exception:
+        # Keep the editorial homepage available even if the blog table is not
+        # ready yet or the database is temporarily unavailable.
+        app.logger.exception("Published articles unavailable for homepage")
+    return render_template("index.html", articles=articles)
 
 
 @app.route("/phone-detail/<name>")
