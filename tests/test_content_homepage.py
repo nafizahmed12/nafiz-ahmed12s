@@ -84,3 +84,15 @@ def test_homepage_has_helpful_empty_state_when_no_articles_are_published(monkeyp
     body = response.get_data(as_text=True)
     assert "Fresh perspectives are on the way." in body
     assert "Visit article library" in body
+
+
+def test_homepage_stays_available_when_database_is_unreachable(monkeypatch):
+    def unavailable_session():
+        raise RuntimeError("database unavailable")
+
+    monkeypatch.setattr(app_module, "SessionLocal", unavailable_session)
+    response = app.test_client().get("/")
+
+    assert response.status_code == 200
+    assert b"Technology," in response.data
+    assert b"Fresh perspectives are on the way." in response.data
