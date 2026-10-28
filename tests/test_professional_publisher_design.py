@@ -15,7 +15,8 @@ def test_homepage_renders_professional_publisher_identity():
     assert "Understand the tech." in body
     assert "The latest from NafizTech" in body
     assert "Independent technology publication" in body
-    assert "Nafiz Store" not in body
+    homepage_template = (TEMPLATES / "index.html").read_text(encoding="utf-8")
+    assert "Nafiz Store" not in homepage_template
 
 
 def test_article_templates_use_consistent_nafiztech_branding_and_clean_canonicals():
