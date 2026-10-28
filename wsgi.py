@@ -29,16 +29,16 @@ ADSENSE_CSP = (
 )
 
 SEO_META = {
-    "/": ("Nafiz Ecommerce — Mobiles, Laptops & Electronics", "Shop mobiles, laptops, electronics, accessories and more at Nafiz Ecommerce. Discover products and deals with secure checkout and fast delivery."),
-    "/shop": ("Shop Mobiles, Laptops & Electronics | Nafiz Ecommerce", "Browse mobiles, laptops, accessories and electronics at Nafiz Ecommerce. Find products, compare options and shop online."),
-    "/phones": ("Mobile Phones — Specs, Prices & Comparisons | Nafiz Ecommerce", "Explore mobile phones, specifications, prices and comparisons. Find the right smartphone for your budget and needs."),
-    "/phone-brands": ("Phone Brands — Compare Smartphones | Nafiz Ecommerce", "Explore popular smartphone brands and compare phones, specifications and prices in one place."),
-    "/compare": ("Compare Mobile Phones — Specs & Prices | Nafiz Ecommerce", "Compare smartphone specifications, features and prices to choose the best phone for you."),
-    "/phone-guides": ("Mobile Phone Buying Guides | Nafiz Ecommerce", "Practical smartphone buying guides covering gaming, cameras, battery, 5G, displays, storage and more."),
-    "/best-phones": ("Best Phones — Top Smartphones by Budget & Use | Nafiz Ecommerce", "Find the best smartphones for gaming, cameras, battery life, 5G, flagship features and different budgets."),
-    "/about": ("About Nafiz Ecommerce", "Learn more about Nafiz Ecommerce and our goal of making online shopping simple, useful and trustworthy."),
-    "/contact": ("Contact Nafiz Ecommerce", "Contact Nafiz Ecommerce for questions, support and help with products or orders."),
-    "/disclaimer": ("Disclaimer | Nafiz Ecommerce", "Read the Nafiz Ecommerce disclaimer covering product information, pricing, availability, affiliate relationships, advertising and external links."),
+    "/": ("NafizTech | Mobile, Gadgets, AI and Technology News", "NafizTech covers mobile technology, gadgets, artificial intelligence, and technology news for readers worldwide."),
+    "/shop": ("Shop Mobiles, Laptops & Electronics | NafizTech", "Browse mobiles, laptops, accessories and electronics at NafizTech. Find products, compare options and shop online."),
+    "/phones": ("Mobile Phones — Specs, Prices & Comparisons | NafizTech", "Explore mobile phones, specifications, prices and comparisons. Find the right smartphone for your budget and needs."),
+    "/phone-brands": ("Phone Brands — Compare Smartphones | NafizTech", "Explore popular smartphone brands and compare phones, specifications and prices in one place."),
+    "/compare": ("Compare Mobile Phones — Specs & Prices | NafizTech", "Compare smartphone specifications, features and prices to choose the best phone for you."),
+    "/phone-guides": ("Mobile Phone Buying Guides | NafizTech", "Practical smartphone buying guides covering gaming, cameras, battery, 5G, displays, storage and more."),
+    "/best-phones": ("Best Phones — Top Smartphones by Budget & Use | NafizTech", "Find the best smartphones for gaming, cameras, battery life, 5G, flagship features and different budgets."),
+    "/about": ("About NafizTech | Independent Technology Media", "Learn about NafizTech, an independent technology publication covering mobile devices, gadgets, AI, and technology news."),
+    "/contact": ("Contact NafizTech | Technology Editorial Team", "Contact the NafizTech editorial team about technology news, corrections, tips, or general questions."),
+    "/disclaimer": ("Disclaimer | NafizTech", "Read the NafizTech editorial disclaimer covering technology information, product specifications, affiliate relationships, advertising, and external links."),
 }
 
 
@@ -76,7 +76,7 @@ def _inject_phone_structured_seo(body, canonical):
     if 'name="twitter:card"' not in body:
         additions.append('<meta name="twitter:card" content="summary_large_image">')
     if 'name="twitter:title"' not in body:
-        additions.append(f'<meta name="twitter:title" content="{escape(model + " Specs, Price & Features | Nafiz Ecommerce", quote=True)}">')
+        additions.append(f'<meta name="twitter:title" content="{escape(model + " Specs, Price & Features | NafizTech", quote=True)}">')
     if 'name="twitter:description"' not in body:
         additions.append(f'<meta name="twitter:description" content="{escape(model + " specifications, price, release details and key features.", quote=True)}">')
     additions.append(f'<script type="application/ld+json">{json.dumps(payload, ensure_ascii=False, separators=(",", ":"))}</script>')
@@ -106,8 +106,8 @@ def _inject_seo(response):
     if description and 'name="description"' not in body.lower():
         additions.append(f'<meta name="description" content="{escape(description, quote=True)}">')
 
-    og_title = title or "Nafiz Ecommerce"
-    og_description = description or "Nafiz Ecommerce — mobiles, laptops, electronics and more."
+    og_title = title or "NafizTech"
+    og_description = description or "NafizTech — mobiles, laptops, electronics and more."
     if 'property="og:title"' not in body:
         additions.append(f'<meta property="og:title" content="{escape(og_title, quote=True)}">')
     if 'property="og:description"' not in body:
