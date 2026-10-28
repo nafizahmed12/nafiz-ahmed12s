@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="description" content="{{ page_description or 'Original technology reporting, smartphone explainers, gadget reviews and practical AI guides from NafizTech.' }}">
 <meta name="robots" content="index,follow">
-<link rel="canonical" href="{{ url_for('blog.blog_index', _external=True) }}">
+<link rel="canonical" href="{{ url_for(request.endpoint, slug=request.view_args.slug, _external=True) if request.view_args and request.view_args.get('slug') else url_for('blog.blog_index', _external=True) }}">
 <meta property="og:type" content="website"><meta property="og:site_name" content="NafizTech"><meta property="og:title" content="{{ page_title or 'Technology articles and guides' }} | NafizTech"><meta property="og:description" content="{{ page_description or 'Clear technology explainers, practical buying advice and thoughtful product analysis.' }}"><meta property="og:url" content="{{ url_for('blog.blog_index', _external=True) }}">
 <meta name="twitter:card" content="summary_large_image">
 <title>{{ page_title or 'Technology articles and guides' }} | NafizTech</title>
