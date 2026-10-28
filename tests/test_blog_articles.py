@@ -24,3 +24,15 @@ def test_sitemap_contains_published_blog_urls_only():
     assert response.status_code == 200
     assert b"/blog/" in response.data
     assert b"/blog/does-not-exist" not in response.data
+
+
+def test_blog_index_canonical_excludes_tracking_query_parameters():
+    client = app.test_client()
+    response = client.get("/blog?utm_source=newsletter&ref=campaign")
+
+    assert response.status_code == 200
+    body = response.get_data(as_text=True)
+    assert '<link rel="canonical" href="http://localhost/blog">' in body
+    assert '<meta property="og:url" content="http://localhost/blog">' in body
+    assert "utm_source" not in body
+    assert "ref=campaign" not in body
