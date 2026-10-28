@@ -51,7 +51,9 @@ def test_homepage_is_a_global_technology_publication_not_a_storefront(monkeypatc
 
     assert response.status_code == 200
     body = response.get_data(as_text=True)
-    assert "Nafiz E-commerce" in body
+    assert "NafizTech" in body
+    assert "Nafiz E-commerce" not in body
+    assert "Artificial intelligence (AI)" in body
     assert "Technology," in body
     assert "clearly explained." in body
     assert "Latest articles" in body
@@ -96,3 +98,15 @@ def test_homepage_stays_available_when_database_is_unreachable(monkeypatch):
     assert response.status_code == 200
     assert b"Technology," in response.data
     assert b"Fresh perspectives are on the way." in response.data
+
+
+def test_homepage_has_nafiztech_brand_and_search_metadata(monkeypatch):
+    monkeypatch.setattr(app_module, "SessionLocal", lambda: _FakeSession([]))
+    response = app.test_client().get("/")
+
+    assert response.status_code == 200
+    body = response.get_data(as_text=True)
+    assert "<title>NafizTech | Mobile, Gadgets, AI and Technology News</title>" in body
+    assert 'property="og:site_name" content="NafizTech"' in body
+    assert 'name="description" content="NafizTech covers mobile technology, gadgets, artificial intelligence, and technology news for readers worldwide."' in body
+    assert 'rel="icon"' in body
