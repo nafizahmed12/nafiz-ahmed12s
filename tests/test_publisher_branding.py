@@ -9,7 +9,7 @@ def test_about_page_uses_global_tech_publisher_branding():
     body = response.get_data(as_text=True)
     assert "NafizTech" in body
     assert "Independent technology publication" in body
-    assert "phones, gadgets, ai and the technology" in body.lower()
+    assert "phones, gadgets, artificial intelligence and the technology" in body.lower()
     assert "Nafiz Ecommerce" not in body
     assert "online shopping" not in body.lower()
 
