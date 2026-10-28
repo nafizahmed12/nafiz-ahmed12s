@@ -1,11 +1,80 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Learn about Nafiz Ecommerce, our shopping platform, technology guides, product analysis and customer support approach."><link rel="canonical" href="{{request.url}}"><meta name="robots" content="index,follow"><title>About Us | Nafiz Ecommerce</title><style>body{margin:0;background:#f8fafc;color:#0f172a;font-family:Inter,system-ui,sans-serif;line-height:1.7}.wrap{max-width:850px;margin:0 auto;padding:40px 20px}.card{background:#fff;border:1px solid #e2e8f0;border-radius:20px;padding:32px}a{color:#15803d;text-decoration:none}.nav{margin-bottom:24px}.nav a{margin-right:18px;font-weight:700}.muted{color:#64748b}h1{color:#0b1f3a}h2{margin-top:28px}</style></head>
-<body><main class="wrap"><nav class="nav" aria-label="Primary"><a href="{{ url_for('home') }}">Nafiz Ecommerce</a><a href="{{ url_for('shop_ui.shop') }}">Shop</a><a href="{{ url_for('blog.blog_index') }}">Blog</a><a href="{{ url_for('contact') }}">Contact</a><a href="{{ url_for('privacy_policy') }}">Privacy</a><a href="{{ url_for('terms') }}">Terms</a></nav>
-<section class="card"><h1>About Nafiz Ecommerce</h1><p>Nafiz Ecommerce is an online shopping and technology information platform designed to make product discovery, research and purchasing easier. We combine a storefront with practical articles and buying guides so visitors can understand their options before making a decision.</p>
-<h2>What we offer</h2><p>We provide selected physical and digital products through a straightforward storefront and secure payment flow. Product availability, pricing and applicable purchase terms are shown before checkout and may change over time.</p>
-<h2>Our technology content</h2><p>Our Blog &amp; Articles section focuses on practical technology topics such as smartphone features, buying decisions, comparisons, battery care, storage, photography and everyday troubleshooting. We aim to explain topics clearly, identify important limitations and avoid presenting rumors or unverified claims as confirmed facts.</p>
-<h2>How we research and present information</h2><p>We try to make our public information useful rather than simply repeating product specifications. Articles are written and edited for readers, with explanations, comparisons, practical examples and conclusions. When information is time-sensitive—such as price, availability, release information or specifications—we encourage readers to verify the latest details before purchasing.</p>
-<h2>Product and affiliate information</h2><p>Product details, prices and availability can change. Where a page links to a third-party retailer or affiliate partner, that relationship is disclosed on the relevant page. An affiliate link does not change the price paid by the shopper.</p>
-<h2>Our approach</h2><p>We aim to provide clear product information, transparent purchasing conditions, useful educational content and responsive customer support. We continuously improve the platform, security and shopping experience rather than relying on misleading claims, hidden purchase conditions or low-quality content.</p>
-<h2>Questions?</h2><p>For product, order or account questions, please use our <a href="{{ url_for('contact') }}">Contact page</a>. For technology guides and product analysis, visit the <a href="{{ url_for('blog.blog_index') }}">Blog &amp; Articles</a> section. You can also review our <a href="{{ url_for('privacy_policy') }}">Privacy Policy</a>, <a href="{{ url_for('terms') }}">Terms &amp; Conditions</a> and <a href="{{ url_for('refund_policy') }}">Refund &amp; Return Policy</a>.</p></section></main></body></html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Learn about NafizTech, an independent technology publication covering phones, gadgets, AI and practical technology guides for readers worldwide.">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="{{ url_for('about', _external=True) }}">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="NafizTech">
+  <meta property="og:title" content="About NafizTech | Global Technology Publication">
+  <meta property="og:description" content="Our editorial mission, research approach and standards for useful technology coverage.">
+  <meta property="og:url" content="{{ url_for('about', _external=True) }}">
+  <title>About NafizTech | Global Technology Publication</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <style>
+    :root{color-scheme:light;--ink:#152033;--muted:#617087;--line:#e3e9f0;--paper:#f5f7fb;--white:#fff;--accent:#176bdf;--max:900px}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--paper);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.75}
+    a{color:var(--accent);text-decoration:none}
+    a:focus-visible{outline:3px solid #f4b942;outline-offset:4px}
+    .header{background:#fff;border-bottom:1px solid var(--line)}
+    .nav{width:min(var(--max),calc(100% - 36px));min-height:70px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:20px}
+    .brand{font-size:21px;font-weight:850;letter-spacing:-.8px;color:var(--ink);white-space:nowrap}
+    .brand span{color:var(--accent)}
+    .links{display:flex;flex-wrap:wrap;gap:18px;font-size:14px;font-weight:700}
+    main{width:min(var(--max),calc(100% - 36px));margin:44px auto 60px}
+    .intro{padding:34px;background:linear-gradient(135deg,#fff,#eef5ff);border:1px solid var(--line);border-radius:20px}
+    .eyebrow{font-size:12px;font-weight:850;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+    h1{font-size:clamp(34px,6vw,54px);line-height:1.1;letter-spacing:-.045em;margin:10px 0 14px}
+    .lead{font-size:18px;color:var(--muted);margin:0;max-width:720px}
+    .content{padding:30px 34px;margin-top:18px;background:#fff;border:1px solid var(--line);border-radius:20px}
+    h2{font-size:22px;letter-spacing:-.025em;margin:26px 0 7px}
+    h2:first-child{margin-top:0}
+    p{margin:0 0 13px}
+    .standards{padding:17px 19px;border-left:3px solid #36a980;border-radius:0 10px 10px 0;background:#effaf5;color:#345b4c;margin-top:20px}
+    footer{border-top:1px solid var(--line);background:#fff;padding:24px 18px;text-align:center;color:var(--muted);font-size:13px}
+    @media(max-width:600px){.nav{align-items:flex-start;flex-direction:column;justify-content:center;padding:13px 0}.links{gap:12px}.intro,.content{padding:22px}main{margin-top:25px}}
+  </style>
+</head>
+<body>
+<header class="header">
+  <nav class="nav" aria-label="Primary navigation">
+    <a class="brand" href="{{ url_for('home') }}">Nafiz<span>Tech</span></a>
+    <div class="links">
+      <a href="{{ url_for('home') }}">Home</a>
+      <a href="{{ url_for('blog.blog_index') }}">Articles</a>
+      <a href="{{ url_for('contact') }}">Contact</a>
+      <a href="{{ url_for('privacy_policy') }}">Privacy</a>
+    </div>
+  </nav>
+</header>
+<main>
+  <section class="intro">
+    <div class="eyebrow">Independent technology publication</div>
+    <h1>About NafizTech</h1>
+    <p class="lead">NafizTech helps readers worldwide understand phones, gadgets, artificial intelligence and the technology shaping everyday life.</p>
+  </section>
+  <article class="content">
+    <h2>What we cover</h2>
+    <p>We publish smartphone explainers, device comparisons, gadget reviews, practical how-to guides and technology news. Our aim is to help readers understand what a feature does, how products differ and which details matter for their own needs.</p>
+
+    <h2>Our editorial approach</h2>
+    <p>Useful technology coverage should do more than repeat specifications. We aim to add context, explain trade-offs, use clear language and distinguish confirmed information from estimates, rumors or opinion. When a detail may vary by country, carrier, software version or release date, that limitation should be made clear.</p>
+
+    <h2>Accuracy and updates</h2>
+    <p>Product specifications, prices, software features and availability can change. We work to keep published information accurate and understandable, and encourage readers to verify time-sensitive details with manufacturers or authorized sellers before making a purchase.</p>
+
+    <h2>Reviews and affiliate links</h2>
+    <p>Where a page contains affiliate links or another commercial relationship, it should be disclosed clearly on that page. A commission does not remove our responsibility to explain relevant limitations and differences honestly.</p>
+
+    <h2>Corrections and contact</h2>
+    <p>If you notice an error, have a question or want to suggest a topic, please use our <a href="{{ url_for('contact') }}">Contact page</a>. We welcome specific, constructive feedback that helps make our coverage more useful.</p>
+
+    <div class="standards"><strong>Our promise:</strong> prioritize helpful original content, transparent explanations and reader trust over exaggerated claims or publishing for volume alone.</div>
+  </article>
+</main>
+<footer>© {{ now_year if now_year is defined else 2026 }} NafizTech. Independent technology reporting for readers worldwide.</footer>
+</body>
+</html>
