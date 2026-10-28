@@ -3,16 +3,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Nafiz E-commerce publishes practical technology explainers, smartphone reviews, gadget comparisons, and clear buying guides for readers worldwide.">
+  <meta name="description" content="NafizTech covers mobile technology, gadgets, artificial intelligence, and technology news for readers worldwide.">
   <meta name="robots" content="index,follow">
   <link rel="canonical" href="{{ url_for('home', _external=True) }}">
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="Nafiz E-commerce">
-  <meta property="og:title" content="Nafiz E-commerce — Technology, clearly explained">
-  <meta property="og:description" content="Practical smartphone reviews, gadget comparisons, and technology guides for readers worldwide.">
+  <meta property="og:site_name" content="NafizTech">
+  <meta property="og:title" content="NafizTech | Mobile, Gadgets, AI and Technology News">
+  <meta property="og:description" content="Mobile coverage, gadget reviews, AI explainers, and clear technology news for readers worldwide.">
   <meta property="og:url" content="{{ url_for('home', _external=True) }}">
-  <meta name="twitter:card" content="summary">
-  <title>Nafiz E-commerce — Technology, clearly explained</title>
+  <meta name="twitter:card" content="summary_large_image">
+  <title>NafizTech | Mobile, Gadgets, AI and Technology News</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
   <meta name="theme-color" content="#101827">
   <style>
     :root{color-scheme:light;--ink:#152033;--muted:#617087;--line:#e3e9f0;--paper:#f5f7fb;--white:#fff;--accent:#176bdf;--accent-dark:#1057bd;--mint:#dff7ed;--max:1160px}
@@ -93,7 +94,7 @@
 <body>
 <header class="site-header">
   <div class="container header-inner">
-    <a class="brand" href="{{ url_for('home') }}" aria-label="Nafiz E-commerce home">Nafiz <span class="brand-mark">E-commerce</span></a>
+    <a class="brand" href="{{ url_for('home') }}" aria-label="NafizTech home">Nafiz<span class="brand-mark">Tech</span></a>
     <nav class="nav" aria-label="Main navigation">
       <a href="{{ url_for('home') }}" aria-current="page">Home</a>
       <a href="{{ url_for('blog.blog_index') }}">Articles</a>
@@ -122,7 +123,8 @@
         <div class="topic-list">
           <div class="topic"><div class="topic-icon" aria-hidden="true">📱</div><div><strong>Phones &amp; smartphones</strong><span>Features, comparisons and buying advice</span></div></div>
           <div class="topic"><div class="topic-icon" aria-hidden="true">🎧</div><div><strong>Gadgets &amp; accessories</strong><span>What is useful, what is worth knowing</span></div></div>
-          <div class="topic"><div class="topic-icon" aria-hidden="true">💡</div><div><strong>Technology explained</strong><span>Clear context without unnecessary jargon</span></div></div>
+          <div class="topic"><div class="topic-icon" aria-hidden="true">🤖</div><div><strong>Artificial intelligence (AI)</strong><span>AI tools, trends and practical explainers</span></div></div>
+          <div class="topic"><div class="topic-icon" aria-hidden="true">💡</div><div><strong>Technology news</strong><span>Important updates, clearly explained</span></div></div>
         </div>
       </aside>
     </div>
@@ -185,10 +187,10 @@
 <footer class="site-footer">
   <div class="container">
     <div class="footer-top">
-      <div><a class="brand footer-brand" href="{{ url_for('home') }}">Nafiz <span class="brand-mark">E-commerce</span></a><p class="footer-copy">A global technology content publication covering phones, gadgets, product comparisons and practical digital-life guides.</p></div>
+      <div><a class="brand footer-brand" href="{{ url_for('home') }}">Nafiz<span class="brand-mark">Tech</span></a><p class="footer-copy">A global technology content publication covering phones, gadgets, product comparisons and practical digital-life guides.</p></div>
       <nav class="footer-links" aria-label="Footer navigation"><a href="{{ url_for('blog.blog_index') }}">Articles</a><a href="{{ url_for('about') }}">About</a><a href="{{ url_for('contact') }}">Contact</a><a href="{{ url_for('privacy_policy') }}">Privacy policy</a><a href="{{ url_for('terms') }}">Terms</a></nav>
     </div>
-    <div class="copyright">© {{ now_year if now_year is defined else 2026 }} Nafiz E-commerce. Editorial content for readers worldwide.</div>
+    <div class="copyright">© {{ now_year if now_year is defined else 2026 }} NafizTech. Independent technology reporting for readers worldwide.</div>
   </div>
 </footer>
 </body>
