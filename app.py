@@ -600,6 +600,61 @@ def logout():
     return redirect(url_for("login"))
 
 
+@app.after_request
+def inject_step_by_step_back_button(response):
+    """Add consistent browser-history navigation to rendered HTML pages."""
+    if (
+        request.method != "GET"
+        or response.mimetype != "text/html"
+        or response.status_code >= 400
+    ):
+        return response
+
+    body = response.get_data(as_text=True)
+    if "</body>" not in body or 'id="site-back-button"' in body:
+        return response
+
+    navigation = """
+    <style>
+      #site-back-button {
+        position: fixed; left: 20px; bottom: 20px; z-index: 9999;
+        display: inline-flex; align-items: center; gap: 8px;
+        min-height: 44px; padding: 0 16px; border: 1px solid #d9e1ec;
+        border-radius: 999px; background: #fff; color: #101827;
+        box-shadow: 0 5px 22px rgba(16, 24, 39, .16);
+        font: 700 13px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        cursor: pointer; transition: transform .15s, background .15s, color .15s;
+      }
+      #site-back-button:hover { transform: translateY(-2px); background: #176bdf; color: #fff; }
+      #site-back-button:focus-visible { outline: 3px solid #f4b942; outline-offset: 3px; }
+      @media (max-width: 600px) { #site-back-button { left: 12px; bottom: 12px; } }
+    </style>
+    <button id="site-back-button" type="button" aria-label="Go back to the previous page">
+      <span aria-hidden="true">←</span> Back
+    </button>
+    <script>
+      (function () {
+        var button = document.getElementById("site-back-button");
+        if (!button) return;
+        button.addEventListener("click", function () {
+          var sameSiteReferrer = false;
+          try {
+            sameSiteReferrer = !!document.referrer &&
+              new URL(document.referrer).origin === window.location.origin;
+          } catch (error) {}
+          if (sameSiteReferrer && window.history.length > 1) {
+            window.history.back();
+          } else {
+            window.location.assign("/");
+          }
+        });
+      })();
+    </script>
+    """
+    response.set_data(body.replace("</body>", navigation + "</body>", 1))
+    return response
+
+
 if __name__ == "__main__":
     from database import init_db
     init_db()
