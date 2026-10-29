@@ -100,7 +100,9 @@ def _extract_affiliate_section(body):
     self-contained block with no nested <section> tags, so slicing to the
     first </section> after its start is enough to isolate it here.
     """
-    start = body.index("home-affiliate-section")
+    # Match the rendered section element, not the CSS selector in the
+    # injected style block (which appears earlier in the HTML).
+    start = body.index('<section class="home-affiliate-section')
     end = body.index("</section>", start) + len("</section>")
     return body[start:end]
 
