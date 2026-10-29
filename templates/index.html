@@ -38,22 +38,25 @@
   <div class="container header-inner">
     <a class="brand" href="{{ url_for('home') }}" aria-label="NafizTech home">Nafiz<span class="brand-mark">Tech</span></a>
     <nav class="nav" aria-label="Main navigation">
-      <a href="{{ url_for('home') }}" aria-current="page">Home</a>
-      <a href="{{ url_for('blog.blog_index') }}">Articles</a>
-      <a href="{{ url_for('about') }}">About</a>
-      <a href="{{ url_for('contact') }}">Contact</a>
-      <a class="nav-cta" href="{{ url_for('blog.blog_index') }}">Explore stories&nbsp; ↗</a>
+      <a href="{{ url_for('home') }}" aria-current="page">Front Page</a>
+      <a href="{{ url_for('roundups') }}">Roundups</a>
+      <a href="/phone-guides">Guides</a>
+      <a href="{{ url_for('blog.blog_index') }}">How Tos</a>
+      <a href="/best-phones">Buyer’s Guide</a>
+      <a class="nav-cta" href="{{ url_for('blog.blog_index') }}">Latest News&nbsp; ↗</a>
     </nav>
   </div>
 </header>
 <div class="newsroom-nav" aria-label="Technology news categories">
   <div class="container newsroom-nav-inner">
-    <span class="newsroom-label">Latest in tech</span>
-    <a href="{{ url_for('blog.blog_index') }}">Phones</a>
-    <a href="{{ url_for('blog.blog_index') }}">Reviews</a>
-    <a href="{{ url_for('blog.blog_index') }}">AI</a>
-    <a href="{{ url_for('blog.blog_index') }}">Gadgets</a>
-    <a href="{{ url_for('blog.blog_index') }}">How-to</a>
+    <span class="newsroom-label">Explore topics</span>
+    <a href="/phones">All Phones</a>
+    <a href="/phones?brand=Apple">Apple</a>
+    <a href="/phones?brand=Samsung">Samsung</a>
+    <a href="/phones?brand=Google">Google Pixel</a>
+    <a href="/best-phones">Best Phones</a>
+    <a href="/compare">Compare Phones</a>
+    <a href="/roundups">All Roundups</a>
   </div>
 </div>
 <main>
