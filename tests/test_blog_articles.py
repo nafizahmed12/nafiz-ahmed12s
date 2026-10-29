@@ -9,7 +9,7 @@ def test_blog_index_is_public():
     client = app.test_client()
     response = client.get("/blog")
     assert response.status_code == 200
-    assert b"Blog & Articles" in response.data
+    assert b"The NafizTech article library" in response.data
 
 
 def test_missing_article_returns_404():
