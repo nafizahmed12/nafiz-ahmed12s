@@ -54,11 +54,10 @@ def test_homepage_is_a_global_technology_publication_not_a_storefront(monkeypatc
     assert "NafizTech" in body
     assert "Nafiz E-commerce" not in body
     assert "Artificial intelligence (AI)" in body
-    assert "Technology," in body
-    assert "clearly explained." in body
-    assert "Latest articles" in body
+    assert "Understand the tech." in body
+    assert "The latest from NafizTech" in body
     assert 'href="/blog"' in body
-    assert "global technology content publication" in body.lower()
+    assert "Independent technology publication" in body
     assert "Trusted marketplace" not in body
     assert "Search product" not in body
     assert "Sign In" not in body
