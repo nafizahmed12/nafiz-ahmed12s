@@ -57,3 +57,30 @@ def test_phone_catalog_detail_has_product_and_breadcrumb_schema():
         assert 'class="spec-groups"' in html
         for key in specs:
             assert key.replace("_", " ").title() in html
+
+
+def test_roundups_page_renders_navigation_and_phone_hubs():
+    import wsgi
+
+    client = wsgi.app.test_client()
+    response = client.get("/roundups")
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "Technology Roundups" in html or "Roundups" in html
+    assert "Smartphone brand hubs" in html
+    assert 'href="/phones?brand=Apple"' in html
+    assert 'href="/phones?brand=Samsung"' in html
+    assert 'href="/compare"' in html
+    assert 'rel="canonical"' in html
+
+
+def test_homepage_links_to_roundups_and_phone_hubs():
+    import wsgi
+
+    client = wsgi.app.test_client()
+    response = client.get("/")
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert 'href="/roundups"' in html
+    assert 'href="/phones?brand=Apple"' in html
+    assert 'href="/phones?brand=Samsung"' in html

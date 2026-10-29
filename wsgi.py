@@ -36,6 +36,7 @@ SEO_META = {
     "/compare": ("Compare Mobile Phones — Specs & Prices | NafizTech", "Compare smartphone specifications, features and prices to choose the best phone for you."),
     "/phone-guides": ("Mobile Phone Buying Guides | NafizTech", "Practical smartphone buying guides covering gaming, cameras, battery, 5G, displays, storage and more."),
     "/best-phones": ("Best Phones — Top Smartphones by Budget & Use | NafizTech", "Find the best smartphones for gaming, cameras, battery life, 5G, flagship features and different budgets."),
+    "/roundups": ("Technology Roundups — Phones, Gadgets & Buying Guides | NafizTech", "Explore curated technology roundups, smartphone brand hubs, phone comparisons and practical buying guides from NafizTech."),
     "/about": ("About NafizTech | Independent Technology Media", "Learn about NafizTech, an independent technology publication covering mobile devices, gadgets, AI, and technology news."),
     "/contact": ("Contact NafizTech | Technology Editorial Team", "Contact the NafizTech editorial team about technology news, corrections, tips, or general questions."),
     "/disclaimer": ("Disclaimer | NafizTech", "Read the NafizTech editorial disclaimer covering technology information, product specifications, affiliate relationships, advertising, and external links."),
@@ -131,6 +132,12 @@ register_phone_guide_routes(app)
 register_phone_series_routes(app)
 register_best_phone_routes(app)
 register_canonical_sitemap(app, products)
+
+
+@app.get("/roundups")
+def roundups():
+    """Curated product and topic hubs for the technology newsroom."""
+    return render_template("roundups.html")
 
 
 @app.get("/disclaimer")
