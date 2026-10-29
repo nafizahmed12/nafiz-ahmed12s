@@ -617,17 +617,25 @@ def inject_step_by_step_back_button(response):
     navigation = """
     <style>
       #site-back-button {
-        position: fixed; left: 20px; bottom: 20px; z-index: 9999;
-        display: inline-flex; align-items: center; gap: 8px;
-        min-height: 44px; padding: 0 16px; border: 1px solid #d9e1ec;
-        border-radius: 999px; background: #fff; color: #101827;
-        box-shadow: 0 5px 22px rgba(16, 24, 39, .16);
-        font: 700 13px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        cursor: pointer; transition: transform .15s, background .15s, color .15s;
+        position: fixed; top: 18px; left: 18px; z-index: 9999;
+        display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+        min-height: 46px; padding: 0 19px; border: 1px solid rgba(255,255,255,.55);
+        border-radius: 999px; background: linear-gradient(135deg, #7c3aed 0%, #2563eb 52%, #06b6d4 100%);
+        color: #fff; box-shadow: 0 8px 24px rgba(37, 99, 235, .35), inset 0 1px 0 rgba(255,255,255,.28);
+        font: 800 13px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: .2px; cursor: pointer;
+        transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
       }
-      #site-back-button:hover { transform: translateY(-2px); background: #176bdf; color: #fff; }
-      #site-back-button:focus-visible { outline: 3px solid #f4b942; outline-offset: 3px; }
-      @media (max-width: 600px) { #site-back-button { left: 12px; bottom: 12px; } }
+      #site-back-button:hover {
+        transform: translateY(-2px) scale(1.03); filter: saturate(1.2) brightness(1.08);
+        box-shadow: 0 12px 30px rgba(124, 58, 237, .4), 0 0 0 4px rgba(6, 182, 212, .14);
+      }
+      #site-back-button:active { transform: translateY(0) scale(.98); }
+      #site-back-button:focus-visible { outline: 3px solid #fbbf24; outline-offset: 4px; }
+      #site-back-button span { font-size: 19px; line-height: 1; }
+      @media (max-width: 600px) {
+        #site-back-button { top: 12px; left: 12px; min-height: 42px; padding: 0 15px; }
+      }
     </style>
     <button id="site-back-button" type="button" aria-label="Go back to the previous page">
       <span aria-hidden="true">←</span> Back
