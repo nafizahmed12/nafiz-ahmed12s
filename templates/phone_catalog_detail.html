@@ -59,7 +59,7 @@
 .section{margin-top:26px}.section h2{font-size:20px;margin:0 0 12px;letter-spacing:-.02em}
 .facts-card{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:6px 18px}.facts-row{display:flex;justify-content:space-between;gap:14px;padding:12px 0;border-bottom:1px solid var(--line);font-size:13px}.facts-row:last-child{border-bottom:none}.facts-row dt{color:var(--muted);font-weight:650;margin:0}.facts-row dd{margin:0;font-weight:750;text-align:right}
 .about-card{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:20px 22px;color:#c3d4e1;font-size:13px}.about-card p{margin:0 0 10px}.about-card p:last-child{margin-bottom:0}
-.specs-card{background:var(--panel);border:1px solid var(--line);border-radius:11px;overflow:hidden}.specs-card table{border-collapse:collapse;width:100%}.specs-card td{padding:12px 18px;border-bottom:1px solid var(--line);font-size:13px}.specs-card tr:last-child td{border-bottom:none}.specs-card td:first-child{color:var(--muted);font-weight:700;width:38%}.specs-card td:last-child{color:#e8f2fb}
+.specs-card{background:var(--panel);border:1px solid var(--line);border-radius:11px;overflow:hidden}.specs-card table{border-collapse:collapse;width:100%}.specs-card td{padding:12px 18px;border-bottom:1px solid var(--line);font-size:13px}.specs-card tr:last-child td{border-bottom:none}.specs-card td:first-child{color:var(--muted);font-weight:700;width:38%}.specs-card td:last-child{color:#e8f2fb}.spec-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.spec-group{background:var(--panel);border:1px solid var(--line);border-radius:11px;overflow:hidden;min-width:0}.spec-group h3{margin:0;padding:13px 16px;background:var(--panel2);border-bottom:1px solid var(--line);font-size:14px}.spec-group table{border-collapse:collapse;width:100%}.spec-group td{padding:10px 14px;border-bottom:1px solid var(--line);font-size:12px;vertical-align:top;overflow-wrap:anywhere}.spec-group tr:last-child td{border-bottom:none}.spec-group td:first-child{color:var(--muted);font-weight:700;width:38%}.spec-group td:last-child{color:#e8f2fb}.spec-empty{color:var(--muted);font-size:13px}@media(max-width:700px){.spec-groups{grid-template-columns:1fr}}
 .faq-card{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:6px 20px}.faq-item{padding:14px 0;border-bottom:1px solid var(--line)}.faq-item:last-child{border-bottom:none}.faq-item h3{font-size:13px;margin:0 0 6px;color:#e8f2fb}.faq-item p{margin:0;font-size:12px;color:var(--muted)}
 .source-card{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:14px 18px;font-size:12px;color:var(--muted)}.source-card strong{color:#c6dcec}.source-card a{color:var(--accent2);text-decoration:none}
 .pill-links{display:flex;gap:10px;flex-wrap:wrap}.pill-links a{border:1px solid var(--line);background:var(--panel);padding:9px 12px;border-radius:8px;text-decoration:none;color:#a8bfd0;font-size:11px}.pill-links a:hover{border-color:#2a608a;color:#fff}
@@ -156,9 +156,38 @@
 {% endif %}
 
 {% if phone.specs %}
-<section class="section">
-<h2>{{ phone.model }} Specifications</h2>
-<div class="specs-card"><table>{% for key,value in phone.specs.items() %}<tr><td>{{ key|replace('_',' ')|title }}</td><td>{{ value }}</td></tr>{% endfor %}</table></div>
+<section class="section" id="specifications">
+<h2>{{ phone.model }} Full Specifications</h2>
+<p class="spec-empty">Specifications are grouped by category for easier reading. Exact variants can differ by region and configuration.</p>
+{% set ns = namespace(groups={'Network & Connectivity': [], 'Display': [], 'Performance & Memory': [], 'Camera': [], 'Battery & Charging': [], 'Design & Build': [], 'Software & Features': [], 'Other Specifications': []}) %}
+{% for key, value in phone.specs.items() %}
+  {% set k = key|lower|replace('_',' ') %}
+  {% if 'network' in k or 'sim' in k or 'wifi' in k or 'wi-fi' in k or 'bluetooth' in k or '5g' in k or 'connect' in k %}
+    {% set bucket = 'Network & Connectivity' %}
+  {% elif 'display' in k or 'screen' in k or 'resolution' in k or 'refresh rate' in k or 'brightness' in k %}
+    {% set bucket = 'Display' %}
+  {% elif 'chip' in k or 'processor' in k or 'cpu' in k or 'gpu' in k or 'ram' in k or 'memory' in k or 'storage' in k or 'performance' in k %}
+    {% set bucket = 'Performance & Memory' %}
+  {% elif 'camera' in k or 'selfie' in k or 'video' in k or 'photo' in k %}
+    {% set bucket = 'Camera' %}
+  {% elif 'battery' in k or 'charging' in k or 'power' in k %}
+    {% set bucket = 'Battery & Charging' %}
+  {% elif 'dimension' in k or 'weight' in k or 'build' in k or 'material' in k or 'protection' in k or 'ip rating' in k or 'color' in k or 'colour' in k %}
+    {% set bucket = 'Design & Build' %}
+  {% elif 'os' in k or 'software' in k or 'sensor' in k or 'feature' in k or 'security' in k or 'audio' in k or 'sound' in k %}
+    {% set bucket = 'Software & Features' %}
+  {% else %}
+    {% set bucket = 'Other Specifications' %}
+  {% endif %}
+  {% set _ = ns.groups[bucket].append((key, value)) %}
+{% endfor %}
+<div class="spec-groups">
+{% for group, items in ns.groups.items() if items %}
+<article class="spec-group"><h3>{{ group }}</h3><table><tbody>
+{% for key, value in items %}<tr><td>{{ key|replace('_',' ')|title }}</td><td>{{ value }}</td></tr>{% endfor %}
+</tbody></table></article>
+{% endfor %}
+</div>
 </section>
 {% endif %}
 
