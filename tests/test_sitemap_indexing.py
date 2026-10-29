@@ -17,6 +17,7 @@ def test_sitemap_contains_only_public_canonical_urls(monkeypatch):
 
     assert "https://nafiz-ahmed12s.onrender.com/" in locations
     assert "https://nafiz-ahmed12s.onrender.com/shop" in locations
+    assert "https://nafiz-ahmed12s.onrender.com/blog" in locations
     assert "https://nafiz-ahmed12s.onrender.com/privacy-policy" in locations
     assert "https://nafiz-ahmed12s.onrender.com/iphone-18" in locations
     assert "https://nafiz-ahmed12s.onrender.com/phone-detail/iphone-18-pro-max" in locations
