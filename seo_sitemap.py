@@ -13,6 +13,7 @@ from phone_series_routes import available_series
 
 
 PUBLIC_PATHS = (
+    ("/blog", "daily", "0.8"),
     ("/", "weekly", "1.0"),
     ("/shop", "daily", "0.9"),
     ("/about", "monthly", "0.7"),
@@ -78,6 +79,25 @@ def _published_article_slugs():
         return []
 
 
+
+def _published_categories():
+    """Return category slugs that have at least one published article."""
+    try:
+        with SessionLocal() as db:
+            categories = db.execute(text("""SELECT DISTINCT category FROM blog_articles
+                WHERE status='published' AND published_at IS NOT NULL
+                AND category IS NOT NULL AND trim(category) <> ''
+                ORDER BY category""")).scalars().all()
+    except Exception:
+        return []
+
+    slugs = []
+    for category in categories:
+        slug = "-".join(str(category).strip().lower().split())
+        if slug and slug not in slugs:
+            slugs.append(slug)
+    return slugs
+
 def _published_catalog_rows():
     try:
         with SessionLocal() as db:
@@ -125,6 +145,12 @@ def register_canonical_sitemap(app, products):
             path = f"/phones/{brand_slug}/series/{series_slug}"
             if path not in known:
                 candidates.append((path, "weekly", "0.8"))
+                known.add(path)
+
+        for slug in _published_categories():
+            path = f"/blog/category/{slug}"
+            if path not in known:
+                candidates.append((path, "weekly", "0.7"))
                 known.add(path)
 
         for slug in _published_article_slugs():
