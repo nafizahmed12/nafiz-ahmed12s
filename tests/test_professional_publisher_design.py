@@ -38,3 +38,12 @@ def test_homepage_and_article_pages_include_responsive_layout_rules():
     for template in (homepage, listing, article):
         assert "@media(max-width:" in template
         assert "a:focus-visible" in template
+
+
+def test_homepage_uses_real_official_product_photography():
+    homepage = (TEMPLATES / "index.html").read_text(encoding="utf-8")
+
+    assert 'class="hero-product-photo"' in homepage
+    assert "store.storeimages.cdn-apple.com" in homepage
+    assert "official Apple product photo" in homepage
+    assert "Abstract technology illustration" not in homepage
