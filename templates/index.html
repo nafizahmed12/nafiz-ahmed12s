@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="NafizTech delivers clear smartphone coverage, gadget reviews, AI explainers and practical technology guides for readers worldwide.">
+  <meta name="description" content="NafizTech covers mobile technology, gadgets, artificial intelligence, and technology news for readers worldwide.">
   <meta name="robots" content="index,follow">
   <link rel="canonical" href="{{ url_for('home', _external=True) }}">
   <meta property="og:type" content="website">
@@ -12,7 +12,7 @@
   <meta property="og:description" content="Independent technology coverage, practical guides and clear explanations for everyday decisions.">
   <meta property="og:url" content="{{ url_for('home', _external=True) }}">
   <meta name="twitter:card" content="summary_large_image">
-  <title>NafizTech — Technology, clearly explained</title>
+  <title>NafizTech | Mobile, Gadgets, AI and Technology News</title>
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
   <meta name="theme-color" content="#101827">
   <style>
@@ -70,7 +70,7 @@
       <span class="coverage-label">What we cover</span>
       <a class="coverage-link" href="{{ url_for('blog.blog_index') }}"><span>↗</span> Smartphones</a>
       <a class="coverage-link" href="{{ url_for('blog.blog_index') }}"><span>↗</span> Gadgets</a>
-      <a class="coverage-link" href="{{ url_for('blog.blog_index') }}"><span>↗</span> Artificial intelligence</a>
+      <a class="coverage-link" href="{{ url_for('blog.blog_index') }}"><span>↗</span> Artificial intelligence (AI)</a>
       <a class="coverage-link" href="{{ url_for('blog.blog_index') }}"><span>↗</span> How-to guides</a>
     </div>
   </div>
@@ -113,7 +113,7 @@
         </div>
       </div>
       {% else %}
-      <div class="empty-state"><h3>Good technology journalism starts with good questions.</h3><p>Our newest articles will appear here as they are reviewed and published. Visit the article library to explore available guides.</p><a class="button button-primary" href="{{ url_for('blog.blog_index') }}">Explore the article library&nbsp; ↗</a></div>
+      <div class="empty-state"><h3>Fresh perspectives are on the way.</h3><p>Our newest articles will appear here as they are reviewed and published. Visit the article library to explore available guides.</p><a class="button button-primary" href="{{ url_for('blog.blog_index') }}">Visit article library&nbsp; ↗</a></div>
       {% endif %}
     </div>
   </section>
