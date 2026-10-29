@@ -44,3 +44,12 @@ def test_homepage_has_newsroom_navigation_and_latest_news_label():
     assert "Latest in tech" in page
     assert "Reviews" in page
     assert "AI" in page
+
+
+def test_pages_include_step_by_step_back_navigation():
+    response = client.get("/")
+    page = response.get_data(as_text=True)
+    assert response.status_code == 200
+    assert 'id="site-back-button"' in page
+    assert "history.back()" in page
+    assert 'aria-label="Go back to the previous page"' in page
