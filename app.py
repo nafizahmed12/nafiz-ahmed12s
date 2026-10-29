@@ -616,7 +616,7 @@ def inject_step_by_step_back_button(response):
 
     navigation = """
     <style>
-      /* Reserve a small top strip so the fixed control never covers page text. */
+      /* Reserve a small top strip so the fixed control does not cover page text. */
       body { padding-top: 54px !important; }
       #site-back-button {
         position: fixed; top: 10px; left: 10px; z-index: 9999;
