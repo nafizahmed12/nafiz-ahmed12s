@@ -27,7 +27,7 @@ def test_phone_catalog_detail_has_product_and_breadcrumb_schema():
     from sqlalchemy import text
 
     with SessionLocal() as db:
-        row = db.execute(text("SELECT brand, slug FROM phone_catalog WHERE status='published' ORDER BY id LIMIT 1")).mappings().first()
+        row = db.execute(text("SELECT brand, slug, specs_json FROM phone_catalog WHERE status='published' ORDER BY id LIMIT 1")).mappings().first()
     if row is None:
         return
 
@@ -49,3 +49,11 @@ def test_phone_catalog_detail_has_product_and_breadcrumb_schema():
 
     assert product["sku"] == row["slug"]
     assert breadcrumb["itemListElement"][0]["name"] == "Home"
+
+    specs = json.loads(row["specs_json"] or "{}")
+    if specs:
+        assert 'id="specifications"' in html
+        assert "Full Specifications" in html
+        assert 'class="spec-groups"' in html
+        for key in specs:
+            assert key.replace("_", " ").title() in html
