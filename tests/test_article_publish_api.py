@@ -1,12 +1,10 @@
-import pytest
-from flask import Flask
-
 import article_publish_api
+from flask import Flask
 
 
 class FakeResult:
-    def __init__(self, rowcount=1):
-        self.rowcount = rowcount
+    def scalar_one(self):
+        return 42
 
 
 class FakeDB:
@@ -20,9 +18,6 @@ class FakeDB:
 
     def commit(self):
         self.committed = True
-
-    def rollback(self):
-        pass
 
     def __enter__(self):
         return self
@@ -41,9 +36,7 @@ def make_client(monkeypatch):
 
 def test_publish_api_rejects_missing_or_invalid_bearer_token(monkeypatch):
     client = make_client(monkeypatch)
-
     response = client.post("/api/articles", json={"title": "Test"})
-
     assert response.status_code == 401
     assert response.get_json()["error"] == "Unauthorized"
 
@@ -51,13 +44,11 @@ def test_publish_api_rejects_missing_or_invalid_bearer_token(monkeypatch):
 def test_publish_api_requires_configured_token(monkeypatch):
     client = make_client(monkeypatch)
     monkeypatch.delenv("ARTICLE_PUBLISH_API_TOKEN")
-
     response = client.post(
         "/api/articles",
         headers={"Authorization": "Bearer test-secret-token"},
         json={"title": "Test"},
     )
-
     assert response.status_code == 503
 
 
@@ -65,13 +56,11 @@ def test_publish_api_validates_article_before_database_write(monkeypatch):
     client = make_client(monkeypatch)
     db = FakeDB()
     monkeypatch.setattr(article_publish_api, "SessionLocal", lambda: db)
-
     response = client.post(
         "/api/articles",
         headers={"Authorization": "Bearer test-secret-token"},
         json={"title": "Test", "content": "too short"},
     )
-
     assert response.status_code == 400
     assert db.committed is False
 
@@ -80,7 +69,6 @@ def test_publish_api_creates_valid_article_and_returns_id(monkeypatch):
     client = make_client(monkeypatch)
     db = FakeDB()
     monkeypatch.setattr(article_publish_api, "SessionLocal", lambda: db)
-
     response = client.post(
         "/api/articles",
         headers={"Authorization": "Bearer test-secret-token"},
@@ -95,8 +83,8 @@ def test_publish_api_creates_valid_article_and_returns_id(monkeypatch):
             "status": "draft",
         },
     )
-
     assert response.status_code == 201
+    assert response.get_json()["id"] == 42
     assert response.get_json()["status"] == "draft"
     assert db.committed is True
     assert db.params["slug"] == "a-smartphone-guide"
