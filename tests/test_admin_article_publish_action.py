@@ -18,7 +18,7 @@ class FakeDB:
     def execute(self, statement, params):
         self.params = params
         if "SELECT id FROM blog_articles" in str(statement):
-            return type("Lookup", (), {"first": lambda self: {"id": 7} if db.existing else None})()
+            return type("Lookup", (), {"first": lambda self: {"id": 7} if self.existing else None})()
         return FakeResult()
 
     def commit(self):
