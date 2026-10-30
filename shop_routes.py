@@ -14,8 +14,6 @@ def _category():
 def _shop_response(template, **context):
     category = context.get("category", _category())
     response = make_response(render_template(template, category=category, **{k: v for k, v in context.items() if k != "category"}))
-    # Keep category SEO deterministic even when the shared after_request hook cannot
-    # replace the old template title because the storefront template was redesigned.
     titled_categories = {
         "fashion", "clothing", "beauty", "accessories",
         "tablets", "computers", "gadgets", "appliances",
@@ -46,9 +44,6 @@ def _shop_response(template, **context):
 
 @shop_bp.get("/shop")
 def shop():
-    # Keep the dedicated phone catalog as the canonical destination for mobile/phone
-    # browsing, including the homepage's "Apple Products" and "Phones" nav links --
-    # /shop's own product_categories table has no phone data of its own.
     if _category() in {"mobile", "apple", "phones"}:
         return redirect("/phones")
     return _shop_response("shop_new.html", category=_category())
@@ -75,6 +70,36 @@ def payment_fail():
 @shop_bp.get("/payment/cancel")
 def payment_cancel():
     return render_template("payment_result.html", result="cancel", order_id=request.args.get("order_id"))
+
+
+@shop_bp.get("/business-tools")
+def business_tools():
+    return render_template("business_tools.html", tool="home", title="Bangladesh Business Toolkit", heading="বাংলাদেশ Business Toolkit", description="ছোট ব্যবসা, দোকানদার ও Facebook sellerদের জন্য দরকারি হিসাবের tools এক জায়গায়।")
+
+
+@shop_bp.get("/profit-calculator")
+def profit_calculator():
+    return render_template("business_tools.html", tool="profit", title="Product Profit Calculator Bangladesh", heading="Product Profit Calculator", description="পণ্যের ক্রয়, বিক্রয় ও অতিরিক্ত খরচ দিয়ে দ্রুত লাভ ও margin হিসাব করুন।")
+
+
+@shop_bp.get("/courier-calculator")
+def courier_calculator():
+    return render_template("business_tools.html", tool="courier", title="Courier Cost Calculator Bangladesh", heading="Courier Cost Calculator", description="Courier charge, return/RTO এবং অন্যান্য fee বাদ দিয়ে order-এর প্রকৃত অবশিষ্ট হিসাব করুন।")
+
+
+@shop_bp.get("/vat-calculator")
+def vat_calculator():
+    return render_template("business_tools.html", tool="vat", title="VAT Calculator Bangladesh", heading="VAT Calculator Bangladesh", description="দামের উপর VAT যোগ করে VAT amount ও মোট মূল্য হিসাব করুন।")
+
+
+@shop_bp.get("/due-calculator")
+def due_calculator():
+    return render_template("business_tools.html", tool="due", title="Customer Due Calculator Bangladesh", heading="Customer Due Calculator", description="মোট বিক্রি ও পরিশোধিত টাকার ভিত্তিতে customer-এর বাকি হিসাব করুন।")
+
+
+@shop_bp.get("/cash-flow-calculator")
+def cash_flow_calculator():
+    return render_template("business_tools.html", tool="cashflow", title="Business Cash Flow Calculator Bangladesh", heading="Business Cash Flow Calculator", description="মাসিক আয় ও ব্যবসায়িক খরচ দিয়ে সহজে cash flow হিসাব করুন।")
 
 
 def _category_products_response():
