@@ -76,7 +76,7 @@ def test_publish_api_creates_valid_article_and_returns_id(monkeypatch):
             "title": "A Smartphone Guide",
             "slug": "a-smartphone-guide",
             "excerpt": "A useful guide.",
-            "content": "This is a sufficiently long article body for the publishing API test.",
+            "content": "This is a sufficiently long article body for the publishing API test, including enough additional detail to exceed the minimum required content length.",
             "category": "Smartphones",
             "featured_image_url": "",
             "seo_description": "A useful smartphone guide.",
