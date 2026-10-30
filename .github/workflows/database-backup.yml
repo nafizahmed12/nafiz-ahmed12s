@@ -25,17 +25,36 @@ jobs:
           dump="backup/database-${timestamp}.dump"
           checksum="backup/database-${timestamp}.sha256"
           dump_name="$(basename "$dump")"
-          docker run --rm \
-            --env BACKUP_DATABASE_URL \
-            --env PGSSLMODE \
-            --env DUMP_FILE="$dump_name" \
-            --volume "$PWD/backup:/backup" \
-            postgres:18 \
-            sh -ec 'pg_dump "$BACKUP_DATABASE_URL" \
-              --format=custom \
-              --no-owner \
-              --no-privileges \
-              --file="/backup/$DUMP_FILE"'
+          export PGCONNECT_TIMEOUT=30
+          backup_succeeded=false
+          for attempt in 1 2 3 4 5; do
+            rm -f "$dump"
+            if docker run --rm \
+              --env BACKUP_DATABASE_URL \
+              --env PGSSLMODE \
+              --env PGCONNECT_TIMEOUT \
+              --env DUMP_FILE="$dump_name" \
+              --volume "$PWD/backup:/backup" \
+              postgres:18 \
+              sh -ec 'pg_dump "$BACKUP_DATABASE_URL" \
+                --format=custom \
+                --no-owner \
+                --no-privileges \
+                --file="/backup/$DUMP_FILE"'; then
+              backup_succeeded=true
+              break
+            fi
+
+            if [ "$attempt" -lt 5 ]; then
+              delay=$((attempt * 15))
+              echo "Database dump attempt $attempt/5 failed; retrying in ${delay}s."
+              sleep "$delay"
+            fi
+          done
+          if [ "$backup_succeeded" != true ]; then
+            echo "Database backup failed after 5 attempts."
+            exit 1
+          fi
           test -s "$dump"
           sha256sum "$dump" > "$checksum"
       - name: Validate backup integrity
