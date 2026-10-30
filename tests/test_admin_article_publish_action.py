@@ -15,11 +15,13 @@ class FakeDB:
     def __init__(self, existing=True):
         self.existing = existing
         self.params = None
+        self.executions = []
         self.committed = False
         self.rolled_back = False
 
     def execute(self, statement, params):
         self.params = params
+        self.executions.append((str(statement), params))
         if "SELECT id FROM blog_articles" in str(statement):
             return type("Lookup", (), {
                 "mappings": lambda self: self,
@@ -83,9 +85,11 @@ def test_publish_draft_sets_status_and_published_timestamp(monkeypatch):
     assert response.status_code == 302
     assert response.location.endswith("/admin/articles")
     assert db.committed is True
-    assert db.params["id"] == 7
-    assert db.params["status"] == "published"
-    assert db.params["published_at"] is not None
+    update_sql, update_params = db.executions[-1]
+    assert "status='published'" in update_sql
+    assert "published_at=COALESCE(published_at, :now)" in update_sql
+    assert update_params["id"] == 7
+    assert update_params["now"] is not None
 
 
 def test_publish_missing_article_returns_not_found(monkeypatch):
