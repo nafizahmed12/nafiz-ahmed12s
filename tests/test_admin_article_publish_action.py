@@ -7,6 +7,9 @@ from flask import Flask
 class FakeResult:
     rowcount = 1
 
+    def mappings(self):
+        return self
+
 
 class FakeDB:
     def __init__(self, existing=True):
@@ -18,7 +21,10 @@ class FakeDB:
     def execute(self, statement, params):
         self.params = params
         if "SELECT id FROM blog_articles" in str(statement):
-            return type("Lookup", (), {"first": lambda self: {"id": 7} if self.existing else None})()
+            return type("Lookup", (), {
+                "mappings": lambda self: self,
+                "first": lambda self: {"id": 7} if db.existing else None,
+            })()
         return FakeResult()
 
     def commit(self):
@@ -59,6 +65,11 @@ def test_publish_draft_requires_valid_admin_session(monkeypatch):
     app = Flask(__name__)
     app.secret_key = "test-secret"
     app.register_blueprint(blog_routes.blog_bp)
+
+    @app.get("/login")
+    def login():
+        return "Login", 200
+
     response = app.test_client().post("/admin/articles/7/publish")
     assert response.status_code == 302
     assert response.location.endswith("/login")
