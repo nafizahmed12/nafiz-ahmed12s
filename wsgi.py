@@ -10,6 +10,7 @@ from flask import Response, request, render_template
 
 from app import app, products
 from blog_routes import register_blog_routes
+from article_publish_api import register_article_publish_api
 from phone_catalog_routes import register_phone_catalog_routes
 from phone_compare_routes import register_phone_compare_routes
 from phone_guides_routes import register_phone_guide_routes
@@ -126,6 +127,7 @@ def _inject_seo(response):
 
 
 register_blog_routes(app)
+register_article_publish_api(app)
 register_phone_catalog_routes(app)
 register_phone_compare_routes(app)
 register_phone_guide_routes(app)
