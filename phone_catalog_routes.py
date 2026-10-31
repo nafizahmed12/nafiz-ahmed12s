@@ -1,4 +1,5 @@
 """Global phone catalog: searchable, indexable and admin-manageable."""
+import base64
 import csv
 import io
 import json
@@ -12,6 +13,24 @@ from phone_brand_seo import brand_seo_context
 from phone_series_routes import available_series
 
 phone_catalog_bp = Blueprint("phone_catalog", __name__)
+
+def _uploaded_phone_image_data_url():
+    """Encode a small admin-uploaded phone image for storage in the catalog row."""
+    upload = request.files.get("image")
+    if not upload or not upload.filename:
+        return ""
+    allowed = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+    content_type = (upload.mimetype or "").lower()
+    if content_type not in allowed:
+        raise ValueError("Image must be JPG, PNG, WEBP or GIF.")
+    raw = upload.read(1024 * 1024 + 1)
+    if len(raw) > 1024 * 1024:
+        raise ValueError("Image must be 1 MB or smaller.")
+    if not raw:
+        raise ValueError("The selected image is empty.")
+    encoded = base64.b64encode(raw).decode("ascii")
+    return f"data:{content_type};base64,{encoded}"
+
 
 def _slug(value):
     value = re.sub(r"[^a-z0-9]+", "-", (value or "").lower()).strip("-")
@@ -148,6 +167,11 @@ def edit_phone(phone_id):
 def update_phone(phone_id): return _save_phone(phone_id)
 
 def _save_phone(phone_id):
+    try:
+        uploaded_image = _uploaded_phone_image_data_url()
+    except ValueError as exc:
+        flash(str(exc), "error")
+        return redirect(request.referrer or url_for("phone_catalog.admin_phones"))
     brand=request.form.get("brand","").strip(); model=request.form.get("model","").strip(); slug=_slug(request.form.get("slug") or f"{brand}-{model}"); description=request.form.get("short_description","").strip(); content=request.form.get("content","").strip(); specs=request.form.get("specs_json","{}").strip() or "{}"
     try: json.loads(specs)
     except ValueError: flash("Specs must be valid JSON.","error"); return redirect(request.referrer or url_for("phone_catalog.admin_phones"))
@@ -158,7 +182,7 @@ def _save_phone(phone_id):
     if checked_raw:
         try: checked=datetime.fromisoformat(checked_raw.replace("Z","+00:00"))
         except ValueError: flash("Source checked time must be ISO-8601.","error"); return redirect(request.referrer or url_for("phone_catalog.admin_phones"))
-    fields={"brand":brand[:80],"model":model[:180],"slug":slug,"short_description":description[:320],"content":content,"image_url":request.form.get("image_url","").strip()[:2048] or None,"release_date":request.form.get("release_date","").strip()[:40] or None,"price_usd":request.form.get("price_usd","").strip()[:40] or None,"price_bdt":request.form.get("price_bdt","").strip()[:40] or None,"specs_json":specs,"status":status,"seo_description":request.form.get("seo_description","").strip()[:320],"source_name":request.form.get("source_name","").strip()[:120] or None,"source_url":request.form.get("source_url","").strip()[:2048] or None,"source_checked_at":checked,"data_confidence":confidence}
+    fields={"brand":brand[:80],"model":model[:180],"slug":slug,"short_description":description[:320],"content":content,"image_url":uploaded_image or request.form.get("image_url","").strip()[:2048] or None,"release_date":request.form.get("release_date","").strip()[:40] or None,"price_usd":request.form.get("price_usd","").strip()[:40] or None,"price_bdt":request.form.get("price_bdt","").strip()[:40] or None,"specs_json":specs,"status":status,"seo_description":request.form.get("seo_description","").strip()[:320],"source_name":request.form.get("source_name","").strip()[:120] or None,"source_url":request.form.get("source_url","").strip()[:2048] or None,"source_checked_at":checked,"data_confidence":confidence}
     with SessionLocal() as db:
         if phone_id is None: db.execute(text("""INSERT INTO phone_catalog (brand,model,slug,short_description,content,image_url,release_date,price_usd,price_bdt,specs_json,status,seo_description,published_at,source_name,source_url,source_checked_at,data_confidence) VALUES (:brand,:model,:slug,:short_description,:content,:image_url,:release_date,:price_usd,:price_bdt,:specs_json,:status,:seo_description,:published_at,:source_name,:source_url,:source_checked_at,:data_confidence)"""),{**fields,"published_at":datetime.utcnow() if status=="published" else None})
         else: db.execute(text("""UPDATE phone_catalog SET brand=:brand,model=:model,slug=:slug,short_description=:short_description,content=:content,image_url=:image_url,release_date=:release_date,price_usd=:price_usd,price_bdt=:price_bdt,specs_json=:specs_json,status=:status,seo_description=:seo_description,updated_at=CURRENT_TIMESTAMP,published_at=:published_at,source_name=:source_name,source_url=:source_url,source_checked_at=:source_checked_at,data_confidence=:data_confidence WHERE id=:id"""),{**fields,"published_at":datetime.utcnow() if status=="published" else None,"id":phone_id})
