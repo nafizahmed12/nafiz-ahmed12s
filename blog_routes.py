@@ -33,7 +33,7 @@ def render_article_content(content):
         )
         cursor = match.end()
     rendered.append(html_escape(raw[cursor:]))
-    return Markup("".join(rendered))
+    return Markup("".join(rendered))  # nosec B704 - untrusted text and attributes are escaped; only fixed image markup is emitted.
 
 
 def _slugify(value):
