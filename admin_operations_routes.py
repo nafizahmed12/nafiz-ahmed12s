@@ -24,7 +24,7 @@ TABLES = {
 def integration_status():
     """Return configuration booleans only; never expose credentials or secret values."""
     publisher_id = os.getenv("ADSENSE_PUBLISHER_ID", "").strip()
-    adsense_configured = bool(re.fullmatch(r"pub-\\d{16}", publisher_id))
+    adsense_configured = bool(re.fullmatch(r"pub-\d{16}", publisher_id))
     ga4_configured = bool(
         os.getenv("GA4_PROPERTY_ID", "").strip()
         and (
