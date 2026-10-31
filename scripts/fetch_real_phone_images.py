@@ -76,6 +76,7 @@ BRAND_ALIAS_WORDS = {
     "apple": {"iphone"},
     "samsung": {"galaxy"},
     "google": {"pixel"},
+    "oneplus": {"one", "plus"},
 }
 
 # Variant/tier words that phone lineups reuse across sibling models (a
@@ -128,7 +129,7 @@ def _is_exact_commons_title_match(brand: str, model: str, title: str) -> bool:
             return False
 
     uninvited_qualifiers = {
-        q for q in VARIANT_QUALIFIER_WORDS - model_words
+        q for q in VARIANT_QUALIFIER_WORDS - model_words - alias_words
         if q not in brand_words
     }
     if title_words & uninvited_qualifiers:
