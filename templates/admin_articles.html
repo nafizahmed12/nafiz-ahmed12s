@@ -20,6 +20,10 @@
 <div class="field full"><label>ARTICLE CONTENT *</label><textarea name="content" required placeholder="Write the article in your own words...">{{article.content if article else ''}}</textarea><span class="hint">Use your own analysis, explanations and examples. Separate paragraphs with a blank line.</span></div>
 <div class="field"><label>FEATURED IMAGE URL</label><input name="featured_image_url" type="url" maxlength="2048" value="{{article.featured_image_url if article else ''}}" placeholder="https://..."></div>
 <div class="field"><label>SEO DESCRIPTION</label><input name="seo_description" maxlength="320" value="{{article.seo_description if article else ''}}" placeholder="Search-friendly description of this article."></div>
+<div class="field"><label>SEO TITLE</label><input name="seo_title" maxlength="200" value="{{article.seo_title if article and article.seo_title else (article.title if article else '')}}" placeholder="Search result title"></div>
+<div class="field"><label>CANONICAL URL</label><input name="canonical_url" type="url" maxlength="2048" value="{{article.canonical_url if article and article.canonical_url else ''}}" placeholder="https://example.com/article"></div>
+<div class="field"><label>OPEN GRAPH TITLE</label><input name="og_title" maxlength="200" value="{{article.og_title if article and article.og_title else ''}}" placeholder="Social sharing title"></div>
+<div class="field"><label>OPEN GRAPH DESCRIPTION</label><input name="og_description" maxlength="320" value="{{article.og_description if article and article.og_description else ''}}" placeholder="Social sharing summary"></div>
 <div class="field"><label>STATUS</label><select name="status"><option value="draft" {% if article and article.status=='draft' %}selected{% endif %}>Draft</option><option value="published" {% if article and article.status=='published' %}selected{% endif %}>Published</option></select></div>
 <div class="actions full"><button class="btn primary" type="submit">{{'Update Article' if article else 'Save Article'}}</button>{% if article %}<a class="btn" href="{{url_for('blog.admin_articles')}}">Cancel</a>{% endif %}</div>
 </form></section>
