@@ -195,6 +195,7 @@ def publish_existing_article(article_id):
         ).mappings().first()
         if existing is None:
             abort(404)
+        log_admin_activity(db, "article_publish", "article", article_id, f"Published article #{article_id}.")
         db.execute(
             text("""UPDATE blog_articles
                 SET status='published',
@@ -203,7 +204,6 @@ def publish_existing_article(article_id):
                 WHERE id=:id"""),
             {"id": article_id, "now": now},
         )
-        log_admin_activity(db, "article_publish", "article", article_id, f"Published article #{article_id}.")
         db.commit()
     flash("Article published successfully.", "success")
     return redirect(url_for("blog.admin_articles"))
