@@ -26,3 +26,22 @@ def test_seo_audit_accepts_complete_metadata():
         "featured_image_url": "https://example.com/image.jpg",
     })
     assert result == []
+
+
+def test_seo_manager_route_is_registered_and_admin_only():
+    import wsgi
+
+    routes = {rule.rule for rule in wsgi.app.url_map.iter_rules()}
+    assert "/admin/seo" in routes
+    response = wsgi.app.test_client().get("/admin/seo")
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/login")
+
+
+def test_seo_manager_template_explains_read_only_audit():
+    from pathlib import Path
+
+    template = Path("templates/admin_publisher_seo.html").read_text(encoding="utf-8")
+    assert "Read-only article metadata audit" in template
+    assert "120–160 characters" in template
+    assert 'href="/admin/seo"' in Path("templates/admin_publisher_dashboard.html").read_text(encoding="utf-8")
