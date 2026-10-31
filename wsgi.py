@@ -112,10 +112,10 @@ def _inject_seo(response):
         description = site_settings["site_description"]
         escaped_title = escape(title)
         escaped_description = escape(description, quote=True)
-        title_pattern = r"<title\\b[^>]*>.*?</title>"
-        description_pattern = r"""<meta\\s+name=["']description["'][^>]*>"""
-        og_title_pattern = r"""<meta\\s+property=["']og:title["'][^>]*>"""
-        og_description_pattern = r"""<meta\\s+property=["']og:description["'][^>]*>"""
+        title_pattern = r"<title\b[^>]*>.*?</title>"
+        description_pattern = r"""<meta\s+name=["']description["'][^>]*>"""
+        og_title_pattern = r"""<meta\s+property=["']og:title["'][^>]*>"""
+        og_description_pattern = r"""<meta\s+property=["']og:description["'][^>]*>"""
         for pattern, replacement in (
             (title_pattern, f"<title>{escaped_title}</title>"),
             (description_pattern, f'<meta name="description" content="{escaped_description}">'),
