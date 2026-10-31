@@ -64,6 +64,26 @@ def normalize_schedule_datetime(value, now=None, timezone_name=None):
     return parsed
 
 
+def format_schedule_input(value):
+    """Format a stored UTC timestamp for the datetime-local editor in the site timezone."""
+    if value is None:
+        return ""
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    zone = ZoneInfo(os.getenv("SITE_TIMEZONE", "Asia/Dhaka"))
+    return value.astimezone(zone).strftime("%Y-%m-%dT%H:%M")
+
+
+def format_schedule_display(value):
+    """Format scheduled publication time in the configured site timezone."""
+    if value is None:
+        return ""
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    zone = ZoneInfo(os.getenv("SITE_TIMEZONE", "Asia/Dhaka"))
+    return value.astimezone(zone).strftime("%d %b %Y, %H:%M")
+
+
 def normalize_site_settings(payload):
     """Accept only explicitly supported public-facing settings; ignore secrets and unknown keys."""
     clean = {}
@@ -260,7 +280,8 @@ def editorial_schedule():
         articles = db.execute(text("""SELECT id,title,slug,status,scheduled_at
             FROM blog_articles WHERE status='scheduled'
             ORDER BY scheduled_at ASC,id ASC LIMIT 200""")).mappings().all()
-    return render_template("admin_schedule.html", articles=articles)
+    display_articles = [dict(row, scheduled_at_display=format_schedule_display(row["scheduled_at"])) for row in articles]
+    return render_template("admin_schedule.html", articles=display_articles)
 
 
 @admin_editorial_bp.get("/admin/articles/<int:article_id>/history")
