@@ -12,6 +12,17 @@ from admin_auth import admin_required
 blog_bp = Blueprint("blog", __name__)
 
 
+def publish_due_articles(db, now=None):
+    """Publish due scheduled drafts; safe to call repeatedly."""
+    now = now or datetime.now(timezone.utc)
+    result = db.execute(text("""UPDATE blog_articles
+        SET status = 'published', published_at = scheduled_at, updated_at = :now, scheduled_at = NULL
+        WHERE status = 'draft' AND scheduled_at IS NOT NULL AND scheduled_at <= :now"""), {"now": now})
+    if result.rowcount:
+        db.commit()
+    return result.rowcount or 0
+
+
 def _slugify(value):
     value = re.sub(r"[^a-zA-Z0-9\s-]", "", (value or "").strip().lower())
     value = re.sub(r"[\s-]+", "-", value).strip("-")
@@ -31,6 +42,20 @@ def _validate_form():
     og_title = request.form.get("og_title", "").strip() or seo_title
     og_description = request.form.get("og_description", "").strip() or seo_description
     status = request.form.get("status", "draft").strip().lower()
+    scheduled_input = request.form.get("scheduled_at", "").strip()
+    scheduled_at = None
+    if scheduled_input:
+        try:
+            scheduled_at = datetime.fromisoformat(scheduled_input)
+            if scheduled_at.tzinfo is None:
+                scheduled_at = scheduled_at.replace(tzinfo=timezone.utc)
+            scheduled_at = scheduled_at.astimezone(timezone.utc)
+        except ValueError:
+            raise ValueError("Scheduled publish time must be a valid date and time.")
+        if scheduled_at <= datetime.now(timezone.utc):
+            raise ValueError("Scheduled publish time must be in the future.")
+        if status == "published":
+            raise ValueError("Choose Draft status when scheduling a future publication.")
     if not title or len(title) > 200:
         raise ValueError("Title is required and must be 200 characters or fewer.")
     if not slug or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", slug):
@@ -51,7 +76,7 @@ def _validate_form():
         raise ValueError("Category or image URL is too long.")
     if status not in {"draft", "published"}:
         raise ValueError("Status must be draft or published.")
-    return title, slug, excerpt, content, category, image, seo_description, seo_title, canonical_url, og_title, og_description, status
+    return title, slug, excerpt, content, category, image, seo_description, seo_title, canonical_url, og_title, og_description, status, scheduled_at
 
 
 @blog_bp.get("/blog")
@@ -124,7 +149,7 @@ def admin_articles():
 @admin_required
 def create_article():
     try:
-        title, slug, excerpt, content, category, image, seo_description, seo_title, canonical_url, og_title, og_description, status = _validate_form()
+        title, slug, excerpt, content, category, image, seo_description, seo_title, canonical_url, og_title, og_description, status, scheduled_at = _validate_form()
     except ValueError as exc:
         flash(str(exc), "error")
         return redirect(url_for("blog.admin_articles"))
@@ -133,8 +158,8 @@ def create_article():
     with SessionLocal() as db:
         try:
             db.execute(text("""INSERT INTO blog_articles
-                (title,slug,excerpt,content,category,featured_image_url,seo_description,seo_title,canonical_url,og_title,og_description,status,created_at,updated_at,published_at)
-                VALUES (:title,:slug,:excerpt,:content,:category,:image,:seo_description,:seo_title,:canonical_url,:og_title,:og_description,:status,:now,:now,:published_at)"""), locals())
+                (title,slug,excerpt,content,category,featured_image_url,seo_description,seo_title,canonical_url,og_title,og_description,status,created_at,updated_at,published_at,scheduled_at)
+                VALUES (:title,:slug,:excerpt,:content,:category,:image,:seo_description,:seo_title,:canonical_url,:og_title,:og_description,:status,:now,:now,:published_at,:scheduled_at)"""), locals())
             db.commit()
         except IntegrityError:
             db.rollback()
@@ -179,7 +204,7 @@ def update_article(article_id):
             db.execute(text("""UPDATE blog_articles SET title=:title,slug=:slug,excerpt=:excerpt,content=:content,
                 category=:category,featured_image_url=:image,seo_description=:seo_description,seo_title=:seo_title,
                 canonical_url=:canonical_url,og_title=:og_title,og_description=:og_description,status=:status,
-                updated_at=:now,published_at=:published_at WHERE id=:id"""), locals())
+                scheduled_at=:scheduled_at,updated_at=:now,published_at=:published_at WHERE id=:id"""), locals())
             db.commit()
         except IntegrityError:
             db.rollback()
