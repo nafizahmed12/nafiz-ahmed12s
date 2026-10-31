@@ -7,6 +7,7 @@ from sqlalchemy.exc import IntegrityError
 
 from database import SessionLocal
 from admin_auth import admin_required
+from admin_editorial_routes import format_schedule_display, format_schedule_input, log_admin_activity, normalize_schedule_datetime, publish_due_articles, record_article_revision
 
 blog_bp = Blueprint("blog", __name__)
 
@@ -36,7 +37,7 @@ def _validate_form():
         raise ValueError("Article content should contain at least 80 characters.")
     if len(category) > 80 or len(image) > 2048:
         raise ValueError("Category or image URL is too long.")
-    if status not in {"draft", "published"}:
+    if status not in {"draft", "published", "scheduled"}:
         raise ValueError("Status must be draft or published.")
     return title, slug, excerpt, content, category, image, seo_description, status
 
@@ -44,6 +45,7 @@ def _validate_form():
 @blog_bp.get("/blog")
 def blog_index():
     with SessionLocal() as db:
+        publish_due_articles(db)
         articles = db.execute(text("""SELECT id,title,slug,excerpt,category,featured_image_url,published_at
             FROM blog_articles WHERE status='published' AND published_at IS NOT NULL
             ORDER BY published_at DESC, id DESC LIMIT 100""")).mappings().all()
@@ -53,6 +55,7 @@ def blog_index():
 @blog_bp.get("/blog/<slug>")
 def blog_article(slug):
     with SessionLocal() as db:
+        publish_due_articles(db)
         article = db.execute(text("""SELECT id,title,slug,excerpt,content,category,featured_image_url,seo_description,published_at,updated_at
             FROM blog_articles WHERE slug=:slug AND status='published' AND published_at IS NOT NULL"""), {"slug": slug}).mappings().first()
         if article is None:
@@ -102,8 +105,9 @@ def blog_tag(slug):
 @admin_required
 def admin_articles():
     with SessionLocal() as db:
-        articles = db.execute(text("""SELECT id,title,slug,excerpt,category,status,featured_image_url,created_at,updated_at,published_at
+        articles = db.execute(text("""SELECT id,title,slug,excerpt,category,status,featured_image_url,created_at,updated_at,published_at,scheduled_at
             FROM blog_articles ORDER BY id DESC""")).mappings().all()
+    articles = [dict(row, scheduled_at_display=format_schedule_display(row["scheduled_at"])) for row in articles]
     return render_template("admin_articles.html", articles=articles, article=None)
 
 
@@ -112,6 +116,7 @@ def admin_articles():
 def create_article():
     try:
         title, slug, excerpt, content, category, image, seo_description, status = _validate_form()
+        scheduled_at = normalize_schedule_datetime(request.form.get("scheduled_at")) if status == "scheduled" else None
     except ValueError as exc:
         flash(str(exc), "error")
         return redirect(url_for("blog.admin_articles"))
@@ -119,9 +124,11 @@ def create_article():
     published_at = now if status == "published" else None
     with SessionLocal() as db:
         try:
-            db.execute(text("""INSERT INTO blog_articles
-                (title,slug,excerpt,content,category,featured_image_url,seo_description,status,created_at,updated_at,published_at)
-                VALUES (:title,:slug,:excerpt,:content,:category,:image,:seo_description,:status,:now,:now,:published_at)"""), locals())
+            article_id = db.execute(text("""INSERT INTO blog_articles
+                (title,slug,excerpt,content,category,featured_image_url,seo_description,status,created_at,updated_at,published_at,scheduled_at)
+                VALUES (:title,:slug,:excerpt,:content,:category,:image,:seo_description,:status,:now,:now,:published_at,:scheduled_at)
+                RETURNING id"""), locals()).scalar_one()
+            log_admin_activity(db, "article_schedule" if status == "scheduled" else "article_create", "article", article_id, f"Created article: {title}")
             db.commit()
         except IntegrityError:
             db.rollback()
@@ -149,23 +156,26 @@ def edit_article(article_id):
 def update_article(article_id):
     try:
         title, slug, excerpt, content, category, image, seo_description, status = _validate_form()
+        scheduled_at = normalize_schedule_datetime(request.form.get("scheduled_at")) if status == "scheduled" else None
     except ValueError as exc:
         flash(str(exc), "error")
         return redirect(url_for("blog.edit_article", article_id=article_id))
     now = datetime.now(timezone.utc)
     with SessionLocal() as db:
-        existing = db.execute(text("SELECT status,published_at FROM blog_articles WHERE id=:id"), {"id": article_id}).mappings().first()
+        existing = db.execute(text("SELECT * FROM blog_articles WHERE id=:id"), {"id": article_id}).mappings().first()
         if existing is None:
             abort(404)
+        record_article_revision(db, existing, "Before article edit")
         published_at = existing["published_at"]
         if status == "published" and published_at is None:
             published_at = now
-        if status == "draft":
+        if status in {"draft", "scheduled"}:
             published_at = None
         try:
             db.execute(text("""UPDATE blog_articles SET title=:title,slug=:slug,excerpt=:excerpt,content=:content,
                 category=:category,featured_image_url=:image,seo_description=:seo_description,status=:status,
-                updated_at=:now,published_at=:published_at WHERE id=:id"""), locals())
+                updated_at=:now,published_at=:published_at,scheduled_at=:scheduled_at WHERE id=:id"""), locals())
+            log_admin_activity(db, "article_schedule" if status == "scheduled" else "article_update", "article", article_id, f"Updated article: {title}")
             db.commit()
         except IntegrityError:
             db.rollback()
@@ -186,11 +196,12 @@ def publish_existing_article(article_id):
         ).mappings().first()
         if existing is None:
             abort(404)
+        log_admin_activity(db, "article_publish", "article", article_id, f"Published article #{article_id}.")
         db.execute(
             text("""UPDATE blog_articles
                 SET status='published',
                     published_at=COALESCE(published_at, :now),
-                    updated_at=:now
+                    scheduled_at=NULL, updated_at=:now
                 WHERE id=:id"""),
             {"id": article_id, "now": now},
         )
@@ -203,10 +214,11 @@ def publish_existing_article(article_id):
 @admin_required
 def delete_article(article_id):
     with SessionLocal() as db:
-        result = db.execute(text("DELETE FROM blog_articles WHERE id=:id"), {"id": article_id})
-        if result.rowcount == 0:
-            db.rollback()
+        article = db.execute(text("SELECT title FROM blog_articles WHERE id=:id"), {"id": article_id}).mappings().first()
+        if article is None:
             abort(404)
+        db.execute(text("DELETE FROM blog_articles WHERE id=:id"), {"id": article_id})
+        log_admin_activity(db, "article_delete", "article", article_id, f"Deleted article: {article['title']}")
         db.commit()
     flash("Article deleted.", "success")
     return redirect(url_for("blog.admin_articles"))

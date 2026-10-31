@@ -18,6 +18,9 @@ TABLES = {
     "Reviews": "product_reviews",
     "Subscribers": "subscribers",
     "Contact messages": "contact_messages",
+    "Media library": "admin_media",
+    "Article revisions": "article_revisions",
+    "Admin activity": "admin_activity_log",
 }
 
 
