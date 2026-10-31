@@ -140,7 +140,8 @@ def blog_tag(slug):
 @admin_required
 def admin_articles():
     with SessionLocal() as db:
-        articles = db.execute(text("""SELECT id,title,slug,excerpt,category,status,featured_image_url,created_at,updated_at,published_at
+        publish_due_articles(db)
+        articles = db.execute(text("""SELECT id,title,slug,excerpt,category,status,featured_image_url,created_at,updated_at,published_at,scheduled_at
             FROM blog_articles ORDER BY id DESC""")).mappings().all()
     return render_template("admin_articles.html", articles=articles, article=None)
 
