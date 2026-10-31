@@ -110,6 +110,16 @@ def _inject_seo(response):
         site_settings = get_public_site_settings()
         title = f"{site_settings['site_title']} | {site_settings['site_tagline']}"
         description = site_settings["site_description"]
+        escaped_title = escape(title)
+        escaped_description = escape(description, quote=True)
+        if re.search(r"<title\\b[^>]*>.*?</title>", body, flags=re.IGNORECASE | re.DOTALL):
+            body = re.sub(r"<title\\b[^>]*>.*?</title>", f"<title>{escaped_title}</title>", body, count=1, flags=re.IGNORECASE | re.DOTALL)
+        if re.search(r'<meta\\s+name=["\\']description["\\'][^>]*>', body, flags=re.IGNORECASE):
+            body = re.sub(r'<meta\\s+name=["\\']description["\\'][^>]*>', f'<meta name="description" content="{escaped_description}">', body, count=1, flags=re.IGNORECASE)
+        if re.search(r'<meta\\s+property=["\\']og:title["\\'][^>]*>', body, flags=re.IGNORECASE):
+            body = re.sub(r'<meta\\s+property=["\\']og:title["\\'][^>]*>', f'<meta property="og:title" content="{escaped_title}">', body, count=1, flags=re.IGNORECASE)
+        if re.search(r'<meta\\s+property=["\\']og:description["\\'][^>]*>', body, flags=re.IGNORECASE):
+            body = re.sub(r'<meta\\s+property=["\\']og:description["\\'][^>]*>', f'<meta property="og:description" content="{escaped_description}">', body, count=1, flags=re.IGNORECASE)
     if title and "<title" not in body.lower():
         additions.append(f"<title>{escape(title)}</title>")
     if description and 'name="description"' not in body.lower():
