@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Publisher Dashboard | NafizTech</title>
+<style>
+:root{font-family:Inter,system-ui,sans-serif;color:#172033;background:#f4f6fa}*{box-sizing:border-box}body{margin:0}.wrap{max-width:1180px;margin:auto;padding:28px 22px 60px}header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:26px}h1{font-size:28px;margin:0 0 5px}.muted{color:#687386;font-size:13px}.links{display:flex;gap:9px;flex-wrap:wrap}.btn{display:inline-block;padding:10px 13px;border-radius:9px;background:#172033;color:white;text-decoration:none;font-size:13px;font-weight:700}.btn.alt{background:white;color:#172033;border:1px solid #dce2eb}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.stat,.panel{background:#fff;border:1px solid #e2e7ef;border-radius:14px;padding:18px}.stat span{display:block;color:#687386;font-size:12px;font-weight:650}.stat strong{display:block;font-size:29px;margin-top:7px}.section{margin-top:22px}.section h2{font-size:18px;margin:0 0 13px}.tools{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.tool{display:block;padding:16px;border:1px solid #e2e7ef;border-radius:12px;text-decoration:none;color:inherit;background:white}.tool b{display:block;margin-bottom:5px}.tool small{color:#687386;line-height:1.5}.table{width:100%;border-collapse:collapse}.table th,.table td{text-align:left;padding:11px 8px;border-bottom:1px solid #edf0f4;font-size:13px}.table th{color:#687386;font-size:11px;text-transform:uppercase}.pill{font-size:11px;border-radius:20px;padding:4px 8px;background:#edf2f8}.pill.published{background:#e4f7eb;color:#176b3a}@media(max-width:760px){.grid,.tools{grid-template-columns:repeat(2,minmax(0,1fr))}.table-wrap{overflow-x:auto}}@media(max-width:480px){.grid,.tools{grid-template-columns:1fr}.wrap{padding:20px 14px}}
+</style>
+</head>
+<body><main class="wrap">
+<header><div><h1>Publisher Dashboard</h1><div class="muted">Editorial operations · NafizTech</div></div><nav class="links"><a class="btn alt" href="/admin">Legacy admin</a><a class="btn" href="/">View website ↗</a></nav></header>
+<section class="grid" aria-label="Publishing statistics">
+<div class="stat"><span>All articles</span><strong>{{ stats.articles_total }}</strong></div>
+<div class="stat"><span>Published articles</span><strong>{{ stats.articles_published }}</strong></div>
+<div class="stat"><span>Article drafts</span><strong>{{ stats.articles_drafts }}</strong></div>
+<div class="stat"><span>Phone records</span><strong>{{ stats.phones_total }}</strong></div>
+<div class="stat"><span>Published phones</span><strong>{{ stats.phones_published }}</strong></div>
+<div class="stat"><span>Phone drafts</span><strong>{{ stats.phones_drafts }}</strong></div>
+</section>
+<section class="section"><h2>Publisher tools</h2><div class="tools">
+<a class="tool" href="/admin/articles"><b>Article Manager</b><small>Create, edit, review and publish technology articles.</small></a>
+<a class="tool" href="/admin/phones"><b>Phone Catalog</b><small>Manage phone specifications, sources and confidence.</small></a>
+<a class="tool" href="/sitemap.xml"><b>SEO · Sitemap</b><small>Inspect the public XML sitemap.</small></a>
+<a class="tool" href="/robots.txt"><b>SEO · Robots</b><small>Inspect crawler access rules.</small></a>
+<a class="tool" href="/roundups"><b>Content Hubs</b><small>View public technology roundups and topic hubs.</small></a>
+<a class="tool" href="/admin"><b>Legacy Admin</b><small>Open existing administration tools without replacing them.</small></a>
+</div></section>
+<section class="section panel"><h2>Recently updated articles</h2>
+{% if latest_articles %}<div class="table-wrap"><table class="table"><thead><tr><th>Title</th><th>Status</th><th>Updated</th></tr></thead><tbody>
+{% for article in latest_articles %}<tr><td>{{ article.title }}</td><td><span class="pill {{ article.status }}">{{ article.status|title }}</span></td><td>{{ article.updated_at or '—' }}</td></tr>{% endfor %}
+</tbody></table></div>{% else %}<p class="muted">No articles yet. Create your first article in Article Manager.</p>{% endif %}
+</section>
+</main></body></html>
