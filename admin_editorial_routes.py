@@ -123,7 +123,7 @@ def log_admin_activity(db, action, entity_type, entity_id=None, summary=""):
         text("""INSERT INTO admin_activity_log (actor,action,entity_type,entity_id,summary,created_at)
             VALUES (:actor,:action,:entity_type,:entity_id,:summary,:created_at)"""),
         {
-            "actor": str(session.get("admin_username") or "admin")[:120],
+            "actor": str(actor or "scheduler")[:120],
             "action": str(action)[:80],
             "entity_type": str(entity_type)[:80],
             "entity_id": entity_id,
