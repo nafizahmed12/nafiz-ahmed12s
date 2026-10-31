@@ -1,7 +1,5 @@
 import html
 
-from markupsafe import Markup
-
 
 def test_article_content_renders_library_markdown_images():
     from blog_routes import render_article_content
@@ -11,7 +9,7 @@ def test_article_content_renders_library_markdown_images():
     ))
 
     assert "First paragraph." in rendered
-    assert '<img src="https://example.com/phone.webp" alt="Phone cover"' in rendered
+    assert '<img class="article-inline-image" src="https://example.com/phone.webp" alt="Phone cover"' in rendered
     assert "loading=\"lazy\"" in rendered
     assert "Last paragraph." in rendered
 
