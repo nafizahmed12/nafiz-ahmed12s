@@ -29,12 +29,13 @@ def test_publisher_pages_share_unified_navigation():
     for filename in templates:
         content = Path(filename).read_text(encoding="utf-8")
         assert "admin-unified-nav" in content, filename
-        for href, _ in PUBLISHER_NAV:
-            assert href in content, (filename, href)
+        assert "{% include 'admin_unified_nav.html' %}" in content, filename
 
 
 def test_unified_navigation_is_mobile_responsive():
     partial = Path("templates/admin_unified_nav.html").read_text(encoding="utf-8")
     assert "aria-label" in partial
+    for href, _ in PUBLISHER_NAV:
+        assert href in partial, href
     assert "@media" in partial
     assert "overflow-x:auto" in partial
