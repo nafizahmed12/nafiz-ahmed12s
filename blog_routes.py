@@ -1,5 +1,8 @@
 from datetime import datetime, timezone
+from html import escape as html_escape
 import re
+
+from markupsafe import Markup
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from sqlalchemy import text
@@ -10,6 +13,27 @@ from admin_auth import admin_required
 from admin_editorial_routes import format_schedule_display, format_schedule_input, log_admin_activity, normalize_schedule_datetime, publish_due_articles, record_article_revision
 
 blog_bp = Blueprint("blog", __name__)
+
+
+def render_article_content(content):
+    """Render safe text plus explicitly supported Markdown image embeds."""
+    raw = str(content or "")
+    image_pattern = re.compile(
+        r"!\[([^\]\r\n]{0,300})\]\((https?://[^\s)]+|/media/[a-f0-9]{32}\.(?:jpg|jpeg|png|gif|webp))\)"
+    )
+    rendered = []
+    cursor = 0
+    for match in image_pattern.finditer(raw):
+        rendered.append(html_escape(raw[cursor:match.start()]))
+        alt = html_escape(match.group(1), quote=True)
+        src = html_escape(match.group(2), quote=True)
+        rendered.append(
+            f'<img class="article-inline-image" src="{src}" alt="{alt}" '
+            'loading="lazy" decoding="async">'
+        )
+        cursor = match.end()
+    rendered.append(html_escape(raw[cursor:]))
+    return Markup("".join(rendered))
 
 
 def _slugify(value):
@@ -107,8 +131,10 @@ def admin_articles():
     with SessionLocal() as db:
         articles = db.execute(text("""SELECT id,title,slug,excerpt,category,status,featured_image_url,created_at,updated_at,published_at,scheduled_at
             FROM blog_articles ORDER BY id DESC""")).mappings().all()
+        media = db.execute(text("""SELECT id,filename,original_name,alt_text,size_bytes
+            FROM admin_media ORDER BY created_at DESC,id DESC LIMIT 300""")).mappings().all()
     articles = [dict(row, scheduled_at_display=format_schedule_display(row["scheduled_at"])) for row in articles]
-    return render_template("admin_articles.html", articles=articles, article=None)
+    return render_template("admin_articles.html", articles=articles, article=None, media=media)
 
 
 @blog_bp.post("/admin/articles")
@@ -148,7 +174,9 @@ def edit_article(article_id):
     with SessionLocal() as db:
         articles = db.execute(text("""SELECT id,title,slug,excerpt,category,status,featured_image_url,created_at,updated_at,published_at
             FROM blog_articles ORDER BY id DESC""")).mappings().all()
-    return render_template("admin_articles.html", articles=articles, article=article)
+        media = db.execute(text("""SELECT id,filename,original_name,alt_text,size_bytes
+            FROM admin_media ORDER BY created_at DESC,id DESC LIMIT 300""")).mappings().all()
+    return render_template("admin_articles.html", articles=articles, article=article, media=media)
 
 
 @blog_bp.post("/admin/articles/<int:article_id>/edit")
