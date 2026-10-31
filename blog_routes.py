@@ -161,7 +161,7 @@ def edit_article(article_id):
 @admin_required
 def update_article(article_id):
     try:
-        title, slug, excerpt, content, category, image, seo_description, status = _validate_form()
+        title, slug, excerpt, content, category, image, seo_description, seo_title, canonical_url, og_title, og_description, status = _validate_form()
     except ValueError as exc:
         flash(str(exc), "error")
         return redirect(url_for("blog.edit_article", article_id=article_id))
