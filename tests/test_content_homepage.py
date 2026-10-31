@@ -109,3 +109,17 @@ def test_homepage_has_nafiztech_brand_and_search_metadata(monkeypatch):
     assert 'property="og:site_name" content="NafizTech"' in body
     assert 'name="description" content="NafizTech covers mobile technology, gadgets, artificial intelligence, and technology news for readers worldwide."' in body
     assert 'rel="icon"' in body
+
+
+def test_homepage_displays_real_product_photos_for_multiple_phone_brands(monkeypatch):
+    monkeypatch.setattr(app_module, "SessionLocal", lambda: _FakeSession([]))
+    response = app.test_client().get("/")
+
+    assert response.status_code == 200
+    body = response.get_data(as_text=True)
+    assert "Samsung Galaxy S26" in body
+    assert "Google Pixel 10 Pro" in body
+    assert "Apple iPhone 17 Pro" in body
+    assert "images.samsung.com" in body
+    assert "storage.googleapis.com/gweb-uniblog-publish-prod/images/Pixel10Pro" in body
+    assert "phone-gallery" in body
