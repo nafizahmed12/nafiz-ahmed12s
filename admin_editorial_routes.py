@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, send_from_directory, url_for
+from flask import Blueprint, abort, current_app, flash, jsonify, redirect, render_template, request, send_from_directory, session, url_for
 from werkzeug.utils import secure_filename
 from sqlalchemy import text
 
@@ -111,7 +111,7 @@ def record_article_revision(db, article, note="Article updated"):
             "article_id": int(article["id"]),
             "snapshot": json.dumps(snapshot, ensure_ascii=False),
             "note": note[:200],
-            "actor": str(__import__("flask").session.get("admin_username") or "admin")[:120],
+            "actor": str(session.get("admin_username") or "admin")[:120],
             "created_at": datetime.now(timezone.utc),
         },
     )
@@ -232,6 +232,21 @@ def delete_media(media_id):
     (upload_dir / filename).unlink(missing_ok=True)
     flash("Media item deleted.", "success")
     return redirect(url_for("admin_editorial.media_library"))
+
+
+@admin_editorial_bp.post("/api/internal/publish-scheduled")
+def publish_scheduled_api():
+    configured_token = os.getenv("SCHEDULED_PUBLISH_TOKEN", "").strip()
+    supplied = request.headers.get("Authorization", "")
+    token = supplied[7:].strip() if supplied.startswith("Bearer ") else ""
+    import hmac
+    if not configured_token:
+        return jsonify({"error": "Scheduled publishing token is not configured."}), 503
+    if not token or not hmac.compare_digest(token, configured_token):
+        return jsonify({"error": "Unauthorized"}), 401
+    with SessionLocal() as db:
+        published = publish_due_articles(db)
+    return jsonify({"published": published}), 200
 
 
 @admin_editorial_bp.get("/admin/schedule")
