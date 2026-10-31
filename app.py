@@ -27,6 +27,7 @@ from admin_security import (
     register_admin_session_guard, mark_admin_authenticated, clear_admin_session
 )
 from admin_auth import admin_required
+from admin_operations_routes import register_admin_operations_routes
 from csrf import register_csrf_protection
 from mail_utils import send_password_reset_email
 from schema import (
@@ -73,6 +74,7 @@ register_digital_affiliate_routes(app)
 register_shop_routes(app)
 register_admin_product_routes(app)
 register_admin_session_guard(app)
+register_admin_operations_routes(app)
 register_csrf_protection(app)
 
 # Dynamic Product Database for SEO Routing

@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>Operations Center | NafizTech</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f6fa;color:#172033;font:14px Inter,system-ui,sans-serif}.wrap{max-width:1180px;margin:auto;padding:26px 18px 60px}header,.head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}h1{margin:0 0 5px;font-size:27px}.muted{color:#697586}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:20px}.panel{background:#fff;border:1px solid #e1e6ee;border-radius:13px;padding:17px}.panel h2{font-size:17px;margin:0 0 14px}.status{font-weight:800;font-size:12px;border-radius:20px;padding:5px 9px;background:#e4f7eb;color:#176b3a}.status.bad{background:#fff0f0;color:#a32b2b}.status.warn{background:#fff7df;color:#8a5b00}.item{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:12px 0;border-top:1px solid #edf0f4}.item:first-of-type{border-top:0}.item b{display:block;margin-bottom:4px}.item small{color:#697586;line-height:1.5}.count{font-size:20px;font-weight:850}.links{display:flex;gap:9px;flex-wrap:wrap}.links a{color:#176b3a;text-decoration:none;font-weight:750}.notice{margin-top:18px;padding:13px;border-radius:10px;background:#fff7df;color:#76500a;line-height:1.5;font-size:12px}@media(max-width:650px){.grid{grid-template-columns:1fr}.wrap{padding:20px 13px}}
+</style>
+</head>
+<body>{% include 'admin_unified_nav.html' %}
+<main class="wrap">
+<header><div><h1>Operations Center</h1><div class="muted">Private system health and integration readiness</div></div><a href="/admin/publisher">← Publisher Dashboard</a></header>
+<div class="grid">
+<section class="panel"><h2>Database connectivity</h2><div class="item"><div><b>Primary database</b><small>{{ database.detail }}</small></div><span class="status {{ '' if database.ok else 'bad' }}">{{ 'Healthy' if database.ok else 'Error' }}</span></div></section>
+<section class="panel"><h2>Integration readiness</h2>
+{% for integration in integrations.values() %}<div class="item"><div><b>{{ integration.label }}</b><small>{{ integration.detail }}</small></div><span class="status {{ '' if integration.configured else 'warn' }}">{{ 'Configured' if integration.configured else 'Setup needed' }}</span></div>{% endfor %}
+</section>
+<section class="panel"><h2>Content inventory</h2>
+{% for item in content_counts %}<div class="item"><div><b>{{ item.label }}</b><small>{{ 'Available' if item.available else 'Table unavailable or query failed' }}</small></div><span class="count">{{ item.count if item.available else '—' }}</span></div>{% endfor %}
+</section>
+<section class="panel"><h2>SEO endpoints</h2>
+<div class="item"><div><b>XML sitemap</b><small>Public sitemap endpoint</small></div><a href="{{ sitemap_path }}" target="_blank" rel="noopener">{{ sitemap_path }} ↗</a></div>
+<div class="item"><div><b>Robots.txt</b><small>Crawler access rules</small></div><a href="{{ robots_path }}" target="_blank" rel="noopener">{{ robots_path }} ↗</a></div>
+<div class="item"><div><b>AdSense ads.txt</b><small>Publisher authorization file</small></div><a href="{{ ads_txt_path }}" target="_blank" rel="noopener">{{ ads_txt_path }} ↗</a></div>
+<div class="item"><div><b>Canonical base URL</b><small>{{ 'PUBLIC_BASE_URL is configured' if public_base_url_configured else 'Uses the incoming request host until PUBLIC_BASE_URL is set' }}</small></div><span class="status {{ '' if public_base_url_configured else 'warn' }}">{{ 'Configured' if public_base_url_configured else 'Review' }}</span></div>
+</section>
+</div>
+<p class="notice">This page reports configuration readiness, not live Google Analytics or AdSense revenue. Those reports require authorized Google API credentials and property access. Credential values and raw database errors are never displayed here.</p>
+</main></body></html>
