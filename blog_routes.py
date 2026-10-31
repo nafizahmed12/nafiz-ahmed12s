@@ -155,6 +155,7 @@ def edit_article(article_id):
 def update_article(article_id):
     try:
         title, slug, excerpt, content, category, image, seo_description, status = _validate_form()
+        scheduled_at = normalize_schedule_datetime(request.form.get("scheduled_at")) if status == "scheduled" else None
     except ValueError as exc:
         flash(str(exc), "error")
         return redirect(url_for("blog.edit_article", article_id=article_id))
