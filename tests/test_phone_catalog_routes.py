@@ -148,3 +148,25 @@ def test_phone_admin_post_forms_include_csrf_tokens():
     post_forms = re.findall(r'<form\b(?=[^>]*method="post")[^>]*>(.*?)</form>', template, re.DOTALL)
     assert len(post_forms) == 3
     assert all('name="csrf_token"' in form for form in post_forms)
+
+
+def test_publisher_dashboard_route_is_registered_and_requires_admin():
+    import wsgi
+
+    rules = {rule.rule for rule in wsgi.app.url_map.iter_rules()}
+    assert "/admin/publisher" in rules
+
+    response = wsgi.app.test_client().get("/admin/publisher")
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/login")
+
+
+def test_publisher_dashboard_template_exposes_editorial_tools():
+    from pathlib import Path
+
+    template = Path("templates/admin_publisher_dashboard.html").read_text(encoding="utf-8")
+    assert "Publisher Dashboard" in template
+    assert 'href="/admin/articles"' in template
+    assert 'href="/admin/phones"' in template
+    assert 'href="/sitemap.xml"' in template
+    assert "SEO" in template
