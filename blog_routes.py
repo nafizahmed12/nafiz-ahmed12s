@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from urllib.parse import urlsplit
 import re
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
@@ -25,11 +26,23 @@ def _validate_form():
     category = request.form.get("category", "Technology").strip() or "Technology"
     image = request.form.get("featured_image_url", "").strip()
     seo_description = request.form.get("seo_description", "").strip() or excerpt
+    seo_title = request.form.get("seo_title", "").strip() or title
+    canonical_url = request.form.get("canonical_url", "").strip() or None
+    og_title = request.form.get("og_title", "").strip() or seo_title
+    og_description = request.form.get("og_description", "").strip() or seo_description
     status = request.form.get("status", "draft").strip().lower()
     if not title or len(title) > 200:
         raise ValueError("Title is required and must be 200 characters or fewer.")
     if not slug or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", slug):
         raise ValueError("Slug may contain only lowercase letters, numbers and hyphens.")
+    if len(seo_title) > 200 or len(og_title) > 200:
+        raise ValueError("SEO and Open Graph titles must be 200 characters or fewer.")
+    if len(og_description) > 320:
+        raise ValueError("Open Graph description must be 320 characters or fewer.")
+    if canonical_url:
+        parsed = urlsplit(canonical_url)
+        if len(canonical_url) > 2048 or parsed.scheme not in {"http", "https"} or not parsed.netloc or parsed.username or parsed.password:
+            raise ValueError("Canonical URL must be a valid HTTP or HTTPS URL.")
     if len(excerpt) > 320 or len(seo_description) > 320:
         raise ValueError("Excerpt and SEO description must be 320 characters or fewer.")
     if len(content) < 80:
@@ -38,7 +51,7 @@ def _validate_form():
         raise ValueError("Category or image URL is too long.")
     if status not in {"draft", "published"}:
         raise ValueError("Status must be draft or published.")
-    return title, slug, excerpt, content, category, image, seo_description, status
+    return title, slug, excerpt, content, category, image, seo_description, seo_title, canonical_url, og_title, og_description, status
 
 
 @blog_bp.get("/blog")
@@ -53,7 +66,7 @@ def blog_index():
 @blog_bp.get("/blog/<slug>")
 def blog_article(slug):
     with SessionLocal() as db:
-        article = db.execute(text("""SELECT id,title,slug,excerpt,content,category,featured_image_url,seo_description,published_at,updated_at
+        article = db.execute(text("""SELECT id,title,slug,excerpt,content,category,featured_image_url,seo_description,seo_title,canonical_url,og_title,og_description,published_at,updated_at
             FROM blog_articles WHERE slug=:slug AND status='published' AND published_at IS NOT NULL"""), {"slug": slug}).mappings().first()
         if article is None:
             abort(404)
@@ -111,7 +124,7 @@ def admin_articles():
 @admin_required
 def create_article():
     try:
-        title, slug, excerpt, content, category, image, seo_description, status = _validate_form()
+        title, slug, excerpt, content, category, image, seo_description, seo_title, canonical_url, og_title, og_description, status = _validate_form()
     except ValueError as exc:
         flash(str(exc), "error")
         return redirect(url_for("blog.admin_articles"))
@@ -120,8 +133,8 @@ def create_article():
     with SessionLocal() as db:
         try:
             db.execute(text("""INSERT INTO blog_articles
-                (title,slug,excerpt,content,category,featured_image_url,seo_description,status,created_at,updated_at,published_at)
-                VALUES (:title,:slug,:excerpt,:content,:category,:image,:seo_description,:status,:now,:now,:published_at)"""), locals())
+                (title,slug,excerpt,content,category,featured_image_url,seo_description,seo_title,canonical_url,og_title,og_description,status,created_at,updated_at,published_at)
+                VALUES (:title,:slug,:excerpt,:content,:category,:image,:seo_description,:seo_title,:canonical_url,:og_title,:og_description,:status,:now,:now,:published_at)"""), locals())
             db.commit()
         except IntegrityError:
             db.rollback()
@@ -164,7 +177,8 @@ def update_article(article_id):
             published_at = None
         try:
             db.execute(text("""UPDATE blog_articles SET title=:title,slug=:slug,excerpt=:excerpt,content=:content,
-                category=:category,featured_image_url=:image,seo_description=:seo_description,status=:status,
+                category=:category,featured_image_url=:image,seo_description=:seo_description,seo_title=:seo_title,
+                canonical_url=:canonical_url,og_title=:og_title,og_description=:og_description,status=:status,
                 updated_at=:now,published_at=:published_at WHERE id=:id"""), locals())
             db.commit()
         except IntegrityError:
