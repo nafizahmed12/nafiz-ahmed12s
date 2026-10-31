@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>SEO Manager | NafizTech</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f6fa;color:#172033;font:14px Inter,system-ui,sans-serif}.wrap{max-width:1200px;margin:auto;padding:26px 18px 60px}header,.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}h1{margin:0 0 6px;font-size:27px}.muted{color:#697586}.btn{display:inline-block;padding:9px 12px;background:#172033;color:#fff;text-decoration:none;border-radius:8px}.summary{background:#fff;border:1px solid #e1e6ee;border-radius:12px;padding:16px;margin:20px 0}.table-wrap{overflow-x:auto;background:#fff;border:1px solid #e1e6ee;border-radius:12px}table{width:100%;border-collapse:collapse;min-width:780px}th,td{text-align:left;padding:12px;border-bottom:1px solid #edf0f4;vertical-align:top}th{font-size:11px;text-transform:uppercase;color:#697586}ul{margin:0;padding-left:18px;color:#a33}.ok{color:#187344}.slug{font-family:monospace;color:#697586}
+</style>
+</head><body><main class="wrap">
+<header><div><h1>SEO Manager</h1><div class="muted">Read-only article metadata audit · first 200 recently updated articles</div></div><nav><a class="btn" href="/admin/publisher">← Dashboard</a></nav></header>
+<section class="summary"><strong>{{ issue_count }} articles need SEO attention</strong><p class="muted">Checks: SEO description (recommended 120–160 characters), excerpt and featured image. This audit does not modify content or database records.</p><a href="{{ sitemap_url }}">Open public XML sitemap ↗</a></section>
+<div class="table-wrap"><table><thead><tr><th>Article</th><th>Status</th><th>SEO description</th><th>Audit</th><th>Public URL</th></tr></thead><tbody>
+{% for article in articles %}<tr><td><strong>{{ article.title }}</strong><br><span class="slug">/{{ article.slug }}</span></td><td>{{ article.status }}</td><td>{{ article.seo_description|length if article.seo_description else 0 }} chars</td><td>{% if article.seo_issues %}<ul>{% for issue in article.seo_issues %}<li>{{ issue }}</li>{% endfor %}</ul>{% else %}<span class="ok">✓ Complete</span>{% endif %}</td><td><a href="/blog/{{ article.slug }}" target="_blank" rel="noopener">View ↗</a></td></tr>{% else %}<tr><td colspan="5" class="muted">No articles found.</td></tr>{% endfor %}
+</tbody></table></div>
+</main></body></html>

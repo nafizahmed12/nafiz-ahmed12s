@@ -1,4 +1,4 @@
-"""Editorial administration dashboard for the technology publisher."""
+"""Editorial administration dashboard and SEO audit tools."""
 from flask import Blueprint, render_template
 from sqlalchemy import text
 
@@ -11,6 +11,23 @@ publisher_admin_bp = Blueprint("publisher_admin", __name__)
 def _count(db, table, where=""):
     # Table names and predicates are fixed constants owned by this module.
     return int(db.execute(text(f"SELECT COUNT(*) FROM {table} {where}")).scalar_one())
+
+
+def audit_article_seo(article):
+    """Return actionable metadata issues for one article without changing it."""
+    description = (article.get("seo_description") or "").strip()
+    issues = []
+    if not description:
+        issues.append("Missing SEO description")
+    elif len(description) < 120:
+        issues.append("SEO description too short")
+    elif len(description) > 160:
+        issues.append("SEO description too long")
+    if not (article.get("excerpt") or "").strip():
+        issues.append("Missing excerpt")
+    if not (article.get("featured_image_url") or "").strip():
+        issues.append("Missing featured image")
+    return issues
 
 
 @publisher_admin_bp.get("/admin/publisher")
@@ -35,6 +52,31 @@ def publisher_dashboard():
         "admin_publisher_dashboard.html",
         stats=stats,
         latest_articles=latest_articles,
+    )
+
+
+@publisher_admin_bp.get("/admin/seo")
+@admin_required
+def publisher_seo_manager():
+    with SessionLocal() as db:
+        rows = db.execute(text("""
+            SELECT id, title, slug, excerpt, featured_image_url,
+                   seo_description, status
+            FROM blog_articles
+            ORDER BY updated_at DESC NULLS LAST, id DESC
+            LIMIT 200
+        """)).mappings().all()
+    articles = []
+    for row in rows:
+        article = dict(row)
+        article["seo_issues"] = audit_article_seo(article)
+        article["canonical_path"] = f"/blog/{article.get('slug') or ''}"
+        articles.append(article)
+    return render_template(
+        "admin_publisher_seo.html",
+        articles=articles,
+        issue_count=sum(bool(article["seo_issues"]) for article in articles),
+        sitemap_url="/sitemap.xml",
     )
 
 
