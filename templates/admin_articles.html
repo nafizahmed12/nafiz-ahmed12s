@@ -38,14 +38,15 @@
         featured.focus();
         return;
       }
-      const alt = (button.dataset.imageAlt || 'Article image').replace(/[\\[\\]\\r\\n]/g, ' ').trim();
+      const alt = (button.dataset.imageAlt || 'Article image').replaceAll('[', '(').replaceAll(']', ')').replaceAll(String.fromCharCode(10), ' ').replaceAll(String.fromCharCode(13), ' ').trim();
       const markdown = '![' + alt + '](' + url + ')';
       const start = content.selectionStart;
       const end = content.selectionEnd;
       const before = content.value.slice(0, start);
       const after = content.value.slice(end);
-      const prefix = before && !before.endsWith('\\n') ? '\\n\\n' : '';
-      const suffix = after && !after.startsWith('\\n') ? '\\n\\n' : '';
+      const newline = String.fromCharCode(10);
+      const prefix = before && !before.endsWith(newline) ? newline + newline : '';
+      const suffix = after && !after.startsWith(newline) ? newline + newline : '';
       content.value = before + prefix + markdown + suffix + after;
       content.focus();
       const cursor = (before + prefix + markdown).length;
