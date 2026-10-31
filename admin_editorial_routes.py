@@ -111,14 +111,14 @@ def record_article_revision(db, article, note="Article updated"):
             "article_id": int(article["id"]),
             "snapshot": json.dumps(snapshot, ensure_ascii=False),
             "note": note[:200],
-            "actor": str(session.get("admin_username") if has_request_context() else "scheduler" or "scheduler")[:120],
+            "actor": str(actor or "scheduler")[:120],
             "created_at": datetime.now(timezone.utc),
         },
     )
 
 
 def log_admin_activity(db, action, entity_type, entity_id=None, summary=""):
-    from flask import session
+    actor = session.get("admin_username") if has_request_context() else None
     db.execute(
         text("""INSERT INTO admin_activity_log (actor,action,entity_type,entity_id,summary,created_at)
             VALUES (:actor,:action,:entity_type,:entity_id,:summary,:created_at)"""),
