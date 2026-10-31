@@ -1,0 +1,19 @@
+<style>
+.admin-unified-nav{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:7px;overflow-x:auto;white-space:nowrap;padding:10px 14px;background:#111827;border-bottom:1px solid #263244;scrollbar-width:thin}
+.admin-unified-nav a{flex:0 0 auto;color:#dbe4f0;text-decoration:none;font:700 12px/1.2 Inter,system-ui,sans-serif;padding:9px 11px;border-radius:8px}
+.admin-unified-nav a:hover,.admin-unified-nav a[aria-current=page]{background:#263b53;color:#fff}
+.admin-unified-nav .nav-brand{color:#fff;font-weight:900;margin-right:8px}
+@media(max-width:600px){.admin-unified-nav{padding:8px}.admin-unified-nav a{padding:9px;font-size:11px}}
+</style>
+<nav class="admin-unified-nav" aria-label="Unified admin navigation">
+<a class="nav-brand" href="/admin">NAFIZTECH ADMIN</a>
+<a href="/admin" {% if request.path == '/admin' %}aria-current="page"{% endif %}>Dashboard</a>
+<a href="/admin/publisher" {% if request.path == '/admin/publisher' %}aria-current="page"{% endif %}>Publisher</a>
+<a href="/admin/articles" {% if request.path.startswith('/admin/articles') %}aria-current="page"{% endif %}>Articles</a>
+<a href="/admin/phones" {% if request.path.startswith('/admin/phones') %}aria-current="page"{% endif %}>Phone Catalog</a>
+<a href="/admin/seo" {% if request.path == '/admin/seo' %}aria-current="page"{% endif %}>SEO Manager</a>
+<a href="/admin/bulk" {% if request.path == '/admin/bulk' %}aria-current="page"{% endif %}>Bulk Editor</a>
+<a href="/admin/products">Products</a>
+<a href="/admin/orders">Orders</a>
+<a href="/admin/reviews">Reviews</a>
+</nav>
