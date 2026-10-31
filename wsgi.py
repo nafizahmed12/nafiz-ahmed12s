@@ -17,6 +17,7 @@ from phone_guides_routes import register_phone_guide_routes
 from phone_series_routes import register_phone_series_routes
 from best_phones_routes import register_best_phone_routes
 from seo_sitemap import register_canonical_sitemap
+from publisher_admin_routes import register_publisher_admin_routes
 
 ADSENSE_CSP = (
     "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; "
@@ -134,6 +135,7 @@ register_phone_guide_routes(app)
 register_phone_series_routes(app)
 register_best_phone_routes(app)
 register_canonical_sitemap(app, products)
+register_publisher_admin_routes(app)
 
 
 @app.get("/roundups")
