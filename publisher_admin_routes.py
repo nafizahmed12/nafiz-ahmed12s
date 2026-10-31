@@ -82,6 +82,84 @@ def publisher_seo_manager():
     )
 
 
+def normalize_bulk_article_action(action):
+    """Allow only the three explicitly supported bulk operations."""
+    action = (action or "").strip().lower()
+    return action if action in {"publish", "draft", "delete"} else None
+
+
+def normalize_bulk_article_ids(values):
+    """Parse unique positive article IDs, rejecting oversized submissions."""
+    values = list(values or [])
+    if len(values) > 100:
+        return []
+    article_ids = []
+    for value in values:
+        try:
+            article_id = int(value)
+        except (TypeError, ValueError):
+            continue
+        if article_id > 0 and article_id not in article_ids:
+            article_ids.append(article_id)
+    return article_ids
+
+
+@publisher_admin_bp.route("/admin/bulk", methods=["GET", "POST"])
+@admin_required
+def publisher_bulk_editor():
+    if request.method == "POST":
+        action = normalize_bulk_article_action(request.form.get("action"))
+        article_ids = normalize_bulk_article_ids(request.form.getlist("article_ids"))
+        if not action or not article_ids:
+            flash("Choose a valid action and at least one article (maximum 100).", "error")
+            return redirect(url_for("publisher_admin.publisher_bulk_editor"))
+
+        placeholders = ", ".join(f":id_{index}" for index in range(len(article_ids)))
+        params = {f"id_{index}": value for index, value in enumerate(article_ids)}
+        with SessionLocal() as db:
+            if action == "delete":
+                result = db.execute(
+                    text(f"DELETE FROM blog_articles WHERE id IN ({placeholders})"),
+                    params,
+                )
+            elif action == "publish":
+                params["published_at"] = datetime.now(timezone.utc)
+                result = db.execute(
+                    text(f"""
+                        UPDATE blog_articles
+                        SET status = 'published',
+                            published_at = COALESCE(published_at, :published_at),
+                            updated_at = :published_at
+                        WHERE id IN ({placeholders})
+                    """),
+                    params,
+                )
+            else:
+                params["updated_at"] = datetime.now(timezone.utc)
+                result = db.execute(
+                    text(f"""
+                        UPDATE blog_articles
+                        SET status = 'draft', published_at = NULL,
+                            updated_at = :updated_at
+                        WHERE id IN ({placeholders})
+                    """),
+                    params,
+                )
+            affected = result.rowcount or 0
+            db.commit()
+        flash(f"{affected} article(s) processed.", "success")
+        return redirect(url_for("publisher_admin.publisher_bulk_editor"))
+
+    with SessionLocal() as db:
+        articles = db.execute(text("""
+            SELECT id, title, slug, status, updated_at
+            FROM blog_articles
+            ORDER BY updated_at DESC NULLS LAST, id DESC
+            LIMIT 200
+        """)).mappings().all()
+    return render_template("admin_publisher_bulk.html", articles=articles)
+
+
 def register_publisher_admin_routes(app):
     if "publisher_admin" not in app.blueprints:
         app.register_blueprint(publisher_admin_bp)
