@@ -6,3 +6,4 @@ psycopg2-binary==2.9.12
 alembic==1.19.1
 pytest==9.0.3
 Flask-Limiter
+cloudinary>=1.41.0,<2.0
