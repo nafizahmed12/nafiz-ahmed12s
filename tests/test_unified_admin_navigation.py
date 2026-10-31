@@ -41,3 +41,16 @@ def test_unified_navigation_is_mobile_responsive():
         assert href in partial, href
     assert "@media" in partial
     assert "overflow-x:auto" in partial
+
+
+def test_legacy_admin_renders_unified_navigation_for_mobile_users():
+    template = Path("templates/admin.html").read_text(encoding="utf-8")
+    assert "{% include 'admin_unified_nav.html' %}" in template
+
+
+def test_unified_navigation_uses_existing_admin_sections_not_missing_pages():
+    partial = Path("templates/admin_unified_nav.html").read_text(encoding="utf-8")
+    assert 'href="/admin#products"' in partial
+    assert 'href="/admin#reviews"' in partial
+    assert 'href="/admin/products"' not in partial
+    assert 'href="/admin/reviews"' not in partial
