@@ -1,10 +1,12 @@
 """Owner-only editorial workflow tools: media, scheduling, revisions, activity and settings."""
+import io
 import json
 import os
 import re
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from flask import Blueprint, abort, current_app, flash, has_request_context, jsonify, redirect, render_template, request, send_from_directory, session, url_for
@@ -39,6 +41,67 @@ IMAGE_SIGNATURES = {
     ".gif": ("image/gif", lambda data: data.startswith((b"GIF87a", b"GIF89a"))),
     ".webp": ("image/webp", lambda data: len(data) >= 12 and data[:4] == b"RIFF" and data[8:12] == b"WEBP"),
 }
+
+
+def cloudinary_storage_configured():
+    """Return whether the Cloudinary credentials needed for persistent uploads exist."""
+    if os.getenv("CLOUDINARY_URL", "").strip():
+        return True
+    return all(os.getenv(key, "").strip() for key in (
+        "CLOUDINARY_CLOUD_NAME", "CLOUDINARY_API_KEY", "CLOUDINARY_API_SECRET"
+    ))
+
+
+def _configure_cloudinary():
+    import cloudinary
+
+    cloudinary_url = os.getenv("CLOUDINARY_URL", "").strip()
+    if cloudinary_url:
+        cloudinary.config()
+    else:
+        cloudinary.config(
+            cloud_name=os.environ["CLOUDINARY_CLOUD_NAME"].strip(),
+            api_key=os.environ["CLOUDINARY_API_KEY"].strip(),
+            api_secret=os.environ["CLOUDINARY_API_SECRET"].strip(),
+            secure=True,
+        )
+    return cloudinary
+
+
+def upload_image_to_cloudinary(raw, filename):
+    """Upload validated image bytes and return Cloudinary's public ID and HTTPS URL."""
+    if not cloudinary_storage_configured():
+        raise RuntimeError("Cloudinary storage is not configured.")
+    cloudinary = _configure_cloudinary()
+    from cloudinary import uploader
+
+    folder = os.getenv("CLOUDINARY_FOLDER", "nafiztech/media").strip().strip("/") or "nafiztech/media"
+    result = uploader.upload(
+        io.BytesIO(raw),
+        resource_type="image",
+        folder=folder,
+        public_id=Path(filename).stem,
+        overwrite=False,
+        unique_filename=False,
+        use_filename=False,
+        filename_override=filename,
+    )
+    public_id = str(result.get("public_id") or "").strip()
+    secure_url = str(result.get("secure_url") or "").strip()
+    parsed_url = urlsplit(secure_url)
+    if not public_id or parsed_url.scheme != "https" or not parsed_url.netloc:
+        raise RuntimeError("Cloudinary did not return a valid public ID and secure HTTPS URL.")
+    return {"public_id": public_id, "secure_url": secure_url}
+
+
+def delete_cloudinary_image(public_id):
+    """Delete a previously uploaded Cloudinary image by its stored public ID."""
+    if not cloudinary_storage_configured():
+        raise RuntimeError("Cloudinary storage is not configured.")
+    _configure_cloudinary()
+    from cloudinary import uploader
+
+    return uploader.destroy(public_id, resource_type="image", invalidate=True)
 
 
 def normalize_schedule_datetime(value, now=None, timezone_name=None):
@@ -205,30 +268,38 @@ def upload_media():
     except ValueError as exc:
         flash(str(exc), "error")
         return redirect(url_for("admin_editorial.media_library"))
+    if not cloudinary_storage_configured():
+        flash("Cloudinary is not configured. Add CLOUDINARY_URL in Render Environment before uploading media.", "error")
+        return redirect(url_for("admin_editorial.media_library"))
+
     filename = f"{uuid.uuid4().hex}{info['extension']}"
-    upload_dir = Path(os.getenv("MEDIA_UPLOAD_DIR", str(Path(current_app.root_path) / "static" / "uploads"))).resolve()
-    upload_dir.mkdir(parents=True, exist_ok=True)
-    target = upload_dir / filename
-    target.write_bytes(raw)
     alt_text = request.form.get("alt_text", "").strip()[:300]
-    from flask import session
+    cloud_asset = None
     try:
+        cloud_asset = upload_image_to_cloudinary(raw, filename)
         with SessionLocal() as db:
             db.execute(text("""INSERT INTO admin_media
-                (filename,original_name,mime_type,size_bytes,alt_text,uploaded_by,created_at)
-                VALUES (:filename,:original_name,:mime_type,:size_bytes,:alt_text,:uploaded_by,:created_at)"""),
+                (filename,original_name,mime_type,size_bytes,alt_text,uploaded_by,created_at,
+                 storage_provider,storage_key,secure_url)
+                VALUES (:filename,:original_name,:mime_type,:size_bytes,:alt_text,:uploaded_by,:created_at,
+                 'cloudinary',:storage_key,:secure_url)"""),
                 {"filename": filename, "original_name": secure_filename(uploaded.filename)[:255],
                  "mime_type": info["mime_type"], "size_bytes": len(raw), "alt_text": alt_text,
                  "uploaded_by": str(session.get("admin_username") or "admin")[:120],
-                 "created_at": datetime.now(timezone.utc)})
-            log_admin_activity(db, "media_upload", "media", None, f"Uploaded image {filename}.")
+                 "created_at": datetime.now(timezone.utc),
+                 "storage_key": cloud_asset["public_id"], "secure_url": cloud_asset["secure_url"]})
+            log_admin_activity(db, "media_upload", "media", None, f"Uploaded image {filename} to Cloudinary.")
             db.commit()
     except Exception:
-        target.unlink(missing_ok=True)
-        current_app.logger.exception("Media upload could not be saved")
-        flash("Image could not be saved. Check database and storage configuration.", "error")
+        if cloud_asset:
+            try:
+                delete_cloudinary_image(cloud_asset["public_id"])
+            except Exception:
+                current_app.logger.exception("Cloudinary cleanup failed after media database error")
+        current_app.logger.exception("Media upload could not be saved to Cloudinary")
+        flash("Image could not be saved to Cloudinary. Check the storage configuration and try again.", "error")
         return redirect(url_for("admin_editorial.media_library"))
-    flash("Image uploaded successfully.", "success")
+    flash("Image uploaded successfully to Cloudinary.", "success")
     return redirect(url_for("admin_editorial.media_library"))
 
 
@@ -236,6 +307,17 @@ def upload_media():
 def serve_media(filename):
     if not re.fullmatch(r"[a-f0-9]{32}\.(?:jpg|jpeg|png|gif|webp)", filename):
         abort(404)
+    with SessionLocal() as db:
+        media = db.execute(text("""SELECT storage_provider,storage_key,secure_url
+            FROM admin_media WHERE filename=:filename"""), {"filename": filename}).mappings().first()
+    if media is None:
+        abort(404)
+    if media["storage_provider"] == "cloudinary":
+        secure_url = str(media["secure_url"] or "").strip()
+        parsed_url = urlsplit(secure_url)
+        if parsed_url.scheme != "https" or not parsed_url.netloc:
+            abort(404)
+        return redirect(secure_url, code=302)
     upload_dir = Path(os.getenv("MEDIA_UPLOAD_DIR", str(Path(current_app.root_path) / "static" / "uploads"))).resolve()
     return send_from_directory(upload_dir, filename, conditional=True, max_age=31536000)
 
@@ -244,15 +326,25 @@ def serve_media(filename):
 @admin_required
 def delete_media(media_id):
     with SessionLocal() as db:
-        row = db.execute(text("SELECT filename FROM admin_media WHERE id=:id"), {"id": media_id}).mappings().first()
+        row = db.execute(text("SELECT filename,storage_provider,storage_key FROM admin_media WHERE id=:id"), {"id": media_id}).mappings().first()
         if row is None:
             abort(404)
         filename = row["filename"]
+        if row["storage_provider"] == "cloudinary":
+            try:
+                result = delete_cloudinary_image(row["storage_key"])
+                if result.get("result") not in {"ok", "not found"}:
+                    raise RuntimeError("Cloudinary did not confirm image deletion.")
+            except Exception:
+                current_app.logger.exception("Cloudinary media deletion failed")
+                flash("Image could not be deleted from Cloudinary. The media record was kept.", "error")
+                return redirect(url_for("admin_editorial.media_library"))
         db.execute(text("DELETE FROM admin_media WHERE id=:id"), {"id": media_id})
         log_admin_activity(db, "media_delete", "media", media_id, f"Deleted image {filename}.")
         db.commit()
-    upload_dir = Path(os.getenv("MEDIA_UPLOAD_DIR", str(Path(current_app.root_path) / "static" / "uploads"))).resolve()
-    (upload_dir / filename).unlink(missing_ok=True)
+    if row["storage_provider"] != "cloudinary":
+        upload_dir = Path(os.getenv("MEDIA_UPLOAD_DIR", str(Path(current_app.root_path) / "static" / "uploads"))).resolve()
+        (upload_dir / filename).unlink(missing_ok=True)
     flash("Media item deleted.", "success")
     return redirect(url_for("admin_editorial.media_library"))
 
@@ -346,7 +438,6 @@ def admin_site_settings():
         except ValueError as exc:
             flash(str(exc), "error")
             return redirect(url_for("admin_editorial.admin_site_settings"))
-        from flask import session
         now = datetime.now(timezone.utc)
         with SessionLocal() as db:
             for key, value in values.items():
