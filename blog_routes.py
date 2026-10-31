@@ -115,11 +115,11 @@ def admin_articles():
 def create_article():
     try:
         title, slug, excerpt, content, category, image, seo_description, status = _validate_form()
+        scheduled_at = normalize_schedule_datetime(request.form.get("scheduled_at")) if status == "scheduled" else None
     except ValueError as exc:
         flash(str(exc), "error")
         return redirect(url_for("blog.admin_articles"))
     now = datetime.now(timezone.utc)
-    scheduled_at = normalize_schedule_datetime(request.form.get("scheduled_at")) if status == "scheduled" else None
     published_at = now if status == "published" else None
     with SessionLocal() as db:
         try:
@@ -164,7 +164,6 @@ def update_article(article_id):
         if existing is None:
             abort(404)
         record_article_revision(db, existing, "Before article edit")
-        scheduled_at = normalize_schedule_datetime(request.form.get("scheduled_at")) if status == "scheduled" else None
         published_at = existing["published_at"]
         if status == "published" and published_at is None:
             published_at = now
