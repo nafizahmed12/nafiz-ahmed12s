@@ -124,7 +124,7 @@ def _inject_seo(response):
                 (og_description_pattern, f'<meta property="og:description" content="{escaped_description}">'),
             ):
                 if re.search(pattern, body, flags=re.IGNORECASE | re.DOTALL):
-                    body = re.sub(pattern, replacement, body, count=1, flags=re.IGNORECASE | re.DOTALL)
+                    body = re.sub(pattern, lambda _match: replacement, body, count=1, flags=re.IGNORECASE | re.DOTALL)
     if title and "<title" not in body.lower():
         additions.append(f"<title>{escape(title)}</title>")
     if description and 'name="description"' not in body.lower():
