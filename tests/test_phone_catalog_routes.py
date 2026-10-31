@@ -84,3 +84,57 @@ def test_homepage_links_to_roundups_and_phone_hubs():
     assert 'href="/roundups"' in html
     assert 'href="/phones?brand=Apple"' in html
     assert 'href="/phones?brand=Samsung"' in html
+
+def test_phone_image_upload_accepts_supported_image_and_returns_data_url():
+    from io import BytesIO
+    from flask import Flask
+    from werkzeug.datastructures import FileStorage
+    from phone_catalog_routes import _uploaded_phone_image_data_url
+
+    app = Flask(__name__)
+    with app.test_request_context():
+        from flask import request
+        request.files = {"image": FileStorage(
+            stream=BytesIO(b"fake-png-bytes"),
+            filename="phone.png",
+            content_type="image/png",
+        )}
+        result = _uploaded_phone_image_data_url()
+    assert result.startswith("data:image/png;base64,")
+    assert "fake-png-bytes" not in result
+
+
+def test_phone_image_upload_rejects_non_image_files():
+    import pytest
+    from io import BytesIO
+    from flask import Flask, request
+    from werkzeug.datastructures import FileStorage
+    from phone_catalog_routes import _uploaded_phone_image_data_url
+
+    app = Flask(__name__)
+    with app.test_request_context():
+        request.files = {"image": FileStorage(
+            stream=BytesIO(b"not-an-image"),
+            filename="phone.txt",
+            content_type="text/plain",
+        )}
+        with pytest.raises(ValueError, match="JPG, PNG, WEBP or GIF"):
+            _uploaded_phone_image_data_url()
+
+
+def test_phone_image_upload_rejects_files_over_one_megabyte():
+    import pytest
+    from io import BytesIO
+    from flask import Flask, request
+    from werkzeug.datastructures import FileStorage
+    from phone_catalog_routes import _uploaded_phone_image_data_url
+
+    app = Flask(__name__)
+    with app.test_request_context():
+        request.files = {"image": FileStorage(
+            stream=BytesIO(b"x" * (1024 * 1024 + 1)),
+            filename="phone.jpg",
+            content_type="image/jpeg",
+        )}
+        with pytest.raises(ValueError, match="1 MB or smaller"):
+            _uploaded_phone_image_data_url()
