@@ -72,3 +72,36 @@ def test_revision_snapshot_is_json_serializable_and_excludes_unneeded_fields():
     assert snapshot["id"] == 12
     assert snapshot["title"] == "Example"
     assert "password" not in snapshot
+
+
+
+def test_due_scheduled_articles_are_published():
+    import uuid
+    from sqlalchemy import text
+    from database import SessionLocal
+    from admin_editorial_routes import publish_due_articles
+
+    slug = "scheduled-ci-" + uuid.uuid4().hex[:12]
+    with SessionLocal() as db:
+        article_id = db.execute(text("""INSERT INTO blog_articles
+            (title,slug,excerpt,content,category,featured_image_url,seo_description,status,created_at,updated_at,published_at,scheduled_at)
+            VALUES ('Scheduled CI article',:slug,'','This is a test article body with enough content to satisfy the publishing schema.',
+            'Technology',NULL,'','scheduled',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,NULL,'2020-01-01 00:00:00+00')
+            RETURNING id"""), {"slug": slug}).scalar_one()
+        db.commit()
+        count = publish_due_articles(db)
+        row = db.execute(text("SELECT status,published_at,scheduled_at FROM blog_articles WHERE id=:id"), {"id": article_id}).mappings().one()
+        assert count >= 1
+        assert row["status"] == "published"
+        assert row["published_at"] is not None
+        assert row["scheduled_at"] is None
+        db.execute(text("DELETE FROM blog_articles WHERE id=:id"), {"id": article_id})
+        db.commit()
+
+
+def test_editorial_api_schedule_runner_requires_a_bearer_token(monkeypatch):
+    from wsgi import app
+
+    monkeypatch.setenv("SCHEDULED_PUBLISH_TOKEN", "test-cron-secret")
+    response = app.test_client().post("/api/internal/publish-scheduled")
+    assert response.status_code == 401
