@@ -19,6 +19,7 @@ from best_phones_routes import register_best_phone_routes
 from seo_sitemap import register_canonical_sitemap
 from publisher_admin_routes import register_publisher_admin_routes
 from admin_operations_routes import register_admin_operations_routes
+from admin_editorial_routes import get_public_site_settings, register_admin_editorial_routes
 
 ADSENSE_CSP = (
     "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; "
@@ -105,6 +106,10 @@ def _inject_seo(response):
         additions.append(f'<link rel="canonical" href="{canonical}">')
 
     title, description = SEO_META.get(request.path, (None, None))
+    if request.path == "/":
+        site_settings = get_public_site_settings()
+        title = f"{site_settings['site_title']} | {site_settings['site_tagline']}"
+        description = site_settings["site_description"]
     if title and "<title" not in body.lower():
         additions.append(f"<title>{escape(title)}</title>")
     if description and 'name="description"' not in body.lower():
@@ -138,6 +143,7 @@ register_best_phone_routes(app)
 register_canonical_sitemap(app, products)
 register_publisher_admin_routes(app)
 register_admin_operations_routes(app)
+register_admin_editorial_routes(app)
 
 
 @app.get("/roundups")
