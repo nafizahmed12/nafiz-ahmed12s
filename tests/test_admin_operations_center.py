@@ -7,11 +7,11 @@ os.environ.setdefault("RENDER", "0")
 
 
 def test_operations_route_is_registered_and_owner_only():
-    import wsgi
+    import app
 
-    routes = {rule.rule for rule in wsgi.app.url_map.iter_rules()}
+    routes = {rule.rule for rule in app.app.url_map.iter_rules()}
     assert "/admin/operations" in routes
-    response = wsgi.app.test_client().get("/admin/operations")
+    response = app.app.test_client().get("/admin/operations")
     assert response.status_code == 302
     assert response.headers["Location"].endswith("/login")
 
