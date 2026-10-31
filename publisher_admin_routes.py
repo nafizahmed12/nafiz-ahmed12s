@@ -6,6 +6,7 @@ from sqlalchemy import text
 
 from admin_auth import admin_required
 from database import SessionLocal
+from admin_editorial_routes import log_admin_activity, record_article_revision
 
 publisher_admin_bp = Blueprint("publisher_admin", __name__)
 
@@ -117,6 +118,13 @@ def publisher_bulk_editor():
         placeholders = ", ".join(f":id_{index}" for index in range(len(article_ids)))
         params = {f"id_{index}": value for index, value in enumerate(article_ids)}
         with SessionLocal() as db:
+            if action != "delete":
+                prior_articles = db.execute(
+                    text(f"SELECT * FROM blog_articles WHERE id IN ({placeholders})"),
+                    params,
+                ).mappings().all()
+                for prior_article in prior_articles:
+                    record_article_revision(db, prior_article, f"Before bulk {action}")
             if action == "delete":
                 result = db.execute(
                     text(f"DELETE FROM blog_articles WHERE id IN ({placeholders})"),
@@ -146,6 +154,7 @@ def publisher_bulk_editor():
                     params,
                 )
             affected = result.rowcount or 0
+            log_admin_activity(db, f"article_bulk_{action}", "article", None, f"Bulk {action}: {affected} article(s).")
             db.commit()
         flash(f"{affected} article(s) processed.", "success")
         return redirect(url_for("publisher_admin.publisher_bulk_editor"))
