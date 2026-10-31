@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from flask import Blueprint, abort, current_app, flash, jsonify, redirect, render_template, request, send_from_directory, session, url_for
+from flask import Blueprint, abort, current_app, flash, has_request_context, jsonify, redirect, render_template, request, send_from_directory, session, url_for
 from werkzeug.utils import secure_filename
 from sqlalchemy import text
 
@@ -28,8 +28,8 @@ SITE_SETTING_LIMITS = {
 }
 DEFAULT_SITE_SETTINGS = {
     "site_title": "NafizTech",
-    "site_tagline": "Mobile, gadgets, AI and technology",
-    "site_description": "Independent technology publishing covering mobile devices, gadgets, AI and technology news.",
+    "site_tagline": "Mobile, Gadgets, AI and Technology News",
+    "site_description": "NafizTech covers mobile technology, gadgets, artificial intelligence, and technology news for readers worldwide.",
 }
 MEDIA_MAX_BYTES = 900 * 1024
 IMAGE_SIGNATURES = {
@@ -111,7 +111,7 @@ def record_article_revision(db, article, note="Article updated"):
             "article_id": int(article["id"]),
             "snapshot": json.dumps(snapshot, ensure_ascii=False),
             "note": note[:200],
-            "actor": str(session.get("admin_username") or "admin")[:120],
+            "actor": str(session.get("admin_username") if has_request_context() else "scheduler" or "scheduler")[:120],
             "created_at": datetime.now(timezone.utc),
         },
     )
