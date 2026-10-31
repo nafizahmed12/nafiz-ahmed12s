@@ -28,8 +28,10 @@ def test_publisher_pages_share_unified_navigation():
     ]
     for filename in templates:
         content = Path(filename).read_text(encoding="utf-8")
-        assert "admin-unified-nav" in content, filename
         assert "{% include 'admin_unified_nav.html' %}" in content, filename
+
+    partial = Path("templates/admin_unified_nav.html").read_text(encoding="utf-8")
+    assert 'class="admin-unified-nav"' in partial
 
 
 def test_unified_navigation_is_mobile_responsive():
