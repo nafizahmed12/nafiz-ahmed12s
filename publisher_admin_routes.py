@@ -1,5 +1,6 @@
 """Editorial administration dashboard and SEO audit tools."""
 from datetime import datetime, timezone
+from urllib.parse import urlsplit
 
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from sqlalchemy import text
@@ -13,6 +14,32 @@ publisher_admin_bp = Blueprint("publisher_admin", __name__)
 def _count(db, table, where=""):
     # Table names and predicates are fixed constants owned by this module.
     return int(db.execute(text(f"SELECT COUNT(*) FROM {table} {where}")).scalar_one())
+
+
+def normalize_seo_metadata(form, title, excerpt):
+    """Validate and normalize editable article SEO/social metadata."""
+    seo_title = (form.get("seo_title") or "").strip() or (title or "").strip()
+    canonical_url = (form.get("canonical_url") or "").strip()
+    og_title = (form.get("og_title") or "").strip() or seo_title
+    og_description = (form.get("og_description") or "").strip() or (excerpt or "").strip()
+    if len(seo_title) > 200:
+        raise ValueError("SEO title must be 200 characters or fewer.")
+    if len(og_title) > 200:
+        raise ValueError("Open Graph title must be 200 characters or fewer.")
+    if len(og_description) > 320:
+        raise ValueError("Open Graph description must be 320 characters or fewer.")
+    if len(canonical_url) > 2048:
+        raise ValueError("Canonical URL is too long.")
+    if canonical_url:
+        parsed = urlsplit(canonical_url)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc or parsed.username or parsed.password:
+            raise ValueError("Canonical URL must be a valid HTTP or HTTPS URL.")
+    return {
+        "seo_title": seo_title,
+        "canonical_url": canonical_url or None,
+        "og_title": og_title,
+        "og_description": og_description,
+    }
 
 
 def audit_article_seo(article):
@@ -63,7 +90,7 @@ def publisher_seo_manager():
     with SessionLocal() as db:
         rows = db.execute(text("""
             SELECT id, title, slug, excerpt, featured_image_url,
-                   seo_description, status
+                   seo_description, seo_title, canonical_url, og_title, og_description, status
             FROM blog_articles
             ORDER BY updated_at DESC NULLS LAST, id DESC
             LIMIT 200
