@@ -148,16 +148,19 @@ def publish_due_articles(db, now=None):
 
 
 def get_public_site_settings():
-    settings = dict(DEFAULT_SITE_SETTINGS)
     try:
         with SessionLocal() as db:
             rows = db.execute(text("SELECT setting_key,setting_value FROM site_settings")).mappings().all()
+        if not rows:
+            return None
+        settings = dict(DEFAULT_SITE_SETTINGS)
         for row in rows:
             if row["setting_key"] in SITE_SETTING_LIMITS:
                 settings[row["setting_key"]] = row["setting_value"]
+        return settings
     except Exception:
         current_app.logger.exception("Could not load public site settings")
-    return settings
+        return None
 
 
 @admin_editorial_bp.get("/admin/media")
