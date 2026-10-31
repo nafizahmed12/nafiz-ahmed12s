@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 
 from database import SessionLocal
 from admin_auth import admin_required
-from admin_editorial_routes import log_admin_activity, normalize_schedule_datetime, publish_due_articles, record_article_revision
+from admin_editorial_routes import format_schedule_display, format_schedule_input, log_admin_activity, normalize_schedule_datetime, publish_due_articles, record_article_revision
 
 blog_bp = Blueprint("blog", __name__)
 
@@ -107,6 +107,7 @@ def admin_articles():
     with SessionLocal() as db:
         articles = db.execute(text("""SELECT id,title,slug,excerpt,category,status,featured_image_url,created_at,updated_at,published_at,scheduled_at
             FROM blog_articles ORDER BY id DESC""")).mappings().all()
+    articles = [dict(row, scheduled_at_display=format_schedule_display(row["scheduled_at"])) for row in articles]
     return render_template("admin_articles.html", articles=articles, article=None)
 
 
