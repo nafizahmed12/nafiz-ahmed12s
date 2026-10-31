@@ -24,3 +24,14 @@ def test_bulk_editor_route_is_registered_and_admin_only():
     response = wsgi.app.test_client().get("/admin/bulk")
     assert response.status_code == 302
     assert response.headers["Location"].endswith("/login")
+
+
+def test_bulk_editor_template_has_csrf_and_explicit_delete_confirmation():
+    from pathlib import Path
+
+    template = Path("templates/admin_publisher_bulk.html").read_text(encoding="utf-8")
+    assert 'name="csrf_token"' in template
+    assert 'value="delete"' in template
+    assert "Permanently delete" in template
+    dashboard = Path("templates/admin_publisher_dashboard.html").read_text(encoding="utf-8")
+    assert 'href="/admin/bulk"' in dashboard
