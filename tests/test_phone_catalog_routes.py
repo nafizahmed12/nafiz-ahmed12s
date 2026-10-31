@@ -145,6 +145,6 @@ def test_phone_admin_post_forms_include_csrf_tokens():
     import re
 
     template = Path("templates/admin_phones.html").read_text(encoding="utf-8")
-    post_forms = re.findall(r'<form\\b(?=[^>]*method="post")[^>]*>(.*?)</form>', template, re.DOTALL)
+    post_forms = re.findall(r'<form\b(?=[^>]*method="post")[^>]*>(.*?)</form>', template, re.DOTALL)
     assert len(post_forms) == 3
     assert all('name="csrf_token"' in form for form in post_forms)
