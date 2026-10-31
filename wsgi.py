@@ -112,14 +112,18 @@ def _inject_seo(response):
         description = site_settings["site_description"]
         escaped_title = escape(title)
         escaped_description = escape(description, quote=True)
-        if re.search(r"<title\\b[^>]*>.*?</title>", body, flags=re.IGNORECASE | re.DOTALL):
-            body = re.sub(r"<title\\b[^>]*>.*?</title>", f"<title>{escaped_title}</title>", body, count=1, flags=re.IGNORECASE | re.DOTALL)
-        if re.search(r'<meta\\s+name=["\\']description["\\'][^>]*>', body, flags=re.IGNORECASE):
-            body = re.sub(r'<meta\\s+name=["\\']description["\\'][^>]*>', f'<meta name="description" content="{escaped_description}">', body, count=1, flags=re.IGNORECASE)
-        if re.search(r'<meta\\s+property=["\\']og:title["\\'][^>]*>', body, flags=re.IGNORECASE):
-            body = re.sub(r'<meta\\s+property=["\\']og:title["\\'][^>]*>', f'<meta property="og:title" content="{escaped_title}">', body, count=1, flags=re.IGNORECASE)
-        if re.search(r'<meta\\s+property=["\\']og:description["\\'][^>]*>', body, flags=re.IGNORECASE):
-            body = re.sub(r'<meta\\s+property=["\\']og:description["\\'][^>]*>', f'<meta property="og:description" content="{escaped_description}">', body, count=1, flags=re.IGNORECASE)
+        title_pattern = r"<title\\b[^>]*>.*?</title>"
+        description_pattern = r"""<meta\\s+name=["']description["'][^>]*>"""
+        og_title_pattern = r"""<meta\\s+property=["']og:title["'][^>]*>"""
+        og_description_pattern = r"""<meta\\s+property=["']og:description["'][^>]*>"""
+        for pattern, replacement in (
+            (title_pattern, f"<title>{escaped_title}</title>"),
+            (description_pattern, f'<meta name="description" content="{escaped_description}">'),
+            (og_title_pattern, f'<meta property="og:title" content="{escaped_title}">'),
+            (og_description_pattern, f'<meta property="og:description" content="{escaped_description}">'),
+        ):
+            if re.search(pattern, body, flags=re.IGNORECASE | re.DOTALL):
+                body = re.sub(pattern, replacement, body, count=1, flags=re.IGNORECASE | re.DOTALL)
     if title and "<title" not in body.lower():
         additions.append(f"<title>{escape(title)}</title>")
     if description and 'name="description"' not in body.lower():
