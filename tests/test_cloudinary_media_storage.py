@@ -32,6 +32,7 @@ def test_cloudinary_upload_returns_only_a_secure_delivery_url(monkeypatch):
     fake_cloudinary.config = lambda: None
     fake_uploader = types.ModuleType("cloudinary.uploader")
     fake_uploader.upload = upload
+    fake_cloudinary.uploader = fake_uploader
     monkeypatch.setitem(sys.modules, "cloudinary", fake_cloudinary)
     monkeypatch.setitem(sys.modules, "cloudinary.uploader", fake_uploader)
     monkeypatch.setenv("CLOUDINARY_URL", "cloudinary://key:secret@example")
@@ -57,6 +58,7 @@ def test_cloudinary_upload_rejects_non_https_delivery_urls(monkeypatch):
         "public_id": "nafiztech/media/abc123",
         "secure_url": "http://example.com/image.png",
     }
+    fake_cloudinary.uploader = fake_uploader
     monkeypatch.setitem(sys.modules, "cloudinary", fake_cloudinary)
     monkeypatch.setitem(sys.modules, "cloudinary.uploader", fake_uploader)
     monkeypatch.setenv("CLOUDINARY_URL", "cloudinary://key:secret@example")
@@ -79,6 +81,7 @@ def test_cloudinary_delete_uses_the_stored_public_id(monkeypatch):
         return {"result": "ok"}
 
     fake_uploader.destroy = destroy
+    fake_cloudinary.uploader = fake_uploader
     monkeypatch.setitem(sys.modules, "cloudinary", fake_cloudinary)
     monkeypatch.setitem(sys.modules, "cloudinary.uploader", fake_uploader)
     monkeypatch.setenv("CLOUDINARY_URL", "cloudinary://key:secret@example")
