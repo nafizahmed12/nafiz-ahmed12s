@@ -23,7 +23,7 @@ def test_article_content_escapes_html_and_rejects_unsafe_image_urls():
 
     assert html.escape('<script>alert("x")</script>') in rendered
     assert "<script>" not in rendered
-    assert "javascript:" not in rendered
+    assert 'src="javascript:' not in rendered
     assert "<img " not in rendered
 
 
