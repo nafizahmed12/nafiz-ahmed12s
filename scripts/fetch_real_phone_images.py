@@ -76,6 +76,7 @@ BRAND_ALIAS_WORDS = {
     "apple": {"iphone"},
     "samsung": {"galaxy"},
     "google": {"pixel"},
+    "oneplus": {"one", "plus"},
 }
 
 # Variant/tier words that phone lineups reuse across sibling models (a
@@ -92,12 +93,61 @@ VARIANT_QUALIFIER_WORDS = {
 }
 
 
-def find_commons_image(brand: str, model: str) -> str | None:
-    """Search Commons for a free-licensed photo matching brand+model.
+def _normalized_words(value: str) -> set[str]:
+    """Return whole alphanumeric tokens, avoiding substring false positives."""
+    import re
 
-    Returns a direct, stable image URL (via Special:FilePath, which always
-    redirects to the current file regardless of internal filename changes)
-    or None if nothing plausible was found.
+    return set(re.findall(r"[a-z0-9]+", value.casefold()))
+
+
+def _is_exact_commons_title_match(brand: str, model: str, title: str) -> bool:
+    """Reject sibling variants and partial-token matches for phone photos."""
+    brand_words = _normalized_words(brand)
+    model_words = _normalized_words(model)
+    title_words = _normalized_words(title)
+
+    alias_words = BRAND_ALIAS_WORDS.get(brand.casefold(), set())
+    brand_required = brand_words - alias_words
+    brand_alias_hit = bool(title_words & alias_words)
+    if not brand_required.issubset(title_words) and not brand_alias_hit:
+        return False
+
+    distinguishing = model_words - alias_words
+    if not distinguishing or not distinguishing.issubset(title_words):
+        return False
+
+    # Do not use broad family/series photos as a model-specific product shot.
+    if title_words & {"series", "family", "lineup", "comparison", "review"}:
+        return False
+
+    brand_compact = "".join(sorted(brand_words))
+    title_compact = "".join(sorted(title_words))
+    # Keep the compact-name allowance for split spellings such as One Plus.
+    # Exact token matching above still governs the model identity.
+    if brand_compact and not brand_required.issubset(title_words):
+        if brand_compact not in title_compact and not brand_alias_hit:
+            return False
+
+    uninvited_qualifiers = {
+        q for q in VARIANT_QUALIFIER_WORDS - model_words - alias_words
+        if q not in brand_words
+    }
+    if title_words & uninvited_qualifiers:
+        return False
+
+    requested_qualifiers = distinguishing & VARIANT_QUALIFIER_WORDS
+    if not requested_qualifiers.issubset(title_words):
+        return False
+
+    return True
+
+
+def find_commons_image(brand: str, model: str) -> str | None:
+    """Search Commons for a freely licensed photo matching the exact model.
+
+    A candidate is accepted only when its filename contains every
+    distinguishing model token as a whole word and no unrequested variant
+    qualifier. Ambiguous family/series images are rejected.
     """
     query = f"{brand} {model} smartphone"
     try:
@@ -106,69 +156,16 @@ def find_commons_image(brand: str, model: str) -> str | None:
             "format": "json",
             "list": "search",
             "srsearch": query,
-            "srnamespace": "6",  # File: namespace only
-            "srlimit": "5",
+            "srnamespace": "6",
+            "srlimit": "10",
         })
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError):
         return None
 
     hits = search.get("query", {}).get("search", [])
-    if not hits:
-        return None
-
-    brand_lower = brand.lower()
-    brand_nospace = brand_lower.replace(" ", "")
-    alias_words = BRAND_ALIAS_WORDS.get(brand_lower, set())
-    # Every model word EXCEPT a known product-line alias is distinguishing.
-    # This only ever removes a word when brand.lower() has a curated entry
-    # for it, so it can't misfire on brands/models not in the map above.
-    model_tokens = {t.lower() for t in model.split() if len(t) > 1}
-    distinguishing_tokens = model_tokens - alias_words
-    # Qualifier words the model itself asked for are fine to see in the
-    # filename, and so is one that's actually embedded in the BRAND's own
-    # name (e.g. "plus" inside "oneplus" -- a "One Plus 13" filename isn't
-    # claiming a "13 Plus" sibling, that's just how the brand name is
-    # spelled/split). Only a qualifier that belongs to neither flags a
-    # genuinely different sibling model.
-    uninvited_qualifiers = {
-        q for q in (VARIANT_QUALIFIER_WORDS - model_tokens)
-        if q not in brand_lower and q not in brand_nospace
-    }
-
     for hit in hits:
-        title = hit.get("title", "")  # e.g. "File:Samsung Galaxy S24 Ultra.jpg"
-        title_lower = title.lower()
-        title_nospace = title_lower.replace(" ", "")
-        title_words = set(title_lower.replace(".", " ").replace("(", " ").replace(")", " ").split())
-        # Compare with spaces stripped too, so brand names that Commons
-        # uploaders sometimes split differently (e.g. "REDMAGIC" vs
-        # "Red Magic", "OnePlus" vs "One Plus") still match.
-        brand_hit = (
-            brand_lower in title_lower
-            or brand_nospace in title_nospace
-            or any(word in title_lower for word in alias_words)
-        )
-        matched_distinguishing = {tok for tok in distinguishing_tokens if tok in title_lower}
-        has_uninvited_qualifier = bool(title_words & uninvited_qualifiers)
-        # Any qualifier word the model itself specifies (e.g. "pro" in
-        # "13 Pro") must actually be present in the filename -- otherwise a
-        # search for the Pro variant could match a base-model-only file
-        # just because a plain token like the model number also matched.
-        requested_qualifiers = distinguishing_tokens & VARIANT_QUALIFIER_WORDS
-        missing_requested_qualifier = bool(requested_qualifiers - title_words)
-        # Require: the brand (or its known alias, e.g. "iPhone" for Apple)
-        # appears; at least one distinguishing model token appears (a
-        # brand-only match, like a generic "Apple logo.png", isn't
-        # enough); every qualifier word the model asked for is present;
-        # and the file doesn't carry a variant word the model didn't ask
-        # for (so an "iPhone 14" search rejects a "14 Plus" or "14 Pro"
-        # file, even though "14" alone matches both).
-        if (
-            not brand_hit
-            or not matched_distinguishing
-            or has_uninvited_qualifier
-            or missing_requested_qualifier
-        ):
+        title = hit.get("title", "")
+        if not _is_exact_commons_title_match(brand, model, title):
             continue
         filename = title.split(":", 1)[-1]
         return "https://commons.wikimedia.org/wiki/Special:FilePath/" + urllib.parse.quote(filename)
