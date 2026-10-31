@@ -96,7 +96,7 @@ def blog_article(slug):
                 WHERE status='published' AND published_at IS NOT NULL AND id <> :id
                 ORDER BY published_at DESC, id DESC LIMIT 3"""),
                 {"id": article["id"]}).mappings().all()
-    return render_template("blog_article.html", article=article, related=related)
+    return render_template("blog_article.html", article=article, related=related, render_article_content=render_article_content)
 
 
 @blog_bp.get("/blog/category/<slug>")
