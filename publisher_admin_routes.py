@@ -1,5 +1,7 @@
 """Editorial administration dashboard and SEO audit tools."""
-from datetime import datetime, timezone\n\nfrom flask import Blueprint, flash, redirect, render_template, request, url_for
+from datetime import datetime, timezone
+
+from flask import Blueprint, flash, redirect, render_template, request, url_for
 from sqlalchemy import text
 
 from admin_auth import admin_required
