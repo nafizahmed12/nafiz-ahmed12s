@@ -175,6 +175,30 @@ def update_article(article_id):
     return redirect(url_for("blog.admin_articles"))
 
 
+@blog_bp.post("/admin/articles/<int:article_id>/publish")
+@admin_required
+def publish_existing_article(article_id):
+    now = datetime.now(timezone.utc)
+    with SessionLocal() as db:
+        existing = db.execute(
+            text("SELECT id FROM blog_articles WHERE id=:id"),
+            {"id": article_id},
+        ).mappings().first()
+        if existing is None:
+            abort(404)
+        db.execute(
+            text("""UPDATE blog_articles
+                SET status='published',
+                    published_at=COALESCE(published_at, :now),
+                    updated_at=:now
+                WHERE id=:id"""),
+            {"id": article_id, "now": now},
+        )
+        db.commit()
+    flash("Article published successfully.", "success")
+    return redirect(url_for("blog.admin_articles"))
+
+
 @blog_bp.post("/admin/articles/<int:article_id>/delete")
 @admin_required
 def delete_article(article_id):
